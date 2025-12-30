@@ -21,12 +21,12 @@ function HabitsPage() {
   
   const datePickerRef = useRef(null);
 
-  // Текущая дата
-const today = new Date();
-const todayUTC = new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate()));
-const currentMonth = todayUTC.getMonth();
-const currentYear = todayUTC.getFullYear();
-const currentDay = todayUTC.getDate();
+  // Текущая дата в UTC
+  const now = new Date();
+  const today = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
+  const currentMonth = today.getMonth();
+  const currentYear = today.getFullYear();
+  const currentDay = today.getDate();
 
   // Загрузка пользователя
   useEffect(() => {
@@ -297,187 +297,215 @@ const currentDay = todayUTC.getDate();
 
   // Выбор даты
   const handleDateSelect = (day) => {
-    const selectedDate = new Date(datePickerYear, datePickerMonth, day);
-    const todayDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    // Создаем выбранную дату в UTC
+    const selectedDate = new Date(Date.UTC(datePickerYear, datePickerMonth, day));
     
-    if (selectedDate >= todayDate) {
+    // Получаем сегодняшнюю дату в UTC
+    const now = new Date();
+    const todayUTC = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
+    
+    // Разрешаем выбирать сегодня и любую будущую дату
+    if (selectedDate >= todayUTC) {
       setNewHabit({...newHabit, startDate: selectedDate});
       setShowDatePicker(false);
+    } else {
+      alert('Нельзя выбрать прошедшую дату. Минимальная дата - сегодня.');
     }
   };
 
   // Проверка, является ли день сегодняшним в date picker
-const isTodayInDatePicker = (day) => {
-  const now = new Date();
-  const todayUTC = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
-  return (
-    day === todayUTC.getDate() &&
-    datePickerMonth === todayUTC.getMonth() &&
-    datePickerYear === todayUTC.getFullYear()
-  );
-};
+  const isTodayInDatePicker = (day) => {
+    const now = new Date();
+    const todayUTC = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
+    return (
+      day === todayUTC.getDate() &&
+      datePickerMonth === todayUTC.getMonth() &&
+      datePickerYear === todayUTC.getFullYear()
+    );
+  };
 
   // Проверка, выбран ли день в date picker
   const isSelectedInDatePicker = (day) => {
+    if (!newHabit.startDate) return false;
+    
+    const selectedDate = new Date(newHabit.startDate);
+    const selectedUTC = new Date(Date.UTC(
+      selectedDate.getFullYear(),
+      selectedDate.getMonth(),
+      selectedDate.getDate()
+    ));
+    
     return (
-      day === newHabit.startDate.getDate() &&
-      datePickerMonth === newHabit.startDate.getMonth() &&
-      datePickerYear === newHabit.startDate.getFullYear()
+      day === selectedUTC.getDate() &&
+      datePickerMonth === selectedUTC.getMonth() &&
+      datePickerYear === selectedUTC.getFullYear()
     );
   };
 
   // Проверка, является ли день в date picker прошедшим
   const isPastDayInDatePicker = (day) => {
-  const now = new Date();
-  const todayUTC = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
-  const date = new Date(Date.UTC(datePickerYear, datePickerMonth, day));
-  return date < todayUTC;
-};
+    const now = new Date();
+    const todayUTC = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
+    const date = new Date(Date.UTC(datePickerYear, datePickerMonth, day));
+    return date < todayUTC;
+  };
 
   // Проверка состояния дня для привычки
   const getDayStatus = (habit, day, progress) => {
-  if (!day || !habit) return 'empty';
-  
-  // ✅ Используем UTC дату
-  const now = new Date();
-  const todayUTC = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
-  const dayDate = new Date(Date.UTC(currentYear, currentMonth, day));
-  const habitStartDate = new Date(habit.startDate);
-  
-  // Приводим к YYYY-MM-DD для сравнения
-  const dayStr = dayDate.toISOString().split('T')[0];
-  const habitStartStr = habitStartDate.toISOString().split('T')[0];
-  const todayStr = todayUTC.toISOString().split('T')[0];
-  
-  // Дни до начала привычки
-  if (dayStr < habitStartStr) {
-    return 'before-start';
-  }
-  
-  // Ищем прогресс для этой даты
-  const progressForDate = progress?.find(p => {
-    const progressDate = new Date(p.completed_date);
-    const progressStr = progressDate.toISOString().split('T')[0];
-    return progressStr === dayStr;
-  });
-  
-  // Сегодняшний день
-  if (dayStr === todayStr) {
-    // Привычка уже началась
-    return progressForDate?.is_completed ? 'today-completed' : 'today';
-  }
-  
-  // Выполненные дни
-  if (progressForDate?.is_completed) {
-    return 'completed';
-  }
-  
-  // Пропущенные дни (прошедшие дни после начала привычки)
-  if (dayStr < todayStr && dayStr >= habitStartStr) {
-    return 'missed';
-  }
-  
-  // Будущие дни
-  return 'future';
-};
+    if (!day || !habit) return 'empty';
+    
+    // Используем UTC дату
+    const now = new Date();
+    const todayUTC = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
+    const dayDate = new Date(Date.UTC(currentYear, currentMonth, day));
+    const habitStartDate = new Date(habit.startDate);
+    const habitStartUTC = new Date(Date.UTC(
+      habitStartDate.getFullYear(),
+      habitStartDate.getMonth(),
+      habitStartDate.getDate()
+    ));
+    
+    // Приводим к YYYY-MM-DD для сравнения
+    const dayStr = dayDate.toISOString().split('T')[0];
+    const habitStartStr = habitStartUTC.toISOString().split('T')[0];
+    const todayStr = todayUTC.toISOString().split('T')[0];
+    
+    // ВАЖНО: Дни до начала привычки - всегда недоступны
+    if (dayStr < habitStartStr) {
+      return 'before-start'; // Эти дни должны быть серыми/неактивными
+    }
+    
+    // Ищем прогресс для этой даты
+    const progressForDate = progress?.find(p => {
+      const progressDate = new Date(p.completed_date);
+      const progressStr = progressDate.toISOString().split('T')[0];
+      return progressStr === dayStr;
+    });
+    
+    // Сегодняшний день (после начала привычки)
+    if (dayStr === todayStr) {
+      return progressForDate?.is_completed ? 'today-completed' : 'today';
+    }
+    
+    // Выполненные дни
+    if (progressForDate?.is_completed) {
+      return 'completed';
+    }
+    
+    // Пропущенные дни (прошедшие дни после начала привычки)
+    if (dayStr < todayStr && dayStr >= habitStartStr) {
+      return 'missed';
+    }
+    
+    // Будущие дни (после начала привычки)
+    return 'future';
+  };
 
   // Создание привычки
   const handleCreateHabit = async (e) => {
-  e.preventDefault();
-  if (!newHabit.title.trim()) return;
+    e.preventDefault();
+    if (!newHabit.title.trim()) return;
 
-  setLoading(true);
-  
-  try {
-    const formattedDate = newHabit.startDate.toISOString().split('T')[0];
+    setLoading(true);
     
-    const { data, error } = await supabase.rpc('create_habit', {
-      p_title: newHabit.title.trim(),
-      p_start_date: formattedDate
-    });
-    
-    if (error) throw error;
-    
-    if (data) {
-      // ✅ ПОЛНАЯ перезагрузка привычек с сервера
-      await loadHabits();
+    try {
+      const formattedDate = newHabit.startDate.toISOString().split('T')[0];
       
-      setNewHabit({ 
-        title: '', 
-        startDate: new Date()
+      const { data, error } = await supabase.rpc('create_habit', {
+        p_title: newHabit.title.trim(),
+        p_start_date: formattedDate
       });
-      setShowCreateForm(false);
-      setShowDatePicker(false);
+      
+      if (error) throw error;
+      
+      if (data) {
+        // ПОЛНАЯ перезагрузка привычек с сервера
+        await loadHabits();
+        
+        setNewHabit({ 
+          title: '', 
+          startDate: new Date()
+        });
+        setShowCreateForm(false);
+        setShowDatePicker(false);
+      }
+    } catch (error) {
+      console.error('Ошибка создания привычки:', error);
+      alert(`Ошибка: ${error.message}`);
+    } finally {
+      setLoading(false);
     }
-  } catch (error) {
-    console.error('Ошибка создания привычки:', error);
-    alert(`Ошибка: ${error.message}`);
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
   // Отметить привычку выполненной
   const toggleHabitCompletion = async (habitId) => {
-  try {
-    const habit = habits.find(h => h.id === habitId);
-    if (!habit) return;
-    
-    // ✅ Используем UTC дату для сравнения
-    const now = new Date();
-    const todayUTC = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
-    const todayStr = todayUTC.toISOString().split('T')[0];
-    
-    const habitStartStr = new Date(habit.startDate).toISOString().split('T')[0];
-    
-    if (habitStartStr > todayStr) {
-      alert('Привычку можно выполнять только начиная с ' + formatDisplayDate(habit.startDate));
-      return;
-    }
-    
-    // Проверяем, выполнена ли привычка сегодня
-    const { data: existingProgress } = await supabase
-      .from('habit_progress')
-      .select('*')
-      .eq('habit_id', habitId)
-      .eq('user_id', user.id)
-      .eq('completed_date', todayStr)
-      .maybeSingle();
-    
-    if (existingProgress?.is_completed) {
-      // Уже выполнена - отменяем
-      const { error } = await supabase
-        .from('habit_progress')
-        .update({ is_completed: false })
-        .eq('id', existingProgress.id);
+    try {
+      const habit = habits.find(h => h.id === habitId);
+      if (!habit) return;
       
-      if (error) throw error;
-    } else {
-      // Не выполнена - отмечаем
-      if (habit.source_type === 'competition' && habit.competition_id) {
-        const { error } = await supabase.rpc('mark_competition_habit_complete', {
-          p_habit_id: habitId
-        });
+      // Используем UTC дату для сравнения
+      const now = new Date();
+      const todayUTC = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
+      const todayStr = todayUTC.toISOString().split('T')[0];
+      
+      // Получаем дату начала привычки (также в UTC)
+      const habitStartDate = new Date(habit.startDate);
+      const habitStartUTC = new Date(Date.UTC(
+        habitStartDate.getFullYear(),
+        habitStartDate.getMonth(),
+        habitStartDate.getDate()
+      ));
+      const habitStartStr = habitStartUTC.toISOString().split('T')[0];
+      
+      // ВАЖНО: Проверяем, наступила ли уже дата начала привычки
+      if (todayStr < habitStartStr) {
+        alert(`Привычка "${habit.title}" будет доступна для выполнения только с ${formatDisplayDate(habit.startDate)}`);
+        return;
+      }
+      
+      // Проверяем, выполнена ли привычка сегодня
+      const { data: existingProgress } = await supabase
+        .from('habit_progress')
+        .select('*')
+        .eq('habit_id', habitId)
+        .eq('user_id', user.id)
+        .eq('completed_date', todayStr)
+        .maybeSingle();
+      
+      if (existingProgress?.is_completed) {
+        // Уже выполнена - отменяем
+        const { error } = await supabase
+          .from('habit_progress')
+          .update({ is_completed: false })
+          .eq('id', existingProgress.id);
         
         if (error) throw error;
       } else {
-        const { error } = await supabase.rpc('mark_habit_completed', {
-          p_habit_id: habitId,
-          p_date: todayStr
-        });
-        
-        if (error) throw error;
+        // Не выполнена - отмечаем
+        if (habit.source_type === 'competition' && habit.competition_id) {
+          const { error } = await supabase.rpc('mark_competition_habit_complete', {
+            p_habit_id: habitId
+          });
+          
+          if (error) throw error;
+        } else {
+          const { error } = await supabase.rpc('mark_habit_completed', {
+            p_habit_id: habitId,
+            p_date: todayStr
+          });
+          
+          if (error) throw error;
+        }
       }
+      
+      // Обновляем прогресс
+      await loadHabits();
+      
+    } catch (error) {
+      console.error('Ошибка отметки выполнения:', error);
+      alert(`Ошибка: ${error.message}`);
     }
-    
-    // Обновляем прогресс
-    await loadHabits();
-    
-  } catch (error) {
-    console.error('Ошибка отметки выполнения:', error);
-    alert(`Ошибка: ${error.message}`);
-  }
-};
+  };
 
   // Удаление привычки
   const deleteHabit = async (id) => {
@@ -496,6 +524,13 @@ const isTodayInDatePicker = (day) => {
       console.error('Ошибка удаления привычки:', error);
       alert(`Ошибка: ${error.message}`);
     }
+  };
+
+  // Вспомогательная функция для склонения слова "день"
+  const getDaysWord = (days) => {
+    if (days % 10 === 1 && days % 100 !== 11) return 'день';
+    if (days % 10 >= 2 && days % 10 <= 4 && (days % 100 < 10 || days % 100 >= 20)) return 'дня';
+    return 'дней';
   };
 
   // Если загрузка данных
@@ -670,6 +705,7 @@ const isTodayInDatePicker = (day) => {
               deleteHabit={deleteHabit}
               progressData={progressData}
               getDayStatus={getDayStatus}
+              getDaysWord={getDaysWord}
             />
           ))}
         </div>
@@ -748,28 +784,41 @@ function HabitCard({
   toggleHabitCompletion,
   deleteHabit,
   progressData,
-  getDayStatus
+  getDayStatus,
+  getDaysWord
 }) {
   const [isLoading, setIsLoading] = useState(false);
   const progress = progressData[habit.id] || [];
 
   const now = new Date();
-const todayUTC = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
-const todayStr = todayUTC.toISOString().split('T')[0];
-const habitStartStr = new Date(habit.startDate).toISOString().split('T')[0];
-const isTodayActive = habitStartStr <= todayStr;
-
-// Проверяем, выполнена ли привычка сегодня
-const isTodayCompleted = progress.find(p => {
-  const progressDate = new Date(p.completed_date);
-  const progressStr = progressDate.toISOString().split('T')[0];
-  return progressStr === todayStr && p.is_completed;
-});
+  const todayUTC = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
+  const todayStr = todayUTC.toISOString().split('T')[0];
+  
+  const habitStartDate = new Date(habit.startDate);
+  const habitStartUTC = new Date(Date.UTC(
+    habitStartDate.getFullYear(),
+    habitStartDate.getMonth(),
+    habitStartDate.getDate()
+  ));
+  const habitStartStr = habitStartUTC.toISOString().split('T')[0];
+  
+  // Проверяем, можно ли выполнять привычку сегодня
+  const isTodayActive = habitStartStr <= todayStr;
+  
+  // Вычисляем сколько дней осталось до начала привычки
+  const daysUntilStart = Math.max(0, Math.ceil((habitStartUTC.getTime() - todayUTC.getTime()) / (1000 * 60 * 60 * 24)));
+  
+  // Проверяем, выполнена ли привычка сегодня
+  const isTodayCompleted = progress.find(p => {
+    const progressDate = new Date(p.completed_date);
+    const progressStr = progressDate.toISOString().split('T')[0];
+    return progressStr === todayStr && p.is_completed;
+  });
 
   const handleComplete = async () => {
+    // Проверяем возможность выполнения
     if (!isTodayActive) {
-      alert(`Привычку можно выполнять только с ${formatDisplayDate(habit.startDate)}`);
-      return;
+      return; // Кнопка и так будет disabled, но на всякий случай
     }
     
     setIsLoading(true);
@@ -778,6 +827,32 @@ const isTodayCompleted = progress.find(p => {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  // Определяем текст для кнопки
+  const getButtonText = () => {
+    if (isLoading) return '...';
+    if (isTodayCompleted) return '✓ ВЫПОЛНЕНО';
+    if (isTodayActive) return 'ВЫПОЛНИТЬ';
+    
+    // Если привычка еще не началась
+    if (daysUntilStart === 1) return 'ЧЕРЕЗ 1 ДЕНЬ';
+    if (daysUntilStart === 2) return 'ЧЕРЕЗ 2 ДНЯ';
+    if (daysUntilStart === 3) return 'ЧЕРЕЗ 3 ДНЯ';
+    if (daysUntilStart === 4) return 'ЧЕРЕЗ 4 ДНЯ';
+    if (daysUntilStart === 5) return 'ЧЕРЕЗ 5 ДНЕЙ';
+    return `ЧЕРЕЗ ${daysUntilStart} ДНЕЙ`;
+  };
+
+  // Определяем класс для кнопки
+  const getButtonClass = () => {
+    const baseClass = 'complete-habit-btn-small';
+    
+    if (isTodayCompleted) return `${baseClass} completed`;
+    if (isTodayActive) return `${baseClass} active`;
+    
+    // Для будущих привычек
+    return `${baseClass} disabled future-habit`;
   };
 
   return (
@@ -833,11 +908,12 @@ const isTodayCompleted = progress.find(p => {
 
       <div className="habit-card-footer">
         <button 
-          className={`complete-habit-btn-small ${isTodayCompleted ? 'completed' : ''} ${!isTodayActive ? 'disabled' : ''}`}
+          className={getButtonClass()}
           onClick={handleComplete}
           disabled={isLoading || !isTodayActive}
+          title={!isTodayActive ? `Привычка будет доступна с ${formatDisplayDate(habit.startDate)} (через ${daysUntilStart} ${getDaysWord(daysUntilStart)})` : ''}
         >
-          {isLoading ? '...' : (isTodayCompleted ? '✓ ВЫПОЛНЕНО' : 'ВЫПОЛНИТЬ')}
+          {getButtonText()}
         </button>
         
         <div className="habit-actions">
@@ -1003,8 +1079,8 @@ function CreateHabitModal({
             </div>
             
             <div className="date-note">
-              <p>Привычку можно будет выполнять только с этой даты.</p>
-              <p>Минимальная дата - сегодня.</p>
+              <p>⚠️ Привычку можно будет выполнять только начиная с этой даты.</p>
+              <p>Если вы выберете будущую дату, кнопка "ВЫПОЛНИТЬ" будет неактивна до её наступления.</p>
             </div>
           </div>
           
