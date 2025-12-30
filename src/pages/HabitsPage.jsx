@@ -1,26 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { supabase } from '../services/supabase'; // Импорт из вашего файла
 import './HabitsPage.css';
 
 function HabitsPage() {
-  const [habits, setHabits] = useState([
-    {
-      id: 1,
-      title: 'walk',
-      completed: false,
-      streak: 0,
-      createdAt: new Date('2025-12-30'),
-      completedDates: []
-    },
-    {
-      id: 2,
-      title: 'read',
-      completed: false,
-      streak: 0,
-      createdAt: new Date('2025-12-30'),
-      completedDates: []
-    }
-  ]);
-
+  const [habits, setHabits] = useState([]);
   const [newHabit, setNewHabit] = useState({
     title: '',
     startDate: new Date()
@@ -32,8 +15,74 @@ function HabitsPage() {
   const [activeTab, setActiveTab] = useState('habits');
   const [datePickerMonth, setDatePickerMonth] = useState(new Date().getMonth());
   const [datePickerYear, setDatePickerYear] = useState(new Date().getFullYear());
+  const [user, setUser] = useState(null);
   
   const datePickerRef = useRef(null);
+
+  // Загрузка пользователя и привычек
+  useEffect(() => {
+    checkUser();
+    if (user) {
+      loadHabits();
+    }
+  }, [user]);
+
+  // Проверка авторизации
+  const checkUser = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    setUser(user);
+  };
+
+  // Загрузка привычек пользователя
+  const loadHabits = async () => {
+    try {
+      // Используем функцию get_all_user_habits из базы
+      const { data, error } = await supabase.rpc('get_all_user_habits');
+      
+      if (error) throw error;
+      
+      if (data) {
+        // Преобразуем данные в нужный формат
+        const formattedHabits = data.map(habit => ({
+          id: habit.habit_id,
+          title: habit.title,
+          frequency_type: habit.frequency_type,
+          startDate: new Date(habit.start_date),
+          created_at: new Date(habit.created_at),
+          role: habit.role,
+          status: habit.status,
+          source_type: habit.source_type,
+          competition_id: habit.competition_id,
+          competition_status: habit.competition_status,
+          friend_id: habit.friend_id,
+          friend_username: habit.friend_username,
+          my_score: habit.my_score,
+          friend_score: habit.friend_score
+        }));
+        
+        setHabits(formattedHabits);
+      }
+    } catch (error) {
+      console.error('Ошибка загрузки привычек:', error);
+    }
+  };
+
+  // Загрузка прогресса привычек для календаря
+  const loadHabitProgress = async (habitId) => {
+    try {
+      const { data, error } = await supabase
+        .from('habit_progress')
+        .select('*')
+        .eq('habit_id', habitId)
+        .eq('user_id', user.id);
+      
+      if (error) throw error;
+      return data || [];
+    } catch (error) {
+      console.error('Ошибка загрузки прогресса:', error);
+      return [];
+    }
+  };
 
   // Обработчик клика вне date picker
   useEffect(() => {
@@ -134,6 +183,7 @@ function HabitsPage() {
 
   // Форматирование даты
   const formatDisplayDate = (date) => {
+    if (!date) return '';
     const day = date.getDate().toString().padStart(2, '0');
     const month = (date.getMonth() + 1).toString().padStart(2, '0');
     const year = date.getFullYear();
@@ -196,23 +246,28 @@ function HabitsPage() {
   };
 
   // Проверка состояния дня для привычки
-  const getDayStatus = (habit, day) => {
-    if (!day || !habit) return 'empty';
+  const getDayStatus = async (habit, day) => {
+    if (!day || !habit || !user) return 'empty';
     
     const dayDate = new Date(currentYear, currentMonth, day);
-    const habitStartDate = new Date(habit.createdAt.toDateString());
+    const habitStartDate = new Date(habit.startDate);
     
     if (dayDate < habitStartDate) {
       return 'before-start';
     }
     
+    // Загружаем прогресс для этой привычки
+    const progress = await loadHabitProgress(habit.id);
+    const progressForDate = progress.find(p => {
+      const progressDate = new Date(p.completed_date);
+      return progressDate.toDateString() === dayDate.toDateString();
+    });
+    
     if (day === currentDay) {
-      return habit.completed ? 'today-completed' : 'today';
+      return progressForDate?.is_completed ? 'today-completed' : 'today';
     }
     
-    if (habit.completedDates && habit.completedDates.some(d => 
-      new Date(d).toDateString() === dayDate.toDateString()
-    )) {
+    if (progressForDate?.is_completed) {
       return 'completed';
     }
     
@@ -223,69 +278,120 @@ function HabitsPage() {
     return 'future';
   };
 
+  // Создание привычки
   const handleCreateHabit = async (e) => {
     e.preventDefault();
     if (!newHabit.title.trim()) return;
 
     setLoading(true);
     
-    setTimeout(() => {
-      const newHabitObj = {
-        id: habits.length + 1,
-        title: newHabit.title.trim(),
-        completed: false,
-        streak: 0,
-        createdAt: new Date(newHabit.startDate),
-        completedDates: []
-      };
-
-      setHabits([...habits, newHabitObj]);
-      setNewHabit({ 
-        title: '', 
-        startDate: new Date()
+    try {
+      // Используем RPC функцию create_habit из базы
+      const { data, error } = await supabase.rpc('create_habit', {
+        p_title: newHabit.title.trim(),
+        p_start_date: newHabit.startDate.toISOString().split('T')[0] // Формат YYYY-MM-DD
       });
-      setShowCreateForm(false);
-      setShowDatePicker(false);
-      setLoading(false);
-    }, 500);
-  };
-
-  const toggleHabitCompletion = (habitId) => {
-    const updatedHabits = habits.map(habit => {
-      if (habit.id === habitId) {
-        const isNowCompleted = !habit.completed;
-        const todayStr = today.toISOString().split('T')[0];
-        const isAlreadyCompleted = habit.completedDates.some(d => 
-          d.split('T')[0] === todayStr
-        );
-        
-        let updatedCompletedDates;
-        if (isNowCompleted && !isAlreadyCompleted) {
-          updatedCompletedDates = [...habit.completedDates, today.toISOString()];
-        } else if (!isNowCompleted && isAlreadyCompleted) {
-          updatedCompletedDates = habit.completedDates.filter(d => 
-            d.split('T')[0] !== todayStr
-          );
-        } else {
-          updatedCompletedDates = habit.completedDates;
-        }
-        
-        return {
-          ...habit,
-          completed: isNowCompleted,
-          completedDates: updatedCompletedDates,
-          streak: isNowCompleted ? habit.streak + 1 : Math.max(0, habit.streak - 1)
+      
+      if (error) throw error;
+      
+      if (data) {
+        // Добавляем новую привычку в состояние
+        const newHabitObj = {
+          id: data.id,
+          title: data.title,
+          startDate: new Date(data.start_date),
+          created_at: new Date(data.created_at),
+          role: 'owner',
+          status: 'accepted',
+          source_type: 'direct'
         };
+        
+        setHabits([...habits, newHabitObj]);
+        setNewHabit({ 
+          title: '', 
+          startDate: new Date()
+        });
+        setShowCreateForm(false);
+        setShowDatePicker(false);
       }
-      return habit;
-    });
-    
-    setHabits(updatedHabits);
+    } catch (error) {
+      console.error('Ошибка создания привычки:', error);
+      alert(`Ошибка: ${error.message}`);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const deleteHabit = (id) => {
-    setHabits(habits.filter(habit => habit.id !== id));
+  // Отметить привычку выполненной
+  const toggleHabitCompletion = async (habitId) => {
+    try {
+      // Для привычек из соревнований используем mark_competition_habit_complete
+      // Для обычных привычек - mark_habit_completed
+      const habit = habits.find(h => h.id === habitId);
+      
+      if (habit.source_type === 'competition') {
+        const { error } = await supabase.rpc('mark_competition_habit_complete', {
+          p_habit_id: habitId
+        });
+        
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.rpc('mark_habit_completed', {
+          p_habit_id: habitId
+        });
+        
+        if (error) throw error;
+      }
+      
+      // Обновляем состояние
+      await loadHabits();
+    } catch (error) {
+      console.error('Ошибка отметки выполнения:', error);
+      alert(`Ошибка: ${error.message}`);
+    }
   };
+
+  // Удаление привычки
+  const deleteHabit = async (id) => {
+    if (!confirm('Вы уверены, что хотите удалить эту привычку?')) return;
+    
+    try {
+      const { error } = await supabase.rpc('delete_habit', {
+        p_habit_id: id
+      });
+      
+      if (error) throw error;
+      
+      // Обновляем список привычек
+      setHabits(habits.filter(habit => habit.id !== id));
+    } catch (error) {
+      console.error('Ошибка удаления привычки:', error);
+      alert(`Ошибка: ${error.message}`);
+    }
+  };
+
+  // Если пользователь не авторизован
+  if (!user) {
+    return (
+      <div className="habits-page">
+        <header className="habits-header">
+          <div className="header-content">
+            <h1>DoubleDo</h1>
+            <div className="user-avatar">
+              <span>👤</span>
+            </div>
+          </div>
+        </header>
+        
+        <div className="empty-habits-container">
+          <div className="empty-habits-content">
+            <h2>Пожалуйста, войдите в систему</h2>
+            <p>Для доступа к привычкам необходимо авторизоваться</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   // Если привычек нет
   if (habits.length === 0) {
@@ -295,7 +401,7 @@ function HabitsPage() {
           <div className="header-content">
             <h1>DoubleDo</h1>
             <div className="user-avatar">
-              <span>👤</span>
+              <span>{user?.email?.charAt(0).toUpperCase() || '👤'}</span>
             </div>
           </div>
         </header>
@@ -379,7 +485,7 @@ function HabitsPage() {
         <div className="header-content">
           <h1>DoubleDo</h1>
           <div className="user-avatar">
-            <span>👤</span>
+            <span>{user?.email?.charAt(0).toUpperCase() || '👤'}</span>
           </div>
         </div>
       </header>
@@ -397,71 +503,20 @@ function HabitsPage() {
 
         <div className="habits-grid">
           {habits.map(habit => (
-            <div key={habit.id} className="habit-card">
-              <div className="habit-card-header">
-                <div className="habit-title-section">
-                  <h3 className="habit-card-title">{habit.title}</h3>
-                  <div className="habit-created-date">
-                    C {formatDisplayDate(habit.createdAt)}
-                  </div>
-                </div>
-              </div>
-
-              <div className="habit-calendar-small">
-                <div className="calendar-grid-small">
-                  <div className="weekdays-row-small">
-                    {dayNames.map((dayName, index) => (
-                      <div key={index} className="weekday-cell-small">
-                        {dayName}
-                      </div>
-                    ))}
-                  </div>
-                  
-                  {calendarWeeks.map((week, weekIndex) => (
-                    <div key={weekIndex} className="calendar-week-small">
-                      {week.map((day, dayIndex) => {
-                        if (day === null) {
-                          return <div key={dayIndex} className="calendar-day-small empty"></div>;
-                        }
-                        
-                        const status = getDayStatus(habit, day);
-                        const isToday = day === currentDay;
-                        
-                        return (
-                          <div 
-                            key={dayIndex} 
-                            className={`calendar-day-small ${status} ${isToday ? 'today-highlight' : ''}`}
-                          >
-                            <span className="day-number-small">{day}</span>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="habit-card-footer">
-                <button 
-                  className={`complete-habit-btn-small ${habit.completed ? 'completed' : ''}`}
-                  onClick={() => toggleHabitCompletion(habit.id)}
-                >
-                  {habit.completed ? '✓ ВЫПОЛНЕНО' : 'ВЫПОЛНИТЬ'}
-                </button>
-                
-                <div className="habit-actions">
-                  <span className="streak-badge">
-                    🔥 {habit.streak} дней
-                  </span>
-                  <button 
-                    className="delete-habit-btn"
-                    onClick={() => deleteHabit(habit.id)}
-                  >
-                    ✕
-                  </button>
-                </div>
-              </div>
-            </div>
+            <HabitCard
+              key={habit.id}
+              habit={habit}
+              user={user}
+              today={today}
+              currentDay={currentDay}
+              currentMonth={currentMonth}
+              currentYear={currentYear}
+              calendarWeeks={calendarWeeks}
+              dayNames={dayNames}
+              formatDisplayDate={formatDisplayDate}
+              toggleHabitCompletion={toggleHabitCompletion}
+              deleteHabit={deleteHabit}
+            />
           ))}
         </div>
 
@@ -495,7 +550,7 @@ function HabitsPage() {
           onClick={() => setActiveTab('profile')}
         >
           <span className="nav-icon">👤</span>
-            <span className="nav-text">Профиль</span>
+          <span className="nav-text">Профиль</span>
         </button>
       </nav>
 
@@ -525,7 +580,158 @@ function HabitsPage() {
   );
 }
 
-// Компонент модального окна создания привычки
+// Компонент карточки привычки
+function HabitCard({ 
+  habit, 
+  user, 
+  today, 
+  currentDay, 
+  currentMonth, 
+  currentYear,
+  calendarWeeks,
+  dayNames,
+  formatDisplayDate,
+  toggleHabitCompletion,
+  deleteHabit
+}) {
+  const [progress, setProgress] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    loadProgress();
+  }, [habit.id]);
+
+  const loadProgress = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('habit_progress')
+        .select('*')
+        .eq('habit_id', habit.id)
+        .eq('user_id', user.id);
+      
+      if (error) throw error;
+      setProgress(data || []);
+    } catch (error) {
+      console.error('Ошибка загрузки прогресса:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Проверка состояния дня для привычки
+  const getDayStatus = (day) => {
+    if (!day || !habit) return 'empty';
+    
+    const dayDate = new Date(currentYear, currentMonth, day);
+    const habitStartDate = new Date(habit.startDate);
+    
+    if (dayDate < habitStartDate) {
+      return 'before-start';
+    }
+    
+    const progressForDate = progress.find(p => {
+      const progressDate = new Date(p.completed_date);
+      return progressDate.toDateString() === dayDate.toDateString();
+    });
+    
+    if (day === currentDay) {
+      return progressForDate?.is_completed ? 'today-completed' : 'today';
+    }
+    
+    if (progressForDate?.is_completed) {
+      return 'completed';
+    }
+    
+    if (dayDate < today && dayDate >= habitStartDate) {
+      return 'missed';
+    }
+    
+    return 'future';
+  };
+
+  const isTodayCompleted = progress.find(p => {
+    const progressDate = new Date(p.completed_date);
+    return progressDate.toDateString() === today.toDateString() && p.is_completed;
+  });
+
+  return (
+    <div key={habit.id} className="habit-card">
+      <div className="habit-card-header">
+        <div className="habit-title-section">
+          <h3 className="habit-card-title">{habit.title}</h3>
+          <div className="habit-created-date">
+            C {formatDisplayDate(habit.startDate)}
+            {habit.source_type === 'competition' && habit.friend_username && (
+              <span className="competition-badge">
+                vs {habit.friend_username}
+              </span>
+            )}
+          </div>
+        </div>
+      </div>
+
+      <div className="habit-calendar-small">
+        <div className="calendar-grid-small">
+          <div className="weekdays-row-small">
+            {dayNames.map((dayName, index) => (
+              <div key={index} className="weekday-cell-small">
+                {dayName}
+              </div>
+            ))}
+          </div>
+          
+          {calendarWeeks.map((week, weekIndex) => (
+            <div key={weekIndex} className="calendar-week-small">
+              {week.map((day, dayIndex) => {
+                if (day === null) {
+                  return <div key={dayIndex} className="calendar-day-small empty"></div>;
+                }
+                
+                const status = getDayStatus(day);
+                const isToday = day === currentDay;
+                
+                return (
+                  <div 
+                    key={dayIndex} 
+                    className={`calendar-day-small ${status} ${isToday ? 'today-highlight' : ''}`}
+                  >
+                    <span className="day-number-small">{day}</span>
+                  </div>
+                );
+              })}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="habit-card-footer">
+        <button 
+          className={`complete-habit-btn-small ${isTodayCompleted ? 'completed' : ''}`}
+          onClick={() => toggleHabitCompletion(habit.id)}
+          disabled={isLoading}
+        >
+          {isTodayCompleted ? '✓ ВЫПОЛНЕНО' : 'ВЫПОЛНИТЬ'}
+        </button>
+        
+        <div className="habit-actions">
+          {habit.source_type === 'competition' && (
+            <span className="streak-badge">
+              🏆 {habit.my_score || 0} : {habit.friend_score || 0}
+            </span>
+          )}
+          <button 
+            className="delete-habit-btn"
+            onClick={() => deleteHabit(habit.id)}
+          >
+            ✕
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Компонент модального окна создания привычки (остается без изменений)
 function CreateHabitModal({
   newHabit,
   setNewHabit,
@@ -559,6 +765,7 @@ function CreateHabitModal({
           <button 
             className="modal-close"
             onClick={() => setShowCreateForm(false)}
+            disabled={loading}
           >
             ×
           </button>
@@ -575,6 +782,7 @@ function CreateHabitModal({
               required
               autoFocus
               className="form-input"
+              disabled={loading}
             />
           </div>
           
