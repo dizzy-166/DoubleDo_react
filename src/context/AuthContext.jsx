@@ -7,9 +7,7 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Только ОДИН useEffect должен быть здесь
   useEffect(() => {
-    // Проверяем текущую сессию при загрузке
     supabase.auth.getSession().then(({ data }) => {
       console.log('Session on load:', data);
       setUser(data.session?.user ?? null);
@@ -18,7 +16,6 @@ export const AuthProvider = ({ children }) => {
 
     const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
       console.log('Auth event:', event);
-      console.log('Session changed:', session);
       setUser(session?.user ?? null);
     });
 
@@ -32,7 +29,14 @@ export const AuthProvider = ({ children }) => {
   };
 
   const signup = async (email, password) => {
-    const { data, error } = await supabase.auth.signUp({ email, password });
+    const { data, error } = await supabase.auth.signUp({ 
+      email, 
+      password,
+      options: {
+        emailRedirectTo: `${window.location.origin}/auth/callback`
+      }
+    });
+    
     if (error) console.log('Signup error:', error.message);
     return { data, error };
   };
@@ -42,13 +46,46 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
   };
 
-  // Добавляем loading state
+  // Новая функция для верификации email (OTP)
+  const verifyEmailOTP = async (email, token) => {
+    return await supabase.auth.verifyOtp({
+      email,
+      token,
+      type: 'signup'
+    });
+  };
+
+  // Функция для отправки OTP кода (для регистрации без пароля)
+  const signupWithOTP = async (email) => {
+    return await supabase.auth.signInWithOtp({
+      email,
+      options: {
+        emailRedirectTo: `${window.location.origin}/auth/callback`
+      }
+    });
+  };
+
   if (loading) {
-    return <div>Loading...</div>;
+    return <div style={{ 
+      display: 'flex', 
+      justifyContent: 'center', 
+      alignItems: 'center', 
+      height: '100vh',
+      color: 'var(--dark)'
+    }}>
+      Загрузка...
+    </div>;
   }
 
   return (
-    <AuthContext.Provider value={{ user, login, signup, logout }}>
+    <AuthContext.Provider value={{ 
+      user, 
+      login, 
+      signup, 
+      logout,
+      verifyEmailOTP,
+      signupWithOTP
+    }}>
       {children}
     </AuthContext.Provider>
   );
