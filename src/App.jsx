@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from './context/AuthContext.jsx';
 import { supabase } from './services/supabase';
+import HabitsPage from './pages/HabitsPage.jsx';
 import './App.css';
 
 function App() {
@@ -393,39 +394,8 @@ function App() {
 
   // Если пользователь авторизован и имеет нормальный никнейм
   if (user && user.id && !needsConfirmation && !needsUsername) {
-    return (
-      <div className="app">
-        <div className="dashboard">
-          <div className="welcome-section">
-            <div className="welcome-header">
-              <div className="user-info">
-                <h1>Добро пожаловать!</h1>
-                <p className="user-email">{user.email}</p>
-              </div>
-              <button onClick={logout} className="logout-button">
-                Выйти
-              </button>
-            </div>
-          </div>
-
-          <div className="features-grid">
-            <div className="feature-card">
-              <h3>🎯 Создавайте привычки</h3>
-              <p>Начните отслеживать свои ежедневные привычки.</p>
-            </div>
-            <div className="feature-card">
-              <h3>👥 Соревнуйтесь с друзьями</h3>
-              <p>Бросайте вызов друзьям в соревнованиях по привычкам.</p>
-            </div>
-            <div className="feature-card">
-              <h3>📈 Отслеживайте прогресс</h3>
-              <p>Смотрите свою статистику и улучшайте результаты.</p>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  return <HabitsPage />;
+}
 
   // Экран создания никнейма
   if (needsUsername) {
