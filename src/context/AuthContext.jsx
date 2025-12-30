@@ -3,6 +3,13 @@ import { supabase } from '../services/supabase';
 
 const AuthContext = createContext();
 
+// AuthContext.jsx - добавьте эту функцию
+const getAccessToken = () => {
+  return user?.access_token || 
+         localStorage.getItem('sb-ydetmjryjpnrpcmoxvre-auth-token') ||
+         sessionStorage.getItem('sb-ydetmjryjpnrpcmoxvre-auth-token');
+};
+
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);

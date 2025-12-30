@@ -19,6 +19,40 @@ function App() {
   const [formErrors, setFormErrors] = useState({});
   const [canResend, setCanResend] = useState(true);
 
+  // Вспомогательная функция для получения токена
+  const getToken = async () => {
+    try {
+      // Сначала пробуем получить из текущей сессии
+      const { data } = await supabase.auth.getSession();
+      if (data?.session?.access_token) {
+        return data.session.access_token;
+      }
+      
+      // Пробуем из пользователя в контексте
+      if (user?.access_token) {
+        return user.access_token;
+      }
+      
+      // Пробуем из localStorage
+      const localData = localStorage.getItem('sb-ydetmjryjpnrpcmoxvre-auth-token');
+      if (localData) {
+        try {
+          const parsed = JSON.parse(localData);
+          if (parsed.access_token) {
+            return parsed.access_token;
+          }
+        } catch (e) {
+          console.log('Error parsing localStorage token:', e);
+        }
+      }
+      
+      return null;
+    } catch (error) {
+      console.error('Error getting token:', error);
+      return null;
+    }
+  };
+
   // Проверяем при загрузке, нужен ли пользователю никнейм
   useEffect(() => {
     if (user && user.id && !needsConfirmation) {
@@ -27,39 +61,47 @@ function App() {
   }, [user, needsConfirmation]);
 
   const checkIfUsernameNeeded = async () => {
-  if (!user || !user.id) return;
-  
-  try {
-    // Используем полный URL вместо относительного
-    const fullUrl = `https://ydetmjryjpnrpcmoxvre.supabase.co/rest/v1/users?id=eq.${user.id}&select=username`;
+    if (!user || !user.id) return;
     
-    const response = await fetch(fullUrl, {
-      headers: {
-        'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
-        'Authorization': `Bearer ${user.access_token}`,
-        'Content-Type': 'application/json'
+    try {
+      const token = await getToken();
+      if (!token) {
+        console.log('No token available for checking username');
+        return;
       }
-    });
-    
-    // Проверяем статус ответа
-    if (!response.ok) {
-      const text = await response.text();
-      console.error('Server error:', response.status, text);
-      return;
-    }
-    
-    const userData = await response.json();
-    
-    if (userData && userData[0]) {
-      const currentUsername = userData[0].username;
-      if (currentUsername && (currentUsername.startsWith('temp_') || currentUsername.startsWith('user_'))) {
-        setNeedsUsername(true);
+      
+      const response = await fetch(
+        `https://ydetmjryjpnrpcmoxvre.supabase.co/rest/v1/users?id=eq.${user.id}&select=username`,
+        {
+          headers: {
+            'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+            'Prefer': 'return=representation'
+          }
+        }
+      );
+      
+      if (!response.ok) {
+        const text = await response.text();
+        console.log('Server error checking username:', response.status, text);
+        return;
       }
+      
+      const userData = await response.json();
+      
+      if (userData && userData.length > 0) {
+        const currentUsername = userData[0].username;
+        console.log('Current username:', currentUsername);
+        
+        if (currentUsername && (currentUsername.startsWith('temp_') || currentUsername.startsWith('user_'))) {
+          setNeedsUsername(true);
+        }
+      }
+    } catch (err) {
+      console.log('Error checking username:', err);
     }
-  } catch (err) {
-    console.error('Error checking username:', err);
-  }
-};
+  };
 
   const validateForm = () => {
     const errors = {};
@@ -211,17 +253,39 @@ function App() {
     setFormErrors({});
 
     try {
-      const response = await fetch('/rest/v1/rpc/set_username_atomic', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
-          'Authorization': `Bearer ${user?.access_token || ''}`
-        },
-        body: JSON.stringify({
-          new_username: username.trim()
-        })
-      });
+      const token = await getToken();
+      if (!token) {
+        throw new Error('Не удалось получить токен авторизации');
+      }
+      
+      const response = await fetch(
+        'https://ydetmjryjpnrpcmoxvre.supabase.co/rest/v1/rpc/set_username_atomic',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            new_username: username.trim()
+          })
+        }
+      );
+
+      // Проверяем статус ответа
+      if (!response.ok) {
+        const text = await response.text();
+        console.error('Server response error:', response.status, text);
+        
+        // Пытаемся распарсить как JSON если возможно
+        try {
+          const errorData = JSON.parse(text);
+          throw new Error(errorData.message || `Ошибка ${response.status}`);
+        } catch (parseError) {
+          throw new Error(`Ошибка сервера: ${response.status} - ${text.substring(0, 100)}`);
+        }
+      }
 
       const result = await response.json();
 
@@ -229,7 +293,13 @@ function App() {
         setNeedsUsername(false);
         setUsername('');
         
-        alert('Регистрация завершена! Теперь вы можете войти с вашим email и паролем.');
+        // Обновляем сессию
+        await supabase.auth.refreshSession();
+        
+        alert('Никнейм успешно сохранен! Регистрация завершена.');
+        
+        // Перезагружаем страницу для обновления данных пользователя
+        setTimeout(() => window.location.reload(), 1000);
       } else {
         setFormErrors({ 
           username: result.message || 'Ошибка при установке никнейма',
@@ -237,8 +307,19 @@ function App() {
         });
       }
     } catch (err) {
-      setFormErrors({ username: 'Произошла ошибка при сохранении никнейма' });
       console.error('Error setting username:', err);
+      
+      let errorMessage = 'Произошла ошибка при сохранении никнейма';
+      if (err.message.includes('409') || err.message.includes('USERNAME_TAKEN')) {
+        errorMessage = 'Этот никнейм уже занят';
+      } else if (err.message.includes('401') || err.message.includes('токен')) {
+        errorMessage = 'Ошибка авторизации. Пожалуйста, войдите заново.';
+      }
+      
+      setFormErrors({ 
+        username: errorMessage,
+        general: err.message
+      });
     } finally {
       setUsernameLoading(false);
     }
@@ -271,35 +352,44 @@ function App() {
     }
   };
 
-const checkUsernameAvailability = async () => {
-  if (!username.trim() || username.length < 3) return false;
+  const checkUsernameAvailability = async () => {
+    if (!username.trim() || username.length < 3) return false;
 
-  try {
-    const response = await fetch('https://ydetmjryjpnrpcmoxvre.supabase.co/rest/v1/rpc/check_username_available', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
-        'Authorization': `Bearer ${user?.access_token || ''}`
-      },
-      body: JSON.stringify({
-        check_username: username.trim()
-      })
-    });
+    try {
+      const token = await getToken();
+      
+      const response = await fetch(
+        'https://ydetmjryjpnrpcmoxvre.supabase.co/rest/v1/rpc/check_username_available',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
+            ...(token && { 'Authorization': `Bearer ${token}` })
+          },
+          body: JSON.stringify({
+            check_username: username.trim()
+          })
+        }
+      );
 
-    if (!response.ok) {
-      const text = await response.text();
-      console.error('Server error:', response.status, text);
+      if (!response.ok) {
+        console.log('Username availability check failed:', response.status);
+        return false;
+      }
+
+      try {
+        const result = await response.json();
+        return result;
+      } catch (jsonError) {
+        console.log('Invalid JSON response:', jsonError);
+        return false;
+      }
+    } catch (err) {
+      console.log('Error checking username availability:', err);
       return false;
     }
-
-    const result = await response.json();
-    return result;
-  } catch (err) {
-    console.error('Error checking username:', err);
-    return false;
-  }
-};
+  };
 
   // Если пользователь авторизован и имеет нормальный никнейм
   if (user && user.id && !needsConfirmation && !needsUsername) {
@@ -379,7 +469,13 @@ const checkUsernameAvailability = async () => {
                 className={`form-input ${formErrors.username ? 'error' : ''}`}
                 placeholder="например, super_user123"
                 value={username}
-                onChange={(e) => setUsername(e.target.value)}
+                onChange={(e) => {
+                  setUsername(e.target.value);
+                  // Очищаем ошибку при вводе
+                  if (formErrors.username) {
+                    setFormErrors({ ...formErrors, username: '' });
+                  }
+                }}
                 disabled={usernameLoading}
                 style={{
                   textAlign: 'center',
@@ -387,10 +483,18 @@ const checkUsernameAvailability = async () => {
                   fontWeight: '500'
                 }}
                 onBlur={async () => {
-                  if (username.length >= 3) {
-                    const isAvailable = await checkUsernameAvailability();
-                    if (!isAvailable && !formErrors.username) {
-                      setFormErrors({ username: 'Этот никнейм уже занят' });
+                  if (username.length >= 3 && !formErrors.username) {
+                    try {
+                      const isAvailable = await checkUsernameAvailability();
+                      console.log('Username available check result:', isAvailable);
+                      if (isAvailable === false) {
+                        setFormErrors(prev => ({ 
+                          ...prev, 
+                          username: 'Этот никнейм уже занят' 
+                        }));
+                      }
+                    } catch (err) {
+                      console.log('Availability check error:', err);
                     }
                   }
                 }}
