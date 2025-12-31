@@ -1,3 +1,4 @@
+// App.jsx (без пароля - только OTP)
 import React, { useState, useEffect } from 'react';
 import { useAuth } from './context/AuthContext.jsx';
 import { supabase } from './services/supabase';
@@ -5,10 +6,8 @@ import HabitsPage from './pages/HabitsPage.jsx';
 import './App.css';
 
 function App() {
-  const { user, login, signup, logout, verifyEmailOTP, signupWithOTP } = useAuth();
+  const { user, loginWithOTP, signupWithOTP, verifyOTP, logout } = useAuth();
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
   const [confirmationCode, setConfirmationCode] = useState('');
   const [username, setUsername] = useState('');
   const [isLogin, setIsLogin] = useState(true);
@@ -19,40 +18,7 @@ function App() {
   const [usernameLoading, setUsernameLoading] = useState(false);
   const [formErrors, setFormErrors] = useState({});
   const [canResend, setCanResend] = useState(true);
-
-  // Вспомогательная функция для получения токена
-  const getToken = async () => {
-    try {
-      // Сначала пробуем получить из текущей сессии
-      const { data } = await supabase.auth.getSession();
-      if (data?.session?.access_token) {
-        return data.session.access_token;
-      }
-      
-      // Пробуем из пользователя в контексте
-      if (user?.access_token) {
-        return user.access_token;
-      }
-      
-      // Пробуем из localStorage
-      const localData = localStorage.getItem('sb-ydetmjryjpnrpcmoxvre-auth-token');
-      if (localData) {
-        try {
-          const parsed = JSON.parse(localData);
-          if (parsed.access_token) {
-            return parsed.access_token;
-          }
-        } catch (e) {
-          console.log('Error parsing localStorage token:', e);
-        }
-      }
-      
-      return null;
-    } catch (error) {
-      console.error('Error getting token:', error);
-      return null;
-    }
-  };
+  const [existingUser, setExistingUser] = useState(null);
 
   // Проверяем при загрузке, нужен ли пользователю никнейм
   useEffect(() => {
@@ -65,36 +31,17 @@ function App() {
     if (!user || !user.id) return;
     
     try {
-      const token = await getToken();
-      if (!token) {
-        console.log('No token available for checking username');
-        return;
-      }
+      const { data, error } = await supabase
+        .from('users')
+        .select('username')
+        .eq('id', user.id)
+        .single();
       
-      const response = await fetch(
-        `https://ydetmjryjpnrpcmoxvre.supabase.co/rest/v1/users?id=eq.${user.id}&select=username`,
-        {
-          headers: {
-            'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json',
-            'Prefer': 'return=representation'
-          }
-        }
-      );
-      
-      if (!response.ok) {
-        const text = await response.text();
-        console.log('Server error checking username:', response.status, text);
-        return;
-      }
-      
-      const userData = await response.json();
-      
-      if (userData && userData.length > 0) {
-        const currentUsername = userData[0].username;
+      if (!error && data) {
+        const currentUsername = data.username;
         console.log('Current username:', currentUsername);
         
+        // Проверяем, является ли ник временным
         if (currentUsername && (currentUsername.startsWith('temp_') || currentUsername.startsWith('user_'))) {
           setNeedsUsername(true);
         }
@@ -104,40 +51,36 @@ function App() {
     }
   };
 
-  const validateForm = () => {
-    const errors = {};
-
-    if (!email) {
-      errors.email = 'Email обязателен';
-    } else if (!/\S+@\S+\.\S+/.test(email)) {
-      errors.email = 'Некорректный email';
-    }
-
-    if (isLogin) {
-      if (!password) {
-        errors.password = 'Пароль обязателен';
-      }
-    } else {
-      if (!password) {
-        errors.password = 'Пароль обязателен';
-      } else if (password.length < 6) {
-        errors.password = 'Минимум 6 символов';
+  // Проверка существования пользователя
+  const checkUserExists = async (email) => {
+    try {
+      const { data, error } = await supabase
+        .from('users')
+        .select('id, username')
+        .eq('email', email)
+        .maybeSingle();
+      
+      if (error && error.code !== 'PGRST116') {
+        console.log('Check user error:', error);
+        return null;
       }
       
-      if (!confirmPassword) {
-        errors.confirmPassword = 'Повторите пароль';
-      } else if (password !== confirmPassword) {
-        errors.confirmPassword = 'Пароли не совпадают';
-      }
+      return data;
+    } catch (err) {
+      console.log('Error checking user:', err);
+      return null;
     }
+  };
 
-    setFormErrors(errors);
-    return Object.keys(errors).length === 0;
+  const validateEmail = (email) => {
+    if (!email) return 'Email обязателен';
+    if (!/\S+@\S+\.\S+/.test(email)) return 'Некорректный email';
+    return null;
   };
 
   const validateUsername = () => {
     const errors = {};
-
+    
     if (!username.trim()) {
       errors.username = 'Никнейм обязателен';
     } else if (username.length < 3) {
@@ -147,61 +90,76 @@ function App() {
     } else if (!/^[a-zA-Z0-9_]+$/.test(username)) {
       errors.username = 'Только буквы, цифры и нижнее подчеркивание';
     }
-
-    setFormErrors(errors);
-    return Object.keys(errors).length === 0;
+    
+    return errors;
   };
 
+  // Обработка отправки OTP
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    if (!validateForm()) {
+    const emailError = validateEmail(email);
+    if (emailError) {
+      setFormErrors({ email: emailError });
       return;
     }
-
+    
     setLoading(true);
     setFormErrors({});
-
+    
     try {
+      // Проверяем, существует ли пользователь
+      const existingUserData = await checkUserExists(email);
+      setExistingUser(existingUserData);
+      
+      let result;
+      
       if (isLogin) {
-        // Вход по паролю
-        const { data, error: authError } = await login(email, password);
-        if (authError) {
-          setFormErrors({ general: authError.message });
+        // Вход - только для существующих пользователей
+        if (!existingUserData) {
+          setFormErrors({ 
+            email: 'Пользователь с таким email не найден. Зарегистрируйтесь.' 
+          });
+          setLoading(false);
+          return;
         }
-      } else {
-        // Регистрация через OTP (без пароля)
-        const { data, error: authError } = await signupWithOTP(email);
         
-        if (authError) {
-          if (authError.message.includes('rate limit') || authError.status === 429) {
-            setFormErrors({ 
-              general: 'Слишком много запросов. Пожалуйста, подождите 60 секунд.'
-            });
-          } else {
-            setFormErrors({ general: authError.message });
-          }
-        } else {
-          // Успешно отправлен OTP для регистрации
-          setNeedsConfirmation(true);
-          setPendingEmail(email);
-          setCanResend(false);
-          
-          // Через 60 секунд разрешаем повторную отправку
-          setTimeout(() => setCanResend(true), 60000);
-          
-          alert(`Код подтверждения отправлен на ${email}. Проверьте вашу почту.`);
+        result = await sendOTPCode(email, false); // false = вход
+      } else {
+        // Регистрация - только для новых пользователей
+        if (existingUserData) {
+          setFormErrors({ 
+            email: 'Пользователь с таким email уже существует. Войдите в систему.' 
+          });
+          setLoading(false);
+          return;
         }
+        
+        result = await sendOTPCode(email, true); // true = регистрация
+      }
+      
+      if (result.success) {
+        setNeedsConfirmation(true);
+        setPendingEmail(email);
+        setCanResend(false);
+        
+        // Через 60 секунд разрешаем повторную отправку
+        setTimeout(() => setCanResend(true), 60000);
+        
+        alert(result.message);
+      } else {
+        setFormErrors({ general: result.message });
       }
     } catch (err) {
       setFormErrors({ general: 'Произошла ошибка. Попробуйте снова.' });
-      console.error('Auth error:', err);
+      console.error('OTP error:', err);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleVerifyCode = async (e) => {
+  // Подтверждение OTP кода
+  const handleVerifyOTP = async (e) => {
     e.preventDefault();
     
     if (!confirmationCode.trim()) {
@@ -218,22 +176,22 @@ function App() {
     setFormErrors({});
 
     try {
-      // Верифицируем OTP код для регистрации
-      const { data, error } = await verifyEmailOTP(pendingEmail, confirmationCode);
+      const result = await verifyOTP(pendingEmail, confirmationCode);
       
-      if (error) {
-        setFormErrors({ confirmation: error.message || 'Неверный код' });
-      } else if (data?.user) {
-        // Успешная верификация регистрации
+      if (result.success) {
         setNeedsConfirmation(false);
         setConfirmationCode('');
         
-        // Получаем обновленную сессию
-        const { data: sessionData } = await supabase.auth.getSession();
-        if (sessionData.session) {
-          // Пользователь создан через OTP, теперь нужно установить никнейм
+        // Проверяем, нужно ли установить никнейм
+        if (existingUser) {
+          // Существующий пользователь - проверяем ник
+          await checkIfUsernameNeeded();
+        } else {
+          // Новый пользователь - всегда нужно установить ник
           setNeedsUsername(true);
         }
+      } else {
+        setFormErrors({ confirmation: result.message });
       }
     } catch (err) {
       setFormErrors({ confirmation: 'Неверный код или произошла ошибка' });
@@ -243,10 +201,13 @@ function App() {
     }
   };
 
+  // Установка никнейма
   const handleSetUsername = async (e) => {
     e.preventDefault();
     
-    if (!validateUsername()) {
+    const errors = validateUsername();
+    if (Object.keys(errors).length > 0) {
+      setFormErrors(errors);
       return;
     }
 
@@ -254,43 +215,14 @@ function App() {
     setFormErrors({});
 
     try {
-      const token = await getToken();
-      if (!token) {
-        throw new Error('Не удалось получить токен авторизации');
-      }
+      // Используем RPC функцию для установки никнейма
+      const { data, error } = await supabase.rpc('set_username_atomic', {
+        new_username: username.trim()
+      });
       
-      const response = await fetch(
-        'https://ydetmjryjpnrpcmoxvre.supabase.co/rest/v1/rpc/set_username_atomic',
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
-            'Authorization': `Bearer ${token}`
-          },
-          body: JSON.stringify({
-            new_username: username.trim()
-          })
-        }
-      );
-
-      // Проверяем статус ответа
-      if (!response.ok) {
-        const text = await response.text();
-        console.error('Server response error:', response.status, text);
-        
-        // Пытаемся распарсить как JSON если возможно
-        try {
-          const errorData = JSON.parse(text);
-          throw new Error(errorData.message || `Ошибка ${response.status}`);
-        } catch (parseError) {
-          throw new Error(`Ошибка сервера: ${response.status} - ${text.substring(0, 100)}`);
-        }
-      }
-
-      const result = await response.json();
-
-      if (result.success) {
+      if (error) throw error;
+      
+      if (data && data.success) {
         setNeedsUsername(false);
         setUsername('');
         
@@ -303,8 +235,8 @@ function App() {
         setTimeout(() => window.location.reload(), 1000);
       } else {
         setFormErrors({ 
-          username: result.message || 'Ошибка при установке никнейма',
-          error_code: result.error
+          username: data?.message || 'Ошибка при установке никнейма',
+          error_code: data?.error
         });
       }
     } catch (err) {
@@ -336,15 +268,20 @@ function App() {
     setFormErrors({});
 
     try {
-      // Повторно отправляем OTP код для регистрации
-      const { data, error } = await signupWithOTP(pendingEmail);
-      
-      if (error) {
-        setFormErrors({ general: error.message });
+      // Повторно отправляем OTP код
+      let result;
+      if (existingUser) {
+        result = await loginWithOTP(pendingEmail);
       } else {
+        result = await signupWithOTP(pendingEmail);
+      }
+      
+      if (result.success) {
         setCanResend(false);
         setTimeout(() => setCanResend(true), 60000);
         alert('Код подтверждения отправлен повторно');
+      } else {
+        setFormErrors({ general: result.message });
       }
     } catch (err) {
       setFormErrors({ general: 'Не удалось отправить код' });
@@ -357,35 +294,16 @@ function App() {
     if (!username.trim() || username.length < 3) return false;
 
     try {
-      const token = await getToken();
+      const { data, error } = await supabase.rpc('check_username_available', {
+        check_username: username.trim()
+      });
       
-      const response = await fetch(
-        'https://ydetmjryjpnrpcmoxvre.supabase.co/rest/v1/rpc/check_username_available',
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
-            ...(token && { 'Authorization': `Bearer ${token}` })
-          },
-          body: JSON.stringify({
-            check_username: username.trim()
-          })
-        }
-      );
-
-      if (!response.ok) {
-        console.log('Username availability check failed:', response.status);
+      if (error) {
+        console.log('Username availability check failed:', error);
         return false;
       }
-
-      try {
-        const result = await response.json();
-        return result;
-      } catch (jsonError) {
-        console.log('Invalid JSON response:', jsonError);
-        return false;
-      }
+      
+      return data;
     } catch (err) {
       console.log('Error checking username availability:', err);
       return false;
@@ -394,8 +312,8 @@ function App() {
 
   // Если пользователь авторизован и имеет нормальный никнейм
   if (user && user.id && !needsConfirmation && !needsUsername) {
-  return <HabitsPage />;
-}
+    return <HabitsPage />;
+  }
 
   // Экран создания никнейма
   if (needsUsername) {
@@ -523,7 +441,7 @@ function App() {
     );
   }
 
-  // Экран подтверждения email (для регистрации через OTP)
+  // Экран подтверждения email
   if (needsConfirmation) {
     return (
       <div className="app">
@@ -571,7 +489,7 @@ function App() {
             </div>
           )}
 
-          <form onSubmit={handleVerifyCode} className="auth-form">
+          <form onSubmit={handleVerifyOTP} className="auth-form">
             <div className="form-group">
               <label className="form-label">Код из email</label>
               <input
@@ -610,7 +528,7 @@ function App() {
             >
               {loading ? (
                 <div className="loading-spinner"></div>
-              ) : 'Подтвердить регистрацию'}
+              ) : 'Подтвердить'}
             </button>
           </form>
 
@@ -645,14 +563,14 @@ function App() {
                 setFormErrors({});
                 setConfirmationCode('');
                 setEmail(pendingEmail);
-                setIsLogin(true); // Переключаем на вход
+                setIsLogin(true);
               }}
               style={{
                 fontSize: '14px',
                 color: 'var(--dark-gray)'
               }}
             >
-              ← Войти в существующий аккаунт
+              ← Вернуться к входу
             </button>
           </div>
         </div>
@@ -691,7 +609,12 @@ function App() {
               className={`form-input ${formErrors.email ? 'error' : ''}`}
               placeholder="your@email.com"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={(e) => {
+                setEmail(e.target.value);
+                if (formErrors.email) {
+                  setFormErrors({ ...formErrors, email: '' });
+                }
+              }}
               disabled={loading}
             />
             {formErrors.email && (
@@ -699,65 +622,17 @@ function App() {
             )}
           </div>
 
-          {isLogin && (
-            <div className="form-group">
-              <label className="form-label">Пароль</label>
-              <input
-                type="password"
-                className={`form-input ${formErrors.password ? 'error' : ''}`}
-                placeholder="••••••••"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                disabled={loading}
-              />
-              {formErrors.password && (
-                <div className="error-message">{formErrors.password}</div>
-              )}
-            </div>
-          )}
-
-          {!isLogin && (
-            <>
-              <div className="form-group">
-                <label className="form-label">Пароль</label>
-                <input
-                  type="password"
-                  className={`form-input ${formErrors.password ? 'error' : ''}`}
-                  placeholder="••••••••"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  disabled={loading}
-                />
-                {formErrors.password && (
-                  <div className="error-message">{formErrors.password}</div>
-                )}
-              </div>
-
-              <div className="form-group">
-                <label className="form-label">Повторите пароль</label>
-                <input
-                  type="password"
-                  className={`form-input ${formErrors.confirmPassword ? 'error' : ''}`}
-                  placeholder="••••••••"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  disabled={loading}
-                />
-                {formErrors.confirmPassword && (
-                  <div className="error-message">{formErrors.confirmPassword}</div>
-                )}
-              </div>
-            </>
-          )}
-
           <button 
             type="submit" 
             className="auth-button"
-            disabled={loading}
+            disabled={loading || !email.trim()}
+            style={{
+              opacity: !email.trim() ? 0.5 : 1
+            }}
           >
             {loading ? (
               <div className="loading-spinner"></div>
-            ) : isLogin ? 'Войти' : 'Зарегистрироваться'}
+            ) : isLogin ? 'Получить код для входа' : 'Зарегистрироваться'}
           </button>
         </form>
 
@@ -771,13 +646,33 @@ function App() {
             onClick={() => {
               setIsLogin(!isLogin);
               setFormErrors({});
-              setConfirmPassword('');
-              setPassword('');
+              setEmail('');
             }}
             disabled={loading}
           >
             {isLogin ? 'Регистрация' : 'Войти'}
           </button>
+        </div>
+
+        <div style={{
+          textAlign: 'center',
+          marginTop: '32px',
+          paddingTop: '24px',
+          borderTop: '1px solid var(--light-gray)',
+          fontSize: '14px',
+          color: 'var(--gray)'
+        }}>
+          <p>
+            <strong>Как это работает:</strong>
+          </p>
+          <p style={{ marginTop: '8px', lineHeight: '1.5' }}>
+            1. Введите email<br/>
+            2. Получите код на почту<br/>
+            3. Введите код для входа
+          </p>
+          <p style={{ marginTop: '12px', fontSize: '13px', fontStyle: 'italic' }}>
+            Пароль не нужен! Безопасно и удобно.
+          </p>
         </div>
       </div>
     </div>

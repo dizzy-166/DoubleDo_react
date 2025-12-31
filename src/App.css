@@ -301,33 +301,67 @@
   }
 }
 
-.confirmation-info {
+/* OTP Confirmation Styles */
+.otp-info {
   text-align: center;
   margin-bottom: 32px;
   color: var(--dark);
 }
 
-.confirmation-email {
+.otp-email {
   font-size: 18px;
   font-weight: 500;
   margin-bottom: 8px;
   word-break: break-all;
+  color: var(--primary);
 }
 
-.confirmation-text {
+.otp-text {
   color: var(--dark-gray);
   line-height: 1.5;
+  margin-bottom: 4px;
+}
+
+.otp-hint {
+  color: var(--gray);
+  font-size: 14px;
+  font-style: italic;
+  margin-top: 8px;
 }
 
 /* Code Input */
 .code-input {
   letter-spacing: 8px;
-  font-size: 20px;
+  font-size: 24px;
   text-align: center;
   font-weight: 600;
+  padding: 15px;
+  height: 60px;
+}
+
+/* Username Setup Styles */
+.username-info {
+  text-align: center;
+  margin-bottom: 32px;
+}
+
+.username-rules {
+  font-size: 12px;
+  color: var(--gray);
+  text-align: center;
+  margin-top: 8px;
+}
+
+.username-rule {
+  margin-bottom: 2px;
 }
 
 /* Resend Button */
+.resend-container {
+  text-align: center;
+  margin-top: 20px;
+}
+
 .resend-button {
   background: none;
   border: none;
@@ -335,6 +369,7 @@
   font-weight: 600;
   cursor: pointer;
   font-size: 15px;
+  padding: 0;
 }
 
 .resend-button:disabled {
@@ -343,18 +378,77 @@
 }
 
 /* Back Button */
+.back-container {
+  text-align: center;
+  margin-top: 24px;
+  padding-top: 24px;
+  border-top: 1px solid var(--light-gray);
+}
+
 .back-button {
   background: none;
   border: none;
   color: var(--dark-gray);
   font-size: 14px;
   cursor: pointer;
-  display: flex;
+  display: inline-flex;
   align-items: center;
   gap: 4px;
-  margin: 24px auto 0;
 }
 
 .back-button:hover {
   color: var(--dark);
+}
+
+/* Instructions Section */
+.instructions {
+  text-align: center;
+  margin-top: 32px;
+  padding-top: 24px;
+  border-top: 1px solid var(--light-gray);
+  font-size: 14px;
+  color: var(--gray);
+}
+
+.instructions-title {
+  font-weight: 600;
+  color: var(--dark);
+  margin-bottom: 8px;
+  display: block;
+}
+
+.instructions-steps {
+  line-height: 1.6;
+  margin-bottom: 12px;
+}
+
+.instructions-note {
+  font-size: 13px;
+  font-style: italic;
+  margin-top: 12px;
+}
+
+/* Password fields - explicitly hide them */
+input[type="password"] {
+  display: none !important;
+  visibility: hidden !important;
+  height: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  border: none !important;
+  width: 0 !important;
+  min-width: 0 !important;
+  max-width: 0 !important;
+  opacity: 0 !important;
+}
+
+/* Hide password-related labels */
+.form-label[for*="password"],
+.form-label:has(+ input[type="password"]) {
+  display: none !important;
+}
+
+/* Hide confirm password fields */
+.form-group:has(input[type="password"]) {
+  display: none !important;
 }
