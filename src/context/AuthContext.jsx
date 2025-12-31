@@ -30,26 +30,34 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   // Функция для обновления public.users
-  const updatePublicUser = async (authUser) => {
-    try {
-      const { data, error } = await supabase
-        .from('users')
-        .upsert({
-          id: authUser.id,
-          email: authUser.email,
-          updated_at: new Date().toISOString()
-        }, {
-          onConflict: 'id',
-          ignoreDuplicates: false
-        });
-      
-      if (error) {
-        console.error('Error updating public user:', error);
-      }
-    } catch (error) {
-      console.error('Error in updatePublicUser:', error);
+ const updatePublicUser = async (authUser) => {
+  try {
+    // Формируем объект для upsert с обязательными полями
+    const userData = {
+      id: authUser.id,
+      email: authUser.email ?? '', // email обязателен
+      username: authUser.username ?? authUser.email?.split('@')[0] ?? 'user', // дефолт
+      updated_at: new Date().toISOString()
+      // добавляй сюда другие обязательные NOT NULL поля, если есть
+    };
+
+    const { data, error } = await supabase
+      .from('users')
+      .upsert(userData, {
+        onConflict: 'id',
+        ignoreDuplicates: false
+      });
+
+    if (error) {
+      console.error('Error updating public user:', error);
+    } else {
+      console.log('Public user updated:', data);
     }
-  };
+  } catch (error) {
+    console.error('Error in updatePublicUser:', error);
+  }
+};
+
 
   // Вход по OTP (6-значный код)
   const loginWithOTP = async (email) => {

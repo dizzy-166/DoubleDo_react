@@ -1,9 +1,46 @@
-// App.jsx (без пароля - только OTP)
+// App.jsx (исправленная версия)
 import React, { useState, useEffect } from 'react';
 import { useAuth } from './context/AuthContext.jsx';
 import { supabase } from './services/supabase';
 import HabitsPage from './pages/HabitsPage.jsx';
 import './App.css';
+
+// ✅ ДОБАВЛЕНА ФУНКЦИЯ sendOTPCode
+const sendOTPCode = async (email, isSignup = false) => {
+  try {
+    console.log('Sending OTP to:', email, 'isSignup:', isSignup);
+    
+    // Используем Supabase для отправки OTP
+    const { data, error } = await supabase.auth.signInWithOtp({
+      email: email.trim(),
+      options: {
+        emailRedirectTo: window.location.origin,
+        shouldCreateUser: isSignup // Создаем пользователя при регистрации
+      }
+    });
+
+    if (error) {
+      console.error('OTP send error:', error);
+      return {
+        success: false,
+        message: error.message || 'Не удалось отправить код'
+      };
+    }
+
+    return {
+      success: true,
+      message: isSignup 
+        ? 'Код подтверждения отправлен на email. Проверьте почту.' 
+        : 'Код для входа отправлен на email. Проверьте почту.'
+    };
+  } catch (err) {
+    console.error('OTP error:', err);
+    return {
+      success: false,
+      message: 'Произошла ошибка при отправке кода'
+    };
+  }
+};
 
 function App() {
   const { user, loginWithOTP, signupWithOTP, verifyOTP, logout } = useAuth();
@@ -124,6 +161,7 @@ function App() {
           return;
         }
         
+        // ✅ ИСПРАВЛЕНО: Используем функцию sendOTPCode вместо loginWithOTP
         result = await sendOTPCode(email, false); // false = вход
       } else {
         // Регистрация - только для новых пользователей
@@ -135,6 +173,7 @@ function App() {
           return;
         }
         
+        // ✅ ИСПРАВЛЕНО: Используем функцию sendOTPCode вместо signupWithOTP
         result = await sendOTPCode(email, true); // true = регистрация
       }
       
@@ -176,6 +215,7 @@ function App() {
     setFormErrors({});
 
     try {
+      // ✅ Используем verifyOTP из AuthContext
       const result = await verifyOTP(pendingEmail, confirmationCode);
       
       if (result.success) {
@@ -268,12 +308,12 @@ function App() {
     setFormErrors({});
 
     try {
-      // Повторно отправляем OTP код
+      // ✅ ИСПРАВЛЕНО: Используем нашу локальную функцию sendOTPCode
       let result;
       if (existingUser) {
-        result = await loginWithOTP(pendingEmail);
+        result = await sendOTPCode(pendingEmail, false);
       } else {
-        result = await signupWithOTP(pendingEmail);
+        result = await sendOTPCode(pendingEmail, true);
       }
       
       if (result.success) {
