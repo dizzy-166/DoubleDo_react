@@ -645,7 +645,7 @@ function App() {
           <div className="form-group">
             <label className="form-label">Email</label>
             <input
-              type="email"
+              type="email" 
               className={`form-input ${formErrors.email ? 'error' : ''}`}
               placeholder="your@email.com"
               value={email}
@@ -702,17 +702,6 @@ function App() {
           fontSize: '14px',
           color: 'var(--gray)'
         }}>
-          <p>
-            <strong>Как это работает:</strong>
-          </p>
-          <p style={{ marginTop: '8px', lineHeight: '1.5' }}>
-            1. Введите email<br/>
-            2. Получите код на почту<br/>
-            3. Введите код для входа
-          </p>
-          <p style={{ marginTop: '12px', fontSize: '13px', fontStyle: 'italic' }}>
-            Пароль не нужен! Безопасно и удобно.
-          </p>
         </div>
       </div>
     </div>
