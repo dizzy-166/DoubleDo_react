@@ -1,8 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '../services/supabase';
+import { useNavigate } from 'react-router-dom'; 
 import './HabitsPage.css';
 
 function HabitsPage() {
+  const navigate = useNavigate();
   const [habits, setHabits] = useState([]);
   const [newHabit, setNewHabit] = useState({
     title: '',
@@ -12,7 +14,6 @@ function HabitsPage() {
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState('habits');
   const [datePickerMonth, setDatePickerMonth] = useState(new Date().getMonth());
   const [datePickerYear, setDatePickerYear] = useState(new Date().getFullYear());
   const [user, setUser] = useState(null);
@@ -141,41 +142,39 @@ function HabitsPage() {
   };
 
   // Загрузка прогресса для всех привычек
-  // Загрузка прогресса для всех привычек
-const loadAllProgress = async (habitsList) => {
-  if (!user || !habitsList || habitsList.length === 0) return;
+  const loadAllProgress = async (habitsList) => {
+    if (!user || !habitsList || habitsList.length === 0) return;
 
-  try {
-    const progressCache = {};
+    try {
+      const progressCache = {};
 
-    // Текущий месяц
-    const startOfMonth = new Date(Date.UTC(currentYear, currentMonth, 1));
-    const endOfMonth = new Date(Date.UTC(currentYear, currentMonth + 1, 0));
+      // Текущий месяц
+      const startOfMonth = new Date(Date.UTC(currentYear, currentMonth, 1));
+      const endOfMonth = new Date(Date.UTC(currentYear, currentMonth + 1, 0));
 
-    const { data, error } = await supabase
-      .from('habit_progress')
-      .select('*')
-      .eq('user_id', user.id)
-      .gte('completed_date', startOfMonth.toISOString().split('T')[0])
-      .lte('completed_date', endOfMonth.toISOString().split('T')[0]);
+      const { data, error } = await supabase
+        .from('habit_progress')
+        .select('*')
+        .eq('user_id', user.id)
+        .gte('completed_date', startOfMonth.toISOString().split('T')[0])
+        .lte('completed_date', endOfMonth.toISOString().split('T')[0]);
 
-    if (error) throw error;
+      if (error) throw error;
 
-    if (data) {
-      data.forEach(progress => {
-        // Приводим дату к строке YYYY-MM-DD
-        const dateStr = new Date(progress.completed_date).toISOString().split('T')[0];
-        if (!progressCache[progress.habit_id]) progressCache[progress.habit_id] = [];
-        progressCache[progress.habit_id].push({ ...progress, completed_date: dateStr });
-      });
+      if (data) {
+        data.forEach(progress => {
+          // Приводим дату к строке YYYY-MM-DD
+          const dateStr = new Date(progress.completed_date).toISOString().split('T')[0];
+          if (!progressCache[progress.habit_id]) progressCache[progress.habit_id] = [];
+          progressCache[progress.habit_id].push({ ...progress, completed_date: dateStr });
+        });
+      }
+
+      setProgressData(progressCache);
+    } catch (error) {
+      console.error('Ошибка загрузки прогресса:', error);
     }
-
-    setProgressData(progressCache);
-  } catch (error) {
-    console.error('Ошибка загрузки прогресса:', error);
-  }
-};
-
+  };
 
   // Обработчик клика вне date picker
   useEffect(() => {
@@ -352,34 +351,33 @@ const loadAllProgress = async (habitsList) => {
   };
 
   // Проверка состояния дня для привычки
-const getDayStatus = (habit, day, progress) => {
-  if (!day || !habit) return 'empty';
+  const getDayStatus = (habit, day, progress) => {
+    if (!day || !habit) return 'empty';
 
-  const dayDate = new Date(Date.UTC(currentYear, currentMonth, day));
-  const dayStr = dayDate.toISOString().split('T')[0];
+    const dayDate = new Date(Date.UTC(currentYear, currentMonth, day));
+    const dayStr = dayDate.toISOString().split('T')[0];
 
-  const habitStartDate = new Date(habit.startDate);
-  const habitStartStr = new Date(Date.UTC(
-    habitStartDate.getFullYear(),
-    habitStartDate.getMonth(),
-    habitStartDate.getDate()
-  )).toISOString().split('T')[0];
+    const habitStartDate = new Date(habit.startDate);
+    const habitStartStr = new Date(Date.UTC(
+      habitStartDate.getFullYear(),
+      habitStartDate.getMonth(),
+      habitStartDate.getDate()
+    )).toISOString().split('T')[0];
 
-  const todayUTC = new Date(Date.UTC(currentYear, currentMonth, currentDay));
-  const todayStr = todayUTC.toISOString().split('T')[0];
+    const todayUTC = new Date(Date.UTC(currentYear, currentMonth, currentDay));
+    const todayStr = todayUTC.toISOString().split('T')[0];
 
-  // Дни до начала привычки
-  if (dayStr < habitStartStr) return 'before-start';
+    // Дни до начала привычки
+    if (dayStr < habitStartStr) return 'before-start';
 
-  // Найти прогресс для этой даты
-  const progressForDate = progress?.find(p => p.completed_date === dayStr);
+    // Найти прогресс для этой даты
+    const progressForDate = progress?.find(p => p.completed_date === dayStr);
 
-  if (dayStr === todayStr) return progressForDate?.is_completed ? 'today-completed' : 'today';
-  if (progressForDate?.is_completed) return 'completed';
-  if (dayStr < todayStr && dayStr >= habitStartStr) return 'missed';
-  return 'future';
-};
-
+    if (dayStr === todayStr) return progressForDate?.is_completed ? 'today-completed' : 'today';
+    if (progressForDate?.is_completed) return 'completed';
+    if (dayStr < todayStr && dayStr >= habitStartStr) return 'missed';
+    return 'future';
+  };
 
   // Создание привычки
   const handleCreateHabit = async (e) => {
@@ -419,87 +417,86 @@ const getDayStatus = (habit, day, progress) => {
 
   // Отметить привычку выполненной
   const toggleHabitCompletion = async (habitId) => {
-  try {
-    const habit = habits.find(h => h.id === habitId);
-    if (!habit) return;
+    try {
+      const habit = habits.find(h => h.id === habitId);
+      if (!habit) return;
 
-    const now = new Date();
-    const todayUTC = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
-    const todayStr = todayUTC.toISOString().split('T')[0];
+      const now = new Date();
+      const todayUTC = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
+      const todayStr = todayUTC.toISOString().split('T')[0];
 
-    const habitStartDate = new Date(habit.startDate);
-    const habitStartUTC = new Date(Date.UTC(
-      habitStartDate.getFullYear(),
-      habitStartDate.getMonth(),
-      habitStartDate.getDate()
-    ));
-    const habitStartStr = habitStartUTC.toISOString().split('T')[0];
+      const habitStartDate = new Date(habit.startDate);
+      const habitStartUTC = new Date(Date.UTC(
+        habitStartDate.getFullYear(),
+        habitStartDate.getMonth(),
+        habitStartDate.getDate()
+      ));
+      const habitStartStr = habitStartUTC.toISOString().split('T')[0];
 
-    if (todayStr < habitStartStr) {
-      alert(`Привычка "${habit.title}" будет доступна для выполнения только с ${formatDisplayDate(habit.startDate)}`);
-      return;
-    }
+      if (todayStr < habitStartStr) {
+        alert(`Привычка "${habit.title}" будет доступна для выполнения только с ${formatDisplayDate(habit.startDate)}`);
+        return;
+      }
 
-    const { data: existingProgress } = await supabase
-      .from('habit_progress')
-      .select('*')
-      .eq('habit_id', habitId)
-      .eq('user_id', user.id)
-      .eq('completed_date', todayStr)
-      .maybeSingle();
-
-    if (existingProgress?.is_completed) {
-      // Отменяем выполнение
-      const { error } = await supabase
+      const { data: existingProgress } = await supabase
         .from('habit_progress')
-        .update({ is_completed: false })
-        .eq('id', existingProgress.id);
-      if (error) throw error;
-    } else {
-      // Отмечаем выполнение
-      if (habit.source_type === 'competition' && habit.competition_id) {
-        const { error } = await supabase.rpc('mark_competition_habit_complete', { p_habit_id: habitId });
+        .select('*')
+        .eq('habit_id', habitId)
+        .eq('user_id', user.id)
+        .eq('completed_date', todayStr)
+        .maybeSingle();
+
+      if (existingProgress?.is_completed) {
+        // Отменяем выполнение
+        const { error } = await supabase
+          .from('habit_progress')
+          .update({ is_completed: false })
+          .eq('id', existingProgress.id);
         if (error) throw error;
       } else {
-        const { error } = await supabase.rpc('mark_habit_completed', { p_habit_id: habitId, p_date: todayStr });
-        if (error) throw error;
+        // Отмечаем выполнение
+        if (habit.source_type === 'competition' && habit.competition_id) {
+          const { error } = await supabase.rpc('mark_competition_habit_complete', { p_habit_id: habitId });
+          if (error) throw error;
+        } else {
+          const { error } = await supabase.rpc('mark_habit_completed', { p_habit_id: habitId, p_date: todayStr });
+          if (error) throw error;
+        }
       }
-    }
 
-    // 🔹 Обновляем прогресс локально, чтобы кнопка менялась мгновенно
-    setProgressData(prev => {
-      const habitProgress = prev[habitId] ? [...prev[habitId]] : [];
-      const todayIndex = habitProgress.findIndex(p => {
-        const progressStr = new Date(p.completed_date).toISOString().split('T')[0];
-        return progressStr === todayStr;
+      // 🔹 Обновляем прогресс локально, чтобы кнопка менялась мгновенно
+      setProgressData(prev => {
+        const habitProgress = prev[habitId] ? [...prev[habitId]] : [];
+        const todayIndex = habitProgress.findIndex(p => {
+          const progressStr = new Date(p.completed_date).toISOString().split('T')[0];
+          return progressStr === todayStr;
+        });
+
+        if (todayIndex >= 0) {
+          habitProgress[todayIndex] = {
+            ...habitProgress[todayIndex],
+            is_completed: !habitProgress[todayIndex].is_completed
+          };
+        } else {
+          habitProgress.push({
+            habit_id: habitId,
+            user_id: user.id,
+            completed_date: todayStr,
+            is_completed: true
+          });
+        }
+
+        return {
+          ...prev,
+          [habitId]: habitProgress
+        };
       });
 
-      if (todayIndex >= 0) {
-        habitProgress[todayIndex] = {
-          ...habitProgress[todayIndex],
-          is_completed: !habitProgress[todayIndex].is_completed
-        };
-      } else {
-        habitProgress.push({
-          habit_id: habitId,
-          user_id: user.id,
-          completed_date: todayStr,
-          is_completed: true
-        });
-      }
-
-      return {
-        ...prev,
-        [habitId]: habitProgress
-      };
-    });
-
-  } catch (error) {
-    console.error('Ошибка отметки выполнения:', error);
-    alert(`Ошибка: ${error.message}`);
-  }
-};
-
+    } catch (error) {
+      console.error('Ошибка отметки выполнения:', error);
+      alert(`Ошибка: ${error.message}`);
+    }
+  };
 
   // Удаление привычки
   const deleteHabit = async (id) => {
@@ -606,59 +603,11 @@ const getDayStatus = (habit, day, progress) => {
             </button>
           </div>
         </div>
-
-        <nav className="bottom-nav">
-          <button 
-            className={`nav-item ${activeTab === 'competitions' ? 'active' : ''}`}
-            onClick={() => setActiveTab('competitions')}
-          >
-            <span className="nav-icon">🏆</span>
-            <span className="nav-text">Соревнования</span>
-          </button>
-          
-          <button 
-            className={`nav-item ${activeTab === 'habits' ? 'active' : ''}`}
-            onClick={() => setActiveTab('habits')}
-          >
-            <span className="nav-icon">✅</span>
-            <span className="nav-text">Привычки</span>
-          </button>
-          
-          <button 
-            className={`nav-item ${activeTab === 'profile' ? 'active' : ''}`}
-            onClick={() => setActiveTab('profile')}
-          >
-            <span className="nav-icon">👤</span>
-            <span className="nav-text">Профиль</span>
-          </button>
-        </nav>
-
-        {showCreateForm && (
-          <CreateHabitModal
-            newHabit={newHabit}
-            setNewHabit={setNewHabit}
-            handleCreateHabit={handleCreateHabit}
-            setShowCreateForm={setShowCreateForm}
-            loading={loading}
-            showDatePicker={showDatePicker}
-            setShowDatePicker={setShowDatePicker}
-            datePickerRef={datePickerRef}
-            datePickerMonth={datePickerMonth}
-            datePickerYear={datePickerYear}
-            handlePrevMonth={handlePrevMonth}
-            handleNextMonth={handleNextMonth}
-            datePickerWeeks={datePickerWeeks}
-            handleDateSelect={handleDateSelect}
-            isTodayInDatePicker={isTodayInDatePicker}
-            isSelectedInDatePicker={isSelectedInDatePicker}
-            isPastDayInDatePicker={isPastDayInDatePicker}
-            dayNames={dayNames}
-          />
-        )}
       </div>
     );
   }
 
+  // Основной интерфейс с привычками
   return (
     <div className="habits-page">
       <header className="habits-header">
@@ -714,24 +663,23 @@ const getDayStatus = (habit, day, progress) => {
 
       <nav className="bottom-nav">
         <button 
-          className={`nav-item ${activeTab === 'competitions' ? 'active' : ''}`}
-          onClick={() => setActiveTab('competitions')}
+          className="nav-item"
+          onClick={() => navigate('/competitions')}
         >
           <span className="nav-icon">🏆</span>
           <span className="nav-text">Соревнования</span>
         </button>
         
         <button 
-          className={`nav-item ${activeTab === 'habits' ? 'active' : ''}`}
-          onClick={() => setActiveTab('habits')}
+          className="nav-item active"
         >
           <span className="nav-icon">✅</span>
           <span className="nav-text">Привычки</span>
         </button>
         
         <button 
-          className={`nav-item ${activeTab === 'profile' ? 'active' : ''}`}
-          onClick={() => setActiveTab('profile')}
+          className="nav-item"
+          onClick={() => navigate('/profile')}
         >
           <span className="nav-icon">👤</span>
           <span className="nav-text">Профиль</span>
@@ -803,9 +751,7 @@ function HabitCard({
   const daysUntilStart = Math.max(0, Math.ceil((habitStartUTC.getTime() - todayUTC.getTime()) / (1000 * 60 * 60 * 24)));
   
   // Проверяем, выполнена ли привычка сегодня
-const isTodayCompleted = progress.find(p => p.completed_date === todayStr && p.is_completed);
-
-
+  const isTodayCompleted = progress.find(p => p.completed_date === todayStr && p.is_completed);
 
   const handleComplete = async () => {
     // Проверяем возможность выполнения
