@@ -4,6 +4,7 @@ import { supabase } from './services/supabase';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import HabitsPage from './pages/HabitsPage.jsx';
 import CompetitionsPage from './pages/CompetitionsPage.jsx';
+import ProfilePage from './pages/ProfilePage.jsx';
 import './App.css';
 
 // Функция для извлечения username из email
@@ -197,21 +198,32 @@ function App() {
     setLoading(true);
     setFormErrors({});
 
-    try {
-      const result = await verifyOTPCode(pendingEmail, confirmationCode);
+     try {
+    const result = await verifyOTPCode(pendingEmail, confirmationCode);
+    
+    if (result.success) {
+      console.log('OTP verified successfully');
+      setNeedsConfirmation(false);
+      setConfirmationCode('');
       
-      if (result.success) {
-        console.log('OTP verified successfully');
-        setNeedsConfirmation(false);
-        setConfirmationCode('');
+      // ✅ ДОБАВИТЬ: Устанавливаем username из email
+      if (!isLogin) {
+        const generatedUsername = extractUsernameFromEmail(pendingEmail);
         
-        // При успешной аутентификации показываем уведомление
-        if (!isLogin) {
-          const generatedUsername = extractUsernameFromEmail(pendingEmail);
-          alert(`Регистрация успешна! Ваш никнейм: ${generatedUsername}`);
+        // Вызываем функцию для установки username в БД
+        const { data, error } = await supabase.rpc('set_username_atomic', {
+          new_username: generatedUsername
+        });
+        
+        if (error) {
+          console.error('Error setting username:', error);
+          // Можно показать сообщение, но не блокировать вход
         }
-      } else {
-        setFormErrors({ confirmation: result.message });
+        
+        alert(`Регистрация успешна! Ваш никнейм: ${generatedUsername}`);
+      }
+    } else {
+      setFormErrors({ confirmation: result.message });
       }
     } catch (err) {
       setFormErrors({ confirmation: 'Неверный код или произошла ошибка' });
@@ -513,15 +525,16 @@ function App() {
     <Router>
       <Routes>
         {user && !needsConfirmation ? (
-          <>
-            <Route path="/habits" element={<HabitsPage />} />
-            <Route path="/competitions" element={<CompetitionsPage />} />
-            <Route path="/" element={<Navigate to="/competitions" replace />} />
-            <Route path="*" element={<Navigate to="/competitions" replace />} />
-          </>
-        ) : (
-          <Route path="*" element={renderAuthScreen()} />
-        )}
+  <>
+    <Route path="/habits" element={<HabitsPage />} />
+    <Route path="/competitions" element={<CompetitionsPage />} />
+    <Route path="/profile" element={<ProfilePage />} /> {/* Добавьте эту строку */}
+    <Route path="/" element={<Navigate to="/competitions" replace />} />
+    <Route path="*" element={<Navigate to="/competitions" replace />} />
+  </>
+) : (
+  <Route path="*" element={renderAuthScreen()} />
+)}
       </Routes>
     </Router>
   );
