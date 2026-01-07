@@ -10,63 +10,147 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     // Проверяем сессию при загрузке
-    supabase.auth.getSession().then(({ data }) => {
-      console.log('Session on load:', data);
-      setUser(data.session?.user ?? null);
-      setLoading(false);
-    });
-
-    const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
-      console.log('Auth event:', event);
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      console.log('Session on load:', session);
       setUser(session?.user ?? null);
+      setLoading(false);
       
-      // Если это вход, обновляем пользователя в public.users
-      if (event === 'SIGNED_IN' && session?.user) {
-        updatePublicUser(session.user);
+      // Если есть пользователь, убедимся что он в public.users
+      if (session?.user) {
+        ensurePublicUser(session.user);
       }
     });
 
-    return () => listener.subscription.unsubscribe();
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('Auth event:', event, 'User:', session?.user?.id);
+      
+      if (event === 'SIGNED_IN' && session?.user) {
+        console.log('User signed in:', session.user.email);
+        
+        // Ждем немного, чтобы триггер успел сработать
+        setTimeout(() => {
+          ensurePublicUser(session.user);
+        }, 1000);
+      }
+      
+      if (event === 'SIGNED_OUT') {
+        console.log('User signed out');
+      }
+      
+      setUser(session?.user ?? null);
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
-  // Функция для обновления public.users
- const updatePublicUser = async (authUser) => {
-  try {
-    // Формируем объект для upsert с обязательными полями
-    const userData = {
-      id: authUser.id,
-      email: authUser.email ?? '', // email обязателен
-      username: authUser.username ?? authUser.email?.split('@')[0] ?? 'user', // дефолт
-      updated_at: new Date().toISOString()
-      // добавляй сюда другие обязательные NOT NULL поля, если есть
-    };
-
-    const { data, error } = await supabase
-      .from('users')
-      .upsert(userData, {
-        onConflict: 'id',
-        ignoreDuplicates: false
-      });
-
-    if (error) {
-      console.error('Error updating public user:', error);
-    } else {
-      console.log('Public user updated:', data);
+  // 🔥 КРИТИЧЕСКАЯ ФУНКЦИЯ: Убедимся, что пользователь есть в public.users
+  const ensurePublicUser = async (authUser) => {
+    try {
+      console.log('Ensuring public user exists for:', authUser.email);
+      
+      // Проверяем, есть ли уже запись
+      const { data: existingUser, error: checkError } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', authUser.id)
+        .single();
+      
+      // Если пользователь не найден, создаем его
+      if (checkError?.code === 'PGRST116') { // PGRST116 = no rows returned
+        console.log('User not found in public.users, creating...');
+        
+        // Создаем username из email
+        const username = generateUsernameFromEmail(authUser.email);
+        
+        const { data: newUser, error: createError } = await supabase
+          .from('users')
+          .upsert({
+            id: authUser.id,
+            email: authUser.email,
+            username: username,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          }, {
+            onConflict: 'id'
+          })
+          .select()
+          .single();
+        
+        if (createError) {
+          console.error('Error creating public user:', createError);
+          // Пробуем еще раз с дефолтным username
+          await createFallbackUser(authUser);
+        } else {
+          console.log('Public user created successfully:', newUser);
+        }
+      } else if (checkError) {
+        console.error('Error checking public user:', checkError);
+      } else {
+        console.log('Public user already exists:', existingUser);
+      }
+    } catch (error) {
+      console.error('Error in ensurePublicUser:', error);
     }
-  } catch (error) {
-    console.error('Error in updatePublicUser:', error);
-  }
-};
+  };
 
+  // Генерация username из email
+  const generateUsernameFromEmail = (email) => {
+    if (!email) return 'user_' + Math.random().toString(36).substr(2, 6);
+    
+    // Берем часть до @ и очищаем
+    let username = email.split('@')[0];
+    
+    // Очищаем от небуквенно-цифровых символов
+    username = username.toLowerCase().replace(/[^a-z0-9]/g, '_');
+    
+    // Если слишком короткий, добавляем случайные символы
+    if (username.length < 3) {
+      username = 'user_' + Math.random().toString(36).substr(2, 4);
+    }
+    
+    // Ограничиваем длину
+    if (username.length > 20) {
+      username = username.substring(0, 20);
+    }
+    
+    return username;
+  };
+
+  // Создание резервного пользователя
+  const createFallbackUser = async (authUser) => {
+    try {
+      const fallbackUsername = 'user_' + authUser.id.substring(0, 8);
+      
+      const { data, error } = await supabase
+        .from('users')
+        .upsert({
+          id: authUser.id,
+          email: authUser.email,
+          username: fallbackUsername,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        })
+        .select()
+        .single();
+      
+      if (error) {
+        console.error('Failed to create fallback user:', error);
+      } else {
+        console.log('Fallback user created:', data);
+      }
+    } catch (error) {
+      console.error('Error in createFallbackUser:', error);
+    }
+  };
 
   // Вход по OTP (6-значный код)
   const loginWithOTP = async (email) => {
     try {
       const { data, error } = await supabase.auth.signInWithOtp({
-        email,
+        email: email.trim(),
         options: {
-          shouldCreateUser: false, // Только вход, без создания пользователя
-          // 🔥 Ключевое изменение: используем email otp вместо magic link
+          shouldCreateUser: false,
+          emailRedirectTo: window.location.origin
         }
       });
       
@@ -90,25 +174,11 @@ export const AuthProvider = ({ children }) => {
   // Регистрация по OTP (6-значный код)
   const signupWithOTP = async (email) => {
     try {
-      // Сначала проверяем, не существует ли уже пользователь
-      const { data: checkData } = await supabase
-        .from('users')
-        .select('id')
-        .eq('email', email)
-        .single();
-      
-      if (checkData) {
-        return {
-          success: false,
-          message: 'Пользователь с таким email уже существует'
-        };
-      }
-      
       const { data, error } = await supabase.auth.signInWithOtp({
-        email,
+        email: email.trim(),
         options: {
-          shouldCreateUser: true, // Создаем нового пользователя
-          // 🔥 Ключевое изменение: используем email otp вместо magic link
+          shouldCreateUser: true,
+          emailRedirectTo: window.location.origin
         }
       });
       
@@ -133,12 +203,19 @@ export const AuthProvider = ({ children }) => {
   const verifyOTP = async (email, token) => {
     try {
       const { data, error } = await supabase.auth.verifyOtp({
-        email,
+        email: email.trim(),
         token,
-        type: 'email' // Тип email OTP
+        type: 'email'
       });
       
       if (error) throw error;
+      
+      // После успешной проверки, убедимся что пользователь в public.users
+      if (data?.user) {
+        setTimeout(() => {
+          ensurePublicUser(data.user);
+        }, 500);
+      }
       
       return { 
         success: true, 
@@ -155,15 +232,14 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // 🔥 НОВАЯ ФУНКЦИЯ: Настройка OTP кодов вместо magic link
+  // 🔥 Упрощенная функция отправки OTP
   const sendOTPCode = async (email, isSignUp = false) => {
     try {
       const { data, error } = await supabase.auth.signInWithOtp({
-        email,
+        email: email.trim(),
         options: {
           shouldCreateUser: isSignUp,
-          // 🔥 Вот эта настройка заставляет отправлять код вместо magic link
-          emailRedirectTo: null, // Убираем redirect URL
+          emailRedirectTo: window.location.origin
         }
       });
       
@@ -209,10 +285,10 @@ export const AuthProvider = ({ children }) => {
       loginWithOTP,
       signupWithOTP,
       verifyOTP,
-      sendOTPCode, // 🔥 Новая функция
+      sendOTPCode,
+      ensurePublicUser, // Экспортируем для использования в других компонентах
       // Общие методы
-      logout,
-      updatePublicUser
+      logout
     }}>
       {children}
     </AuthContext.Provider>

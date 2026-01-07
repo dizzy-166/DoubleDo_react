@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '../services/supabase';
-import { useNavigate } from 'react-router-dom'; 
+import { useNavigate, useLocation } from 'react-router-dom'; 
 import './HabitsPage.css';
 
 function HabitsPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [habits, setHabits] = useState([]);
   const [newHabit, setNewHabit] = useState({
     title: '',
@@ -19,10 +20,17 @@ function HabitsPage() {
   const [user, setUser] = useState(null);
   const [progressData, setProgressData] = useState({});
   const [isInitialized, setIsInitialized] = useState(false);
+  const [creatingHabit, setCreatingHabit] = useState(false);
   
   const datePickerRef = useRef(null);
 
-  // Текущая дата в UTC
+  const getActiveTab = () => {
+    const path = location.pathname;
+    if (path.includes('/competitions')) return 'competitions';
+    if (path.includes('/profile')) return 'profile';
+    return 'habits';
+  };
+
   const now = new Date();
   const today = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
   const currentMonth = today.getMonth();
@@ -32,9 +40,22 @@ function HabitsPage() {
   // Загрузка пользователя
   useEffect(() => {
     const checkUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      setUser(user);
-      setIsInitialized(true);
+      try {
+        const { data: { user }, error } = await supabase.auth.getUser();
+        
+        if (error) {
+          console.error('❌ Ошибка получения пользователя:', error);
+          setUser(null);
+        } else {
+          console.log('✅ Пользователь получен:', user?.id);
+          setUser(user);
+        }
+      } catch (err) {
+        console.error('❌ Исключение при получении пользователя:', err);
+        setUser(null);
+      } finally {
+        setIsInitialized(true);
+      }
     };
     
     checkUser();
@@ -42,30 +63,69 @@ function HabitsPage() {
 
   // Загрузка привычек после получения пользователя
   useEffect(() => {
-    if (user && isInitialized) {
+    console.log('🔍 Проверка условий для загрузки привычек', {
+      user: !!user,
+      isInitialized,
+      loading
+    });
+    
+    if (user && isInitialized && !loading) {
+      console.log('✅ Условия выполнены, запуск loadHabits');
       loadHabits();
     }
   }, [user, isInitialized]);
 
   // Загрузка привычек пользователя
   const loadHabits = async () => {
-    if (!user) return;
+    console.log('🚀 Начало загрузки привычек');
+    if (!user) {
+      console.error('❌ Пользователь не определен');
+      return;
+    }
     
     setLoading(true);
+    
     try {
-      // Используем функцию get_all_user_habits из базы
-      const { data, error } = await supabase.rpc('get_all_user_habits');
+      console.log('📥 Вызов loadHabitsSafe');
+      const habitsData = await loadHabitsSafe();
+      console.log('✅ Данные привычек получены:', {
+        count: habitsData?.length || 0,
+        data: habitsData
+      });
       
+      setHabits(habitsData || []);
+      console.log('✅ Привычки установлены в состояние');
+      
+      if (habitsData && habitsData.length > 0) {
+        console.log('📊 Загрузка прогресса для привычек');
+        await loadAllProgress(habitsData);
+      }
+    } catch (error) {
+      console.error('❌ Ошибка загрузки привычек:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Упрощенная загрузка привычек
+  const loadHabitsSafe = async () => {
+    console.log('🔍 Загрузка привычек для пользователя:', user?.id);
+    
+    try {
+      // 1. Пробуем RPC функцию
+      console.log('📞 Вызов get_all_user_habits');
+      const { data: habitsData, error } = await supabase
+        .rpc('get_all_user_habits');
+
       if (error) {
-        console.error('Ошибка RPC get_all_user_habits:', error);
-        // Fallback
-        await loadHabitsFallback();
-        return;
+        console.error('❌ RPC ошибка:', error);
+        throw error;
       }
       
-      if (data) {
-        // Преобразуем данные в нужный формат
-        const formattedHabits = data.map(habit => ({
+      console.log('✅ RPC успешен, привычек:', habitsData?.length || 0);
+      
+      if (habitsData && habitsData.length > 0) {
+        return habitsData.map(habit => ({
           id: habit.habit_id,
           title: habit.title,
           frequency_type: habit.frequency_type,
@@ -73,32 +133,19 @@ function HabitsPage() {
           created_at: new Date(habit.created_at),
           role: habit.role,
           status: habit.status,
-          source_type: habit.source_type,
+          source_type: habit.source_type || 'direct',
           competition_id: habit.competition_id,
           competition_status: habit.competition_status,
           friend_id: habit.friend_id,
           friend_username: habit.friend_username,
-          my_score: habit.my_score,
-          friend_score: habit.friend_score
+          my_score: habit.my_score || 0,
+          friend_score: habit.friend_score || 0
         }));
-        
-        setHabits(formattedHabits);
-        
-        // Загружаем прогресс для всех привычек
-        await loadAllProgress(formattedHabits);
       }
-    } catch (error) {
-      console.error('Ошибка загрузки привычек:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Fallback загрузка привычек
-  const loadHabitsFallback = async () => {
-    try {
-      // Получаем привычки через привычные запросы
-      const { data: members, error } = await supabase
+      
+      // 2. Если RPC вернул 0, пробуем прямой запрос
+      console.log('🔄 Прямой запрос к habit_members');
+      const { data: membersData, error: membersError } = await supabase
         .from('habit_members')
         .select(`
           habit_id,
@@ -111,42 +158,92 @@ function HabitsPage() {
             title,
             frequency_type,
             start_date,
-            created_at,
-            created_by
+            created_at
           )
         `)
         .eq('user_id', user.id)
         .eq('status', 'accepted');
       
-      if (error) throw error;
+      if (membersError) {
+        console.error('❌ Ошибка запроса habit_members:', membersError);
+        throw membersError;
+      }
       
-      if (members) {
-        const formattedHabits = members.map(member => ({
-          id: member.habits.id,
-          title: member.habits.title,
-          frequency_type: member.habits.frequency_type,
-          startDate: new Date(member.habits.start_date),
-          created_at: new Date(member.habits.created_at),
-          role: member.role,
-          status: member.status,
-          source_type: member.source_type || 'direct',
-          competition_id: member.competition_id
+      console.log('✅ Прямой запрос успешен, записей:', membersData?.length || 0);
+      
+      const formattedHabits = (membersData || []).map(member => ({
+        id: member.habits.id,
+        title: member.habits.title,
+        frequency_type: member.habits.frequency_type,
+        startDate: new Date(member.habits.start_date),
+        created_at: new Date(member.habits.created_at),
+        role: member.role,
+        status: member.status,
+        source_type: member.source_type || 'direct',
+        competition_id: member.competition_id,
+        competition_status: null,
+        friend_id: null,
+        friend_username: null,
+        my_score: 0,
+        friend_score: 0
+      }));
+      
+      console.log('📝 Отформатировано привычек:', formattedHabits.length);
+      return formattedHabits;
+      
+    } catch (error) {
+      console.error('❌ Все методы не сработали:', error);
+      
+      // 3. Последняя попытка: ручной запрос
+      try {
+        console.log('🔍 Ручной запрос к привычкам');
+        const { data: directHabits, error: directError } = await supabase
+          .from('habits')
+          .select('*')
+          .eq('created_by', user.id);
+        
+        if (directError) {
+          console.error('❌ Ошибка прямого запроса привычек:', directError);
+          return [];
+        }
+        
+        console.log('✅ Найдено привычек созданных пользователем:', directHabits?.length || 0);
+        
+        return (directHabits || []).map(habit => ({
+          id: habit.id,
+          title: habit.title,
+          frequency_type: habit.frequency_type,
+          startDate: new Date(habit.start_date),
+          created_at: new Date(habit.created_at),
+          role: 'owner',
+          status: 'accepted',
+          source_type: 'direct',
+          competition_id: null,
+          competition_status: null,
+          friend_id: null,
+          friend_username: null,
+          my_score: 0,
+          friend_score: 0
         }));
         
-        setHabits(formattedHabits);
-        await loadAllProgress(formattedHabits);
+      } catch (finalError) {
+        console.error('❌ Финальная ошибка:', finalError);
+        return [];
       }
-    } catch (error) {
-      console.error('Ошибка fallback загрузки:', error);
     }
   };
 
   // Загрузка прогресса для всех привычек
   const loadAllProgress = async (habitsList) => {
-    if (!user || !habitsList || habitsList.length === 0) return;
+    console.log('📊 Загрузка прогресса для', habitsList?.length, 'привычек');
+    
+    if (!user || !habitsList || habitsList.length === 0) {
+      return;
+    }
 
     try {
       const progressCache = {};
+      const habitIds = habitsList.map(h => h.id);
 
       // Текущий месяц
       const startOfMonth = new Date(Date.UTC(currentYear, currentMonth, 1));
@@ -156,14 +253,19 @@ function HabitsPage() {
         .from('habit_progress')
         .select('*')
         .eq('user_id', user.id)
+        .in('habit_id', habitIds)
         .gte('completed_date', startOfMonth.toISOString().split('T')[0])
         .lte('completed_date', endOfMonth.toISOString().split('T')[0]);
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Ошибка запроса прогресса:', error);
+        return;
+      }
+
+      console.log('✅ Прогресс получен:', data?.length || 0, 'записей');
 
       if (data) {
         data.forEach(progress => {
-          // Приводим дату к строке YYYY-MM-DD
           const dateStr = new Date(progress.completed_date).toISOString().split('T')[0];
           if (!progressCache[progress.habit_id]) progressCache[progress.habit_id] = [];
           progressCache[progress.habit_id].push({ ...progress, completed_date: dateStr });
@@ -172,7 +274,7 @@ function HabitsPage() {
 
       setProgressData(progressCache);
     } catch (error) {
-      console.error('Ошибка загрузки прогресса:', error);
+      console.error('❌ Ошибка загрузки прогресса:', error);
     }
   };
 
@@ -260,7 +362,6 @@ function HabitsPage() {
   const calendarWeeks = generateHabitCalendar();
   const datePickerWeeks = generateDatePickerCalendar();
   
-  // Названия дней недели
   const dayNames = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
   const monthNames = [
     'Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь',
@@ -297,14 +398,10 @@ function HabitsPage() {
 
   // Выбор даты
   const handleDateSelect = (day) => {
-    // Создаем выбранную дату в UTC
     const selectedDate = new Date(Date.UTC(datePickerYear, datePickerMonth, day));
-    
-    // Получаем сегодняшнюю дату в UTC
     const now = new Date();
     const todayUTC = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
     
-    // Разрешаем выбирать сегодня и любую будущую дату
     if (selectedDate >= todayUTC) {
       setNewHabit({...newHabit, startDate: selectedDate});
       setShowDatePicker(false);
@@ -379,25 +476,111 @@ function HabitsPage() {
     return 'future';
   };
 
-  // Создание привычки
+  // 🔥 ИСПРАВЛЕННАЯ ФУНКЦИЯ: Создание привычки
   const handleCreateHabit = async (e) => {
     e.preventDefault();
-    if (!newHabit.title.trim()) return;
+    console.log('🎯 СОЗДАНИЕ ПРИВЫЧКИ');
+    
+    if (!newHabit.title.trim()) {
+      alert('Введите название привычки');
+      return;
+    }
 
-    setLoading(true);
+    if (!user) {
+      alert('Пользователь не авторизован');
+      return;
+    }
+
+    setCreatingHabit(true);
     
     try {
+      console.log('1. Текущий пользователь:', user?.id);
+      
       const formattedDate = newHabit.startDate.toISOString().split('T')[0];
       
-      const { data, error } = await supabase.rpc('create_habit', {
-        p_title: newHabit.title.trim(),
-        p_start_date: formattedDate
+      console.log('2. Данные для создания:', {
+        title: newHabit.title.trim(),
+        start_date: formattedDate,
+        user_id: user?.id
       });
       
-      if (error) throw error;
+      // 🔥 ПРЯМОЙ ЗАПРОС вместо RPC
+      console.log('3. Создаем привычку напрямую...');
       
-      if (data) {
-        // ПОЛНАЯ перезагрузка привычек с сервера
+      // 1. Создаем запись в habits
+      const { data: habitData, error: habitError } = await supabase
+        .from('habits')
+        .insert({
+          title: newHabit.title.trim(),
+          created_by: user.id,
+          start_date: formattedDate,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        })
+        .select()
+        .single();
+      
+      if (habitError) {
+        console.error('❌ Ошибка создания привычки:', habitError);
+        throw habitError;
+      }
+      
+      console.log('✅ Привычка создана:', habitData);
+      
+      // 2. Добавляем пользователя как владельца в habit_members
+      const { error: memberError } = await supabase
+        .from('habit_members')
+        .insert({
+          habit_id: habitData.id,
+          user_id: user.id,
+          role: 'owner',
+          status: 'accepted',
+          invited_at: new Date().toISOString(),
+          accepted_at: new Date().toISOString()
+        });
+      
+      if (memberError) {
+        console.error('❌ Ошибка добавления в habit_members:', memberError);
+        throw memberError;
+      }
+      
+      console.log('✅ Пользователь добавлен как владелец');
+      
+      // 3. Перезагружаем список привычек
+      await loadHabits();
+      
+      console.log('=== ПРИВЫЧКА УСПЕШНО СОЗДАНА ===');
+      
+      // 4. Сброс формы
+      setNewHabit({ 
+        title: '', 
+        startDate: new Date()
+      });
+      setShowCreateForm(false);
+      setShowDatePicker(false);
+      
+      alert('Привычка успешно создана!');
+      
+    } catch (error) {
+      console.error('🔥 ОШИБКА СОЗДАНИЯ ПРИВЫЧКИ:', error);
+      
+      // Попробуем альтернативный метод
+      try {
+        console.log('🔄 Пробуем через RPC...');
+        
+        const formattedDate = newHabit.startDate.toISOString().split('T')[0];
+        
+        const { data, error: rpcError } = await supabase.rpc('create_habit', {
+          p_title: newHabit.title.trim(),
+          p_start_date: formattedDate
+        });
+        
+        if (rpcError) {
+          console.error('RPC ошибка:', rpcError);
+          throw new Error(`RPC: ${rpcError.message}`);
+        }
+        
+        console.log('✅ RPC успешно:', data);
         await loadHabits();
         
         setNewHabit({ 
@@ -406,12 +589,13 @@ function HabitsPage() {
         });
         setShowCreateForm(false);
         setShowDatePicker(false);
+        
+      } catch (fallbackError) {
+        console.error('Все методы не сработали:', fallbackError);
+        alert(`Ошибка: ${fallbackError.message}`);
       }
-    } catch (error) {
-      console.error('Ошибка создания привычки:', error);
-      alert(`Ошибка: ${error.message}`);
     } finally {
-      setLoading(false);
+      setCreatingHabit(false);
     }
   };
 
@@ -434,7 +618,7 @@ function HabitsPage() {
       const habitStartStr = habitStartUTC.toISOString().split('T')[0];
 
       if (todayStr < habitStartStr) {
-        alert(`Привычка "${habit.title}" будет доступна для выполнения только с ${formatDisplayDate(habit.startDate)}`);
+        alert(`Привычка "${habit.title}" будет доступна только с ${formatDisplayDate(habit.startDate)}`);
         return;
       }
 
@@ -456,21 +640,23 @@ function HabitsPage() {
       } else {
         // Отмечаем выполнение
         if (habit.source_type === 'competition' && habit.competition_id) {
-          const { error } = await supabase.rpc('mark_competition_habit_complete', { p_habit_id: habitId });
+          const { error } = await supabase.rpc('mark_competition_habit_complete', { 
+            p_habit_id: habitId 
+          });
           if (error) throw error;
         } else {
-          const { error } = await supabase.rpc('mark_habit_completed', { p_habit_id: habitId, p_date: todayStr });
+          const { error } = await supabase.rpc('mark_habit_completed', { 
+            p_habit_id: habitId, 
+            p_date: todayStr 
+          });
           if (error) throw error;
         }
       }
 
-      // 🔹 Обновляем прогресс локально, чтобы кнопка менялась мгновенно
+      // Обновляем локально
       setProgressData(prev => {
         const habitProgress = prev[habitId] ? [...prev[habitId]] : [];
-        const todayIndex = habitProgress.findIndex(p => {
-          const progressStr = new Date(p.completed_date).toISOString().split('T')[0];
-          return progressStr === todayStr;
-        });
+        const todayIndex = habitProgress.findIndex(p => p.completed_date === todayStr);
 
         if (todayIndex >= 0) {
           habitProgress[todayIndex] = {
@@ -509,7 +695,7 @@ function HabitsPage() {
       
       if (error) throw error;
       
-      // Обновляем список привычек
+      // Обновляем локально
       setHabits(habits.filter(habit => habit.id !== id));
     } catch (error) {
       console.error('Ошибка удаления привычки:', error);
@@ -523,6 +709,21 @@ function HabitsPage() {
     if (days % 10 >= 2 && days % 10 <= 4 && (days % 100 < 10 || days % 100 >= 20)) return 'дня';
     return 'дней';
   };
+
+  // Обработчик нажатия на кнопку создания привычки на пустом экране
+  const handleCreateFirstHabitClick = () => {
+    console.log('🎯 КНОПКА "СОЗДАТЬ ПРИВЫЧКУ" НАЖАТА');
+    setShowCreateForm(true);
+  };
+
+  // Логи для отладки
+  console.log('🎯 Состояние компонента:', {
+    isInitialized,
+    user: !!user,
+    loading,
+    habitsCount: habits.length,
+    showCreateForm
+  });
 
   // Если загрузка данных
   if (!isInitialized || (user && loading && habits.length === 0)) {
@@ -597,12 +798,35 @@ function HabitsPage() {
             
             <button 
               className="create-first-habit-btn"
-              onClick={() => setShowCreateForm(true)}
+              onClick={handleCreateFirstHabitClick}
             >
               Создать привычку
             </button>
           </div>
         </div>
+
+        {showCreateForm && (
+          <CreateHabitModal
+            newHabit={newHabit}
+            setNewHabit={setNewHabit}
+            handleCreateHabit={handleCreateHabit}
+            setShowCreateForm={setShowCreateForm}
+            loading={creatingHabit}
+            showDatePicker={showDatePicker}
+            setShowDatePicker={setShowDatePicker}
+            datePickerRef={datePickerRef}
+            datePickerMonth={datePickerMonth}
+            datePickerYear={datePickerYear}
+            handlePrevMonth={handlePrevMonth}
+            handleNextMonth={handleNextMonth}
+            datePickerWeeks={datePickerWeeks}
+            handleDateSelect={handleDateSelect}
+            isTodayInDatePicker={isTodayInDatePicker}
+            isSelectedInDatePicker={isSelectedInDatePicker}
+            isPastDayInDatePicker={isPastDayInDatePicker}
+            dayNames={dayNames}
+          />
+        )}
       </div>
     );
   }
@@ -621,7 +845,7 @@ function HabitsPage() {
 
       <main className="habits-main">
         <div className="habits-list-header">
-          <h2>Мои привычки</h2>
+          <h2>Мои привычки ({habits.length})</h2>
           <button 
             className="add-habit-btn"
             onClick={() => setShowCreateForm(true)}
@@ -661,9 +885,10 @@ function HabitsPage() {
         </div>
       </main>
 
+      {/* НАВИГАЦИЯ */}
       <nav className="bottom-nav">
         <button 
-          className="nav-item"
+          className={`nav-item ${getActiveTab() === 'competitions' ? 'active' : ''}`}
           onClick={() => navigate('/competitions')}
         >
           <span className="nav-icon">🏆</span>
@@ -671,14 +896,15 @@ function HabitsPage() {
         </button>
         
         <button 
-          className="nav-item active"
+          className={`nav-item ${getActiveTab() === 'habits' ? 'active' : ''}`}
+          onClick={() => navigate('/habits')}
         >
           <span className="nav-icon">✅</span>
           <span className="nav-text">Привычки</span>
         </button>
         
         <button 
-          className="nav-item"
+          className={`nav-item ${getActiveTab() === 'profile' ? 'active' : ''}`}
           onClick={() => navigate('/profile')}
         >
           <span className="nav-icon">👤</span>
@@ -692,7 +918,7 @@ function HabitsPage() {
           setNewHabit={setNewHabit}
           handleCreateHabit={handleCreateHabit}
           setShowCreateForm={setShowCreateForm}
-          loading={loading}
+          loading={creatingHabit}
           showDatePicker={showDatePicker}
           setShowDatePicker={setShowDatePicker}
           datePickerRef={datePickerRef}
@@ -754,10 +980,7 @@ function HabitCard({
   const isTodayCompleted = progress.find(p => p.completed_date === todayStr && p.is_completed);
 
   const handleComplete = async () => {
-    // Проверяем возможность выполнения
-    if (!isTodayActive) {
-      return; // Кнопка и так будет disabled, но на всякий случай
-    }
+    if (!isTodayActive) return;
     
     setIsLoading(true);
     try {
@@ -773,7 +996,6 @@ function HabitCard({
     if (isTodayCompleted) return '✓ ВЫПОЛНЕНО';
     if (isTodayActive) return 'ВЫПОЛНИТЬ';
     
-    // Если привычка еще не началась
     if (daysUntilStart === 1) return 'ЧЕРЕЗ 1 ДЕНЬ';
     if (daysUntilStart === 2) return 'ЧЕРЕЗ 2 ДНЯ';
     if (daysUntilStart === 3) return 'ЧЕРЕЗ 3 ДНЯ';
@@ -788,13 +1010,19 @@ function HabitCard({
     
     if (isTodayCompleted) return `${baseClass} completed`;
     if (isTodayActive) return `${baseClass} active`;
-    
-    // Для будущих привычек
     return `${baseClass} disabled future-habit`;
   };
 
+  console.log('🃏 Карточка привычки:', {
+    id: habit.id,
+    title: habit.title,
+    isTodayActive,
+    isTodayCompleted,
+    daysUntilStart
+  });
+
   return (
-    <div key={habit.id} className="habit-card">
+    <div className="habit-card">
       <div className="habit-card-header">
         <div className="habit-title-section">
           <h3 className="habit-card-title">{habit.title}</h3>
@@ -901,8 +1129,8 @@ function CreateHabitModal({
   ];
 
   return (
-    <div className="modal-overlay">
-      <div className="modal-content create-habit-modal">
+    <div className="modal-overlay" onClick={() => !loading && setShowCreateForm(false)}>
+      <div className="modal-content create-habit-modal" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
           <h3>Создать привычку</h3>
           <button 
@@ -921,7 +1149,7 @@ function CreateHabitModal({
               type="text"
               value={newHabit.title}
               onChange={(e) => setNewHabit({...newHabit, title: e.target.value})}
-              placeholder="Введите название привычки"
+              placeholder="Например: 'Пить воду', 'Зарядка', 'Читать'"
               required
               autoFocus
               className="form-input"
@@ -981,14 +1209,12 @@ function CreateHabitModal({
                           {week.map((day, dayIndex) => {
                             if (day === null) {
                               return (
-                                <button
+                                <div
                                   key={dayIndex}
-                                  type="button"
                                   className="datepicker-day outside-month"
-                                  disabled
                                 >
                                   {day}
-                                </button>
+                                </div>
                               );
                             }
                             
@@ -1036,7 +1262,7 @@ function CreateHabitModal({
               className="btn-primary"
               disabled={loading || !newHabit.title.trim()}
             >
-              {loading ? 'Создание...' : 'Сохранить'}
+              {loading ? 'Создание...' : 'Создать привычку'}
             </button>
           </div>
         </form>

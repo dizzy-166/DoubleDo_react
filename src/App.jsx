@@ -6,18 +6,48 @@ import HabitsPage from './pages/HabitsPage.jsx';
 import CompetitionsPage from './pages/CompetitionsPage.jsx';
 import './App.css';
 
+// Функция для извлечения username из email
+const extractUsernameFromEmail = (email) => {
+  if (!email) return '';
+  
+  // Берем часть до @ и очищаем от спецсимволов
+  const emailPart = email.split('@')[0];
+  
+  // Удаляем все небуквенные и нецифровые символы, кроме точки
+  let username = emailPart.toLowerCase().replace(/[^a-z0-9.]/g, '');
+  
+  // Заменяем точки на подчеркивания
+  username = username.replace(/\./g, '_');
+  
+  // Если после очистки username пустой, используем часть email
+  if (!username || username.length < 3) {
+    // Берем первые 8 символов из email (без @)
+    const cleanEmail = email.toLowerCase().replace(/[^a-z0-9]/g, '');
+    username = 'user_' + (cleanEmail.substring(0, 6) || 'user');
+  }
+  
+  // Ограничиваем длину
+  if (username.length > 20) {
+    username = username.substring(0, 20);
+  }
+  
+  return username;
+};
+
+// Функция отправки OTP кода
 const sendOTPCode = async (email, isSignup = false) => {
   try {
     console.log('Sending OTP to:', email, 'isSignup:', isSignup);
     
-    // Используем Supabase для отправки OTP
-    const { data, error } = await supabase.auth.signInWithOtp({
+    const authOptions = {
       email: email.trim(),
       options: {
         emailRedirectTo: window.location.origin,
-        shouldCreateUser: isSignup // Создаем пользователя при регистрации
+        shouldCreateUser: isSignup
       }
-    });
+    };
+
+    const { data, error } = await supabase.auth.signInWithOtp(authOptions);
 
     if (error) {
       console.error('OTP send error:', error);
@@ -29,9 +59,7 @@ const sendOTPCode = async (email, isSignup = false) => {
 
     return {
       success: true,
-      message: isSignup 
-        ? 'Код подтверждения отправлен на email. Проверьте почту.' 
-        : 'Код для входа отправлен на email. Проверьте почту.'
+      message: '6-значный код отправлен на email. Проверьте почту.'
     };
   } catch (err) {
     console.error('OTP error:', err);
@@ -42,72 +70,74 @@ const sendOTPCode = async (email, isSignup = false) => {
   }
 };
 
+// Функция проверки OTP кода
+const verifyOTPCode = async (email, token) => {
+  try {
+    const { data, error } = await supabase.auth.verifyOtp({
+      email,
+      token,
+      type: 'email'
+    });
+    
+    if (error) {
+      console.error('OTP verification error:', error);
+      return {
+        success: false,
+        message: error.message || 'Неверный код или истек срок действия'
+      };
+    }
+    
+    return {
+      success: true,
+      message: 'Email успешно подтвержден',
+      data
+    };
+  } catch (err) {
+    console.error('Verify OTP error:', err);
+    return {
+      success: false,
+      message: 'Произошла ошибка при проверке кода'
+    };
+  }
+};
+
 function App() {
-  const { user, verifyOTP } = useAuth();
+  const { user } = useAuth();
   const [email, setEmail] = useState('');
   const [confirmationCode, setConfirmationCode] = useState('');
-  const [username, setUsername] = useState('');
   const [isLogin, setIsLogin] = useState(true);
   const [needsConfirmation, setNeedsConfirmation] = useState(false);
-  const [needsUsername, setNeedsUsername] = useState(false);
   const [pendingEmail, setPendingEmail] = useState('');
   const [loading, setLoading] = useState(false);
-  const [usernameLoading, setUsernameLoading] = useState(false);
   const [formErrors, setFormErrors] = useState({});
   const [canResend, setCanResend] = useState(true);
-  const [existingUser, setExistingUser] = useState(null);
 
-  // Проверяем при загрузке, нужен ли пользователю никнейм
+  // Проверяем, что пользователь имеет username
   useEffect(() => {
-    if (user && user.id && !needsConfirmation) {
-      checkIfUsernameNeeded();
-    }
-  }, [user, needsConfirmation]);
-
-  const checkIfUsernameNeeded = async () => {
-    if (!user || !user.id) return;
-    
-    try {
-      const { data, error } = await supabase
-        .from('users')
-        .select('username')
-        .eq('id', user.id)
-        .single();
+    const checkUserProfile = async () => {
+      if (!user?.id) return;
       
-      if (!error && data) {
-        const currentUsername = data.username;
-        console.log('Current username:', currentUsername);
+      try {
+        // Получаем информацию о пользователе из public.users
+        const { data, error } = await supabase
+          .from('users')
+          .select('username')
+          .eq('id', user.id)
+          .single();
         
-        // Проверяем, является ли ник временным
-        if (currentUsername && (currentUsername.startsWith('temp_') || currentUsername.startsWith('user_'))) {
-          setNeedsUsername(true);
+        if (error) {
+          console.error('Error fetching user profile:', error);
+        } else if (data) {
+          console.log('User has username:', data.username);
+          // Username уже установлен автоматически через триггер
         }
+      } catch (err) {
+        console.error('Error checking user profile:', err);
       }
-    } catch (err) {
-      console.log('Error checking username:', err);
-    }
-  };
-
-  // Проверка существования пользователя
-  const checkUserExists = async (email) => {
-    try {
-      const { data, error } = await supabase
-        .from('users')
-        .select('id, username')
-        .eq('email', email)
-        .maybeSingle();
-      
-      if (error && error.code !== 'PGRST116') {
-        console.log('Check user error:', error);
-        return null;
-      }
-      
-      return data;
-    } catch (err) {
-      console.log('Error checking user:', err);
-      return null;
-    }
-  };
+    };
+    
+    checkUserProfile();
+  }, [user]);
 
   const validateEmail = (email) => {
     if (!email) return 'Email обязателен';
@@ -115,23 +145,7 @@ function App() {
     return null;
   };
 
-  const validateUsername = () => {
-    const errors = {};
-    
-    if (!username.trim()) {
-      errors.username = 'Никнейм обязателен';
-    } else if (username.length < 3) {
-      errors.username = 'Минимум 3 символа';
-    } else if (username.length > 20) {
-      errors.username = 'Максимум 20 символов';
-    } else if (!/^[a-zA-Z0-9_]+$/.test(username)) {
-      errors.username = 'Только буквы, цифры и нижнее подчеркивание';
-    }
-    
-    return errors;
-  };
-
-  // Обработка отправки OTP
+  // Обработчик отправки формы (регистрация/вход)
   const handleSubmit = async (e) => {
     e.preventDefault();
     
@@ -145,44 +159,13 @@ function App() {
     setFormErrors({});
     
     try {
-      // Проверяем, существует ли пользователь
-      const existingUserData = await checkUserExists(email);
-      setExistingUser(existingUserData);
-      
-      let result;
-      
-      if (isLogin) {
-        // Вход - только для существующих пользователей
-        if (!existingUserData) {
-          setFormErrors({ 
-            email: 'Пользователь с таким email не найден. Зарегистрируйтесь.' 
-          });
-          setLoading(false);
-          return;
-        }
-        
-        // ✅ ИСПРАВЛЕНО: Используем функцию sendOTPCode вместо loginWithOTP
-        result = await sendOTPCode(email, false); // false = вход
-      } else {
-        // Регистрация - только для новых пользователей
-        if (existingUserData) {
-          setFormErrors({ 
-            email: 'Пользователь с таким email уже существует. Войдите в систему.' 
-          });
-          setLoading(false);
-          return;
-        }
-        
-        // ✅ ИСПРАВЛЕНО: Используем функцию sendOTPCode вместо signupWithOTP
-        result = await sendOTPCode(email, true); // true = регистрация
-      }
+      const result = await sendOTPCode(email, !isLogin);
       
       if (result.success) {
         setNeedsConfirmation(true);
         setPendingEmail(email);
         setCanResend(false);
         
-        // Через 60 секунд разрешаем повторную отправку
         setTimeout(() => setCanResend(true), 60000);
         
         alert(result.message);
@@ -197,7 +180,7 @@ function App() {
     }
   };
 
-  // Подтверждение OTP кода
+  // Обработчик подтверждения OTP
   const handleVerifyOTP = async (e) => {
     e.preventDefault();
     
@@ -215,20 +198,17 @@ function App() {
     setFormErrors({});
 
     try {
-      // ✅ Используем verifyOTP из AuthContext
-      const result = await verifyOTP(pendingEmail, confirmationCode);
+      const result = await verifyOTPCode(pendingEmail, confirmationCode);
       
       if (result.success) {
+        console.log('OTP verified successfully');
         setNeedsConfirmation(false);
         setConfirmationCode('');
         
-        // Проверяем, нужно ли установить никнейм
-        if (existingUser) {
-          // Существующий пользователь - проверяем ник
-          await checkIfUsernameNeeded();
-        } else {
-          // Новый пользователь - всегда нужно установить ник
-          setNeedsUsername(true);
+        // При успешной аутентификации показываем уведомление
+        if (!isLogin) {
+          const generatedUsername = extractUsernameFromEmail(pendingEmail);
+          alert(`Регистрация успешна! Ваш никнейм: ${generatedUsername}`);
         }
       } else {
         setFormErrors({ confirmation: result.message });
@@ -238,63 +218,6 @@ function App() {
       console.error('Verify error:', err);
     } finally {
       setLoading(false);
-    }
-  };
-
-  // Установка никнейма
-  const handleSetUsername = async (e) => {
-    e.preventDefault();
-    
-    const errors = validateUsername();
-    if (Object.keys(errors).length > 0) {
-      setFormErrors(errors);
-      return;
-    }
-
-    setUsernameLoading(true);
-    setFormErrors({});
-
-    try {
-      // Используем RPC функцию для установки никнейма
-      const { data, error } = await supabase.rpc('set_username_atomic', {
-        new_username: username.trim()
-      });
-      
-      if (error) throw error;
-      
-      if (data && data.success) {
-        setNeedsUsername(false);
-        setUsername('');
-        
-        // Обновляем сессию
-        await supabase.auth.refreshSession();
-        
-        alert('Никнейм успешно сохранен! Регистрация завершена.');
-        
-        // Перезагружаем страницу для обновления данных пользователя
-        setTimeout(() => window.location.reload(), 1000);
-      } else {
-        setFormErrors({ 
-          username: data?.message || 'Ошибка при установке никнейма',
-          error_code: data?.error
-        });
-      }
-    } catch (err) {
-      console.error('Error setting username:', err);
-      
-      let errorMessage = 'Произошла ошибка при сохранении никнейма';
-      if (err.message.includes('409') || err.message.includes('USERNAME_TAKEN')) {
-        errorMessage = 'Этот никнейм уже занят';
-      } else if (err.message.includes('401') || err.message.includes('токен')) {
-        errorMessage = 'Ошибка авторизации. Пожалуйста, войдите заново.';
-      }
-      
-      setFormErrors({ 
-        username: errorMessage,
-        general: err.message
-      });
-    } finally {
-      setUsernameLoading(false);
     }
   };
 
@@ -308,13 +231,7 @@ function App() {
     setFormErrors({});
 
     try {
-      // ✅ ИСПРАВЛЕНО: Используем нашу локальную функцию sendOTPCode
-      let result;
-      if (existingUser) {
-        result = await sendOTPCode(pendingEmail, false);
-      } else {
-        result = await sendOTPCode(pendingEmail, true);
-      }
+      const result = await sendOTPCode(pendingEmail, !isLogin);
       
       if (result.success) {
         setCanResend(false);
@@ -330,154 +247,8 @@ function App() {
     }
   };
 
-  const checkUsernameAvailability = async () => {
-    if (!username.trim() || username.length < 3) return false;
-
-    try {
-      const { data, error } = await supabase.rpc('check_username_available', {
-        check_username: username.trim()
-      });
-      
-      if (error) {
-        console.log('Username availability check failed:', error);
-        return false;
-      }
-      
-      return data;
-    } catch (err) {
-      console.log('Error checking username availability:', err);
-      return false;
-    }
-  };
-
   // Функция для рендеринга аутентификационных экранов
   const renderAuthScreen = () => {
-    // Экран создания никнейма
-    if (needsUsername) {
-      return (
-        <div className="app">
-          <div className="auth-container">
-            <div className="auth-header">
-              <div className="logo">
-                <div className="logo-icon">DD</div>
-                <div className="logo-text">DoubleDo</div>
-              </div>
-              <p className="auth-subtitle">Придумайте никнейм и начните свой путь</p>
-            </div>
-
-            <div style={{
-              textAlign: 'center',
-              marginBottom: '32px',
-              color: 'var(--dark)'
-            }}>
-              <p style={{ 
-                color: 'var(--dark-gray)',
-                lineHeight: '1.5',
-                fontSize: '15px'
-              }}>
-                Ваш никнейм будет использоваться во всем приложении.<br />
-                Друзья будут искать вас по этому никнейму.
-              </p>
-            </div>
-
-            {formErrors.general && (
-              <div className="error-message" style={{ marginBottom: '16px' }}>
-                {formErrors.general}
-              </div>
-            )}
-
-            <form onSubmit={handleSetUsername} className="auth-form">
-              <div className="form-group">
-                <label className="form-label">Ваш никнейм</label>
-                <input
-                  type="text"
-                  className={`form-input ${formErrors.username ? 'error' : ''}`}
-                  placeholder="например, super_user123"
-                  value={username}
-                  onChange={(e) => {
-                    setUsername(e.target.value);
-                    // Очищаем ошибку при вводе
-                    if (formErrors.username) {
-                      setFormErrors({ ...formErrors, username: '' });
-                    }
-                  }}
-                  disabled={usernameLoading}
-                  style={{
-                    textAlign: 'center',
-                    fontSize: '18px',
-                    fontWeight: '500'
-                  }}
-                  onBlur={async () => {
-                    if (username.length >= 3 && !formErrors.username) {
-                      try {
-                        const isAvailable = await checkUsernameAvailability();
-                        console.log('Username available check result:', isAvailable);
-                        if (isAvailable === false) {
-                          setFormErrors(prev => ({ 
-                            ...prev, 
-                            username: 'Этот никнейм уже занят' 
-                          }));
-                        }
-                      } catch (err) {
-                        console.log('Availability check error:', err);
-                      }
-                    }
-                  }}
-                />
-                {formErrors.username && (
-                  <div className="error-message">
-                    {formErrors.username}
-                    {formErrors.error_code === 'USERNAME_TAKEN' && ' (попробуйте другой)'}
-                    {formErrors.error_code === 'USERNAME_TOO_SHORT' && ' (минимум 3 символа)'}
-                    {formErrors.error_code === 'USERNAME_TOO_LONG' && ' (максимум 20 символов)'}
-                    {formErrors.error_code === 'USERNAME_INVALID_FORMAT' && ' (только буквы, цифры и _)'}
-                  </div>
-                )}
-                <div style={{
-                  fontSize: '12px',
-                  color: 'var(--gray)',
-                  marginTop: '8px',
-                  textAlign: 'center'
-                }}>
-                  <div>• От 3 до 20 символов</div>
-                  <div>• Можно использовать буквы, цифры и _</div>
-                  <div>• Регистр не учитывается (SuperUser = superuser)</div>
-                </div>
-              </div>
-
-              <button 
-                type="submit" 
-                className="auth-button"
-                disabled={usernameLoading || !username.trim() || username.length < 3}
-                style={{
-                  opacity: (!username.trim() || username.length < 3) ? 0.5 : 1
-                }}
-              >
-                {usernameLoading ? (
-                  <div className="loading-spinner"></div>
-                ) : 'Сохранить'}
-              </button>
-            </form>
-
-            <div style={{
-              textAlign: 'center',
-              marginTop: '32px',
-              paddingTop: '24px',
-              borderTop: '1px solid var(--light-gray)'
-            }}>
-              <p style={{ 
-                color: 'var(--gray)',
-                fontSize: '14px'
-              }}>
-                Никнейм можно изменить только 1 раз в месяц.<br />
-                Выберите внимательно!
-              </p>
-            </div>
-          </div>
-        </div>
-      );
-    }
-
     // Экран подтверждения email
     if (needsConfirmation) {
       return (
@@ -511,13 +282,18 @@ function App() {
               }}>
                 Мы отправили 6-значный код подтверждения на вашу почту
               </p>
-              <p style={{ 
-                color: 'var(--gray)',
-                fontSize: '14px',
-                fontStyle: 'italic'
-              }}>
-                Проверьте папку "Спам", если не видите письмо
-              </p>
+              {!isLogin && (
+                <p style={{ 
+                  color: 'var(--primary)',
+                  fontSize: '14px',
+                  marginTop: '12px',
+                  padding: '8px',
+                  backgroundColor: 'rgba(0, 150, 255, 0.1)',
+                  borderRadius: '8px'
+                }}>
+                  После регистрации ваш никнейм будет создан автоматически
+                </p>
+              )}
             </div>
 
             {formErrors.general && (
@@ -600,14 +376,13 @@ function App() {
                   setFormErrors({});
                   setConfirmationCode('');
                   setEmail(pendingEmail);
-                  setIsLogin(true);
                 }}
                 style={{
                   fontSize: '14px',
                   color: 'var(--dark-gray)'
                 }}
               >
-                ← Вернуться к входу
+                ← Вернуться к {isLogin ? 'входу' : 'регистрации'}
               </button>
             </div>
           </div>
@@ -615,7 +390,7 @@ function App() {
       );
     }
 
-    // Основная форма (вход/регистрация)
+    // Основная форма (регистрация/вход)
     return (
       <div className="app">
         <div className="auth-container">
@@ -653,24 +428,62 @@ function App() {
                   }
                 }}
                 disabled={loading}
+                autoFocus
               />
               {formErrors.email && (
                 <div className="error-message">{formErrors.email}</div>
               )}
             </div>
 
+            {/* {!isLogin && (
+              <div style={{
+                marginBottom: '16px',
+                padding: '12px',
+                backgroundColor: 'rgba(0, 150, 255, 0.1)',
+                borderRadius: '8px',
+                fontSize: '14px',
+                color: 'var(--dark)',
+                textAlign: 'center'
+              }}>
+                <p style={{ margin: 0 }}>
+                  Ваш никнейм будет автоматически создан из вашего email
+                </p>
+                <p style={{ 
+                  margin: '4px 0 0 0',
+                  fontSize: '12px',
+                  color: 'var(--dark-gray)'
+                }}>
+                  Например: obeme22864@gmail.com → obeme22864
+                </p>
+              </div>
+            )} */}
+
             <button 
               type="submit" 
               className="auth-button"
               disabled={loading || !email.trim()}
               style={{
-                opacity: !email.trim() ? 0.5 : 1
+                opacity: !email.trim() ? 0.5 : 1,
+                marginTop: '20px'
               }}
             >
               {loading ? (
                 <div className="loading-spinner"></div>
-              ) : isLogin ? 'Получить код для входа' : 'Зарегистрироваться'}
+              ) : isLogin ? 'Войти' : 'Зарегистрироваться'}
             </button>
+
+            <div style={{
+              fontSize: '12px',
+              color: 'var(--gray)',
+              marginTop: '12px',
+              textAlign: 'center',
+              padding: '8px',
+              backgroundColor: 'var(--light)',
+              borderRadius: '8px',
+              border: '1px solid var(--light-gray)'
+            }}>
+              <span>Безопасный вход по email (без пароля)</span>
+            </div>
           </form>
 
           <div className="auth-toggle">
@@ -687,43 +500,28 @@ function App() {
               }}
               disabled={loading}
             >
-              {isLogin ? 'Регистрация' : 'Войти'}
+              {isLogin ? 'Создать аккаунт' : 'Войти'}
             </button>
-          </div>
-
-          <div style={{
-            textAlign: 'center',
-            marginTop: '32px',
-            paddingTop: '24px',
-            borderTop: '1px solid var(--light-gray)',
-            fontSize: '14px',
-            color: 'var(--gray)'
-          }}>
           </div>
         </div>
       </div>
     );
   };
 
-  // Если пользователь авторизован и имеет нормальный никнейм
-  if (user && user.id && !needsConfirmation && !needsUsername) {
-    return (
-      <Router>
-        <Routes>
-          <Route path="/habits" element={<HabitsPage />} />
-          <Route path="/competitions" element={<CompetitionsPage />} />
-          <Route path="/" element={<Navigate to="/competitions" replace />} />
-          <Route path="*" element={<Navigate to="/competitions" replace />} />
-        </Routes>
-      </Router>
-    );
-  }
-
-  // Рендерим приложение с роутером для аутентификации
+  // Основной рендеринг
   return (
     <Router>
       <Routes>
-        <Route path="*" element={renderAuthScreen()} />
+        {user && !needsConfirmation ? (
+          <>
+            <Route path="/habits" element={<HabitsPage />} />
+            <Route path="/competitions" element={<CompetitionsPage />} />
+            <Route path="/" element={<Navigate to="/competitions" replace />} />
+            <Route path="*" element={<Navigate to="/competitions" replace />} />
+          </>
+        ) : (
+          <Route path="*" element={renderAuthScreen()} />
+        )}
       </Routes>
     </Router>
   );
