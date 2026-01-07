@@ -484,7 +484,7 @@ function App() {
               ) : isLogin ? 'Войти' : 'Зарегистрироваться'}
             </button>
 
-            <div style={{
+            {/* <div style={{
               fontSize: '12px',
               color: 'var(--gray)',
               marginTop: '12px',
@@ -495,7 +495,7 @@ function App() {
               border: '1px solid var(--light-gray)'
             }}>
               <span>Безопасный вход по email (без пароля)</span>
-            </div>
+            </div> */}
           </form>
 
           <div className="auth-toggle">
