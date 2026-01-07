@@ -892,7 +892,7 @@ function HabitsPage() {
           onClick={() => navigate('/competitions')}
         >
           <span className="nav-icon">🏆</span>
-          <span className="nav-text">Соревнования</span>
+          {/* <span className="nav-text">Соревнования</span> */}
         </button>
         
         <button 
@@ -900,7 +900,7 @@ function HabitsPage() {
           onClick={() => navigate('/habits')}
         >
           <span className="nav-icon">✅</span>
-          <span className="nav-text">Привычки</span>
+          {/* <span className="nav-text">Привычки</span> */}
         </button>
         
         <button 
@@ -908,7 +908,7 @@ function HabitsPage() {
           onClick={() => navigate('/profile')}
         >
           <span className="nav-icon">👤</span>
-          <span className="nav-text">Профиль</span>
+          {/* <span className="nav-text">Профиль</span> */}
         </button>
       </nav>
 
