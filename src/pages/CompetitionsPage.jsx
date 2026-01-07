@@ -75,6 +75,35 @@ function CompetitionsPage() {
     if (user) loadCompetitions();
   }, [user]);
 
+  // Подписка на изменения в прогрессии привычек
+  useEffect(() => {
+    if (!user) return;
+
+    const channel = supabase
+      .channel('competition_progress_changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'habit_progress',
+          filter: `user_id=eq.${user.id}`
+        },
+        (payload) => {
+          console.log('Progress changed:', payload);
+          // При изменении прогресса перезагружаем соревнования
+          supabase.rpc('get_user_competitions').then(({ data }) => {
+            if (data) setCompetitions(data);
+          });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user]);
+
   // Функция поиска пользователей
   const handleSearchUsers = async () => {
     if (!searchQuery.trim()) return;
@@ -283,7 +312,7 @@ function CompetitionsPage() {
                 onClick={() => setShowCreateForm(true)}
                 disabled={loading}
               >
-                {loading ? '...' : '+ Создать соревнование'}
+                {loading ? '...' : '+'}
               </button>
             </div>
 
@@ -524,7 +553,16 @@ function CompetitionCard({ competition, user }) {
     };
     
     loadCalendarData();
-  }, [competition.competition_id]);
+    
+    // Периодическое обновление данных
+    const interval = setInterval(() => {
+      if (competition.status === 'active') {
+        loadCalendarData();
+      }
+    }, 30000); // Обновляем каждые 30 секунд
+    
+    return () => clearInterval(interval);
+  }, [competition.competition_id, competition.status]);
 
   // Генерация календаря для текущего месяца
   const currentMonth = new Date().getMonth();
@@ -555,32 +593,20 @@ function CompetitionCard({ competition, user }) {
     weeks.push(week);
   }
 
-  // Функция отметки выполнения привычки
-  const handleMarkComplete = async () => {
-    if (!competition.habit_id) return;
+  // Функция для получения текущего прогресса
+  const getMyCompletedDays = () => {
+    if (!calendarData) return [];
     
-    try {
-      const { data, error } = await supabase.rpc('mark_competition_habit_complete', {
-        p_habit_id: competition.habit_id
-      });
-      
-      if (error) throw error;
-      
-      if (data.success) {
-        alert('Привычка отмечена как выполненная!');
-        // Можно обновить данные соревнования
-      }
-    } catch (error) {
-      console.error('Error marking habit complete:', error);
-      alert('Ошибка при отметке привычки');
-    }
+    // Используем данные из RPC функции
+    return calendarData.my_completed_days || [];
   };
 
-  // Проверяем, можно ли отметить сегодня
-  const canMarkToday = () => {
-    const today = new Date().getDate();
-    const myCompletedDays = calendarData?.my_completed_days || [];
-    return !myCompletedDays.includes(today);
+  // Функция для получения прогресса друга
+  const getFriendCompletedDays = () => {
+    if (!calendarData) return [];
+    
+    // Используем данные из RPC функции
+    return calendarData.friend_completed_days || [];
   };
 
   return (
@@ -638,7 +664,8 @@ function CompetitionCard({ competition, user }) {
                       return <div key={dayIndex} className="calendar-day empty"></div>;
                     }
                     
-                    const completed = calendarData.my_completed_days?.includes(day) || false;
+                    const myCompletedDays = getMyCompletedDays();
+                    const completed = myCompletedDays.includes(day);
                     const isToday = day === new Date().getDate();
                     
                     return (
@@ -673,7 +700,8 @@ function CompetitionCard({ competition, user }) {
                       return <div key={dayIndex} className="calendar-day empty"></div>;
                     }
                     
-                    const completed = calendarData.friend_completed_days?.includes(day) || false;
+                    const friendCompletedDays = getFriendCompletedDays();
+                    const completed = friendCompletedDays.includes(day);
                     const isToday = day === new Date().getDate();
                     
                     return (
@@ -692,21 +720,22 @@ function CompetitionCard({ competition, user }) {
         </div>
       )}
 
-      <div className="competition-actions">
+      {/* <div className="competition-actions">
         <button className="action-btn secondary">
           Подробнее
         </button>
         
-        {competition.status === 'active' && canMarkToday() && (
-          <button className="action-btn primary" onClick={handleMarkComplete}>
-            Выполнить сегодня
-          </button>
-        )}
+        <button 
+          className="action-btn primary"
+          onClick={() => window.location.href = '/habits'}
+        >
+          ➔ Отметить выполнение в привычках
+        </button>
         
         {competition.status === 'pending' && (
           <span className="pending-notice">Ожидает подтверждения друга</span>
         )}
-      </div>
+      </div> */}
     </div>
   );
 }
@@ -785,7 +814,8 @@ function FriendRequestItem({ request, onAccept, onDecline }) {
 function CreateCompetitionModal({ setShowCreateForm, friends, onCompetitionCreated }) {
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState({
-    title: '',
+    habitId: '', // Изменено: теперь храним ID привычки, а не title
+    habitTitle: '', // Добавлено: для отображения названия
     friendUsername: '',
     duration: 30,
     startDate: new Date().toISOString().split('T')[0],
@@ -804,21 +834,38 @@ function CreateCompetitionModal({ setShowCreateForm, friends, onCompetitionCreat
         
         if (error) throw error;
         
-        // Фильтруем привычки, которые не являются частью соревнования
-        const availableHabits = (data || []).filter(habit => 
-          !habit.competition_id || habit.competition_status !== 'active'
-        );
+        console.log('✅ Привычки получены:', data);
         
+        // Фильтруем привычки:
+        // 1. Только привычки, где пользователь является владельцем (role = 'owner')
+        // 2. Не являются частью активного соревнования
+        const availableHabits = (data || []).filter(habit => {
+          const isOwner = habit.role === 'owner';
+          const hasActiveCompetition = habit.competition_id && 
+                                      habit.competition_status === 'active';
+          
+          console.log('Фильтр привычки:', {
+            title: habit.habit_title,
+            isOwner,
+            hasActiveCompetition,
+            competition_status: habit.competition_status
+          });
+          
+          return isOwner && !hasActiveCompetition;
+        });
+        
+        console.log('✅ Доступные привычки для соревнования:', availableHabits);
         setUserHabits(availableHabits);
         
-        if (availableHabits.length > 0 && !formData.title) {
+        if (availableHabits.length > 0 && !formData.habitId) {
           setFormData(prev => ({
             ...prev,
-            title: availableHabits[0].habit_title
+            habitId: availableHabits[0].habit_id,
+            habitTitle: availableHabits[0].habit_title
           }));
         }
       } catch (error) {
-        console.error('Error loading habits:', error);
+        console.error('❌ Ошибка загрузки привычек:', error);
         setUserHabits([]);
       } finally {
         setLoadingHabits(false);
@@ -844,6 +891,19 @@ function CreateCompetitionModal({ setShowCreateForm, friends, onCompetitionCreat
     }
   };
 
+  const handleChangeHabit = (e) => {
+    const selectedHabitId = e.target.value;
+    const selectedHabit = userHabits.find(h => h.habit_id === selectedHabitId);
+    
+    if (selectedHabit) {
+      setFormData(prev => ({
+        ...prev,
+        habitId: selectedHabit.habit_id,
+        habitTitle: selectedHabit.habit_title
+      }));
+    }
+  };
+
   const handleChange = (field, value) => {
     setFormData(prev => ({
       ...prev,
@@ -853,64 +913,75 @@ function CreateCompetitionModal({ setShowCreateForm, friends, onCompetitionCreat
 
   // Функция создания соревнования
   const handleCreateCompetition = async () => {
-    if (!formData.title || !formData.friendUsername) {
+    console.log('🎯 Создание соревнования с данными:', formData);
+    
+    if (!formData.habitId || !formData.friendUsername) {
       alert('Пожалуйста, заполните все обязательные поля');
       return;
     }
 
     setCreating(true);
     try {
-      // Находим ID привычки по названию
-      const selectedHabit = userHabits.find(h => h.habit_title === formData.title);
-      
-      if (!selectedHabit) {
-        alert('Привычка не найдена');
-        return;
-      }
-
       // Создаем соревнование
       const { data, error } = await supabase.rpc('create_competition', {
-        p_habit_id: selectedHabit.habit_id,
+        p_habit_id: formData.habitId,
         p_friend_username: formData.friendUsername,
         p_total_days: formData.duration
       });
 
-      if (error) throw error;
+      console.log('📤 Результат создания соревнования:', { data, error });
 
-      if (data.success) {
-        alert('Соревнование создано успешно!');
+      if (error) {
+        console.error('❌ Ошибка RPC:', error);
+        throw error;
+      }
+
+      if (data && data.success) {
+        alert('✅ Соревнование создано успешно!');
         setShowCreateForm(false);
         if (onCompetitionCreated) {
           onCompetitionCreated();
         }
       } else {
-        alert(`Ошибка: ${data.message}`);
+        const errorMessage = data?.message || 'Неизвестная ошибка';
+        console.error('❌ Ошибка создания:', errorMessage);
+        alert(`Ошибка: ${errorMessage}`);
       }
     } catch (error) {
-      console.error('Error creating competition:', error);
-      alert('Ошибка при создании соревнования');
+      console.error('❌ Ошибка при создании соревнования:', error);
+      alert(`Ошибка: ${error.message || 'Неизвестная ошибка'}`);
     } finally {
       setCreating(false);
     }
   };
 
   return (
-    <div className="modal-overlay">
-      <div className="modal-content create-competition-modal">
+    <div className="modal-overlay" onClick={() => !creating && setShowCreateForm(false)}>
+      <div className="modal-content create-competition-modal" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
           <h3>Создать соревнование</h3>
           <button 
             className="modal-close"
             onClick={() => setShowCreateForm(false)}
+            disabled={creating}
           >
             ×
           </button>
         </div>
         
         <div className="modal-steps">
-          <div className={`step-indicator ${step >= 1 ? 'active' : ''}`}>1</div>
-          <div className={`step-indicator ${step >= 2 ? 'active' : ''}`}>2</div>
-          <div className={`step-indicator ${step >= 3 ? 'active' : ''}`}>3</div>
+          <div className={`step-indicator ${step >= 1 ? 'active' : ''}`}>
+            <span className="step-number">1</span>
+            <span className="step-label">Привычка</span>
+          </div>
+          <div className={`step-indicator ${step >= 2 ? 'active' : ''}`}>
+            <span className="step-number">2</span>
+            <span className="step-label">Настройки</span>
+          </div>
+          <div className={`step-indicator ${step >= 3 ? 'active' : ''}`}>
+            <span className="step-number">3</span>
+            <span className="step-label">Подтверждение</span>
+          </div>
         </div>
         
         <div className="modal-body">
@@ -920,47 +991,71 @@ function CreateCompetitionModal({ setShowCreateForm, friends, onCompetitionCreat
               
               {loadingHabits ? (
                 <div className="loading-habits">
+                  <div className="loading-spinner-small"></div>
                   <p>Загрузка ваших привычек...</p>
                 </div>
               ) : userHabits.length === 0 ? (
                 <div className="no-habits">
-                  <p>У вас нет доступных привычек для соревнования.</p>
-                  <p>Сначала создайте привычку в разделе "Привычки".</p>
+                  <div className="no-habits-icon">📋</div>
+                  <p><strong>У вас нет доступных привычек для соревнования.</strong></p>
+                  <p>Причины:</p>
+                  <ul className="no-habits-reasons">
+                    <li>У вас нет привычек, где вы являетесь владельцем</li>
+                    <li>Все ваши привычки уже участвуют в активных соревнованиях</li>
+                    <li>Вы еще не создали ни одной привычки</li>
+                  </ul>
+                  <p className="hint">Сначала создайте привычку в разделе "Привычки".</p>
                 </div>
               ) : (
                 <div className="form-group">
-                  <label className="form-label">Выберите привычку для соревнования</label>
+                  <label className="form-label">Выберите привычку для соревнования *</label>
                   <select
-                    value={formData.title}
-                    onChange={(e) => handleChange('title', e.target.value)}
+                    value={formData.habitId}
+                    onChange={handleChangeHabit}
                     className="form-select"
+                    required
                   >
+                    <option value="">-- Выберите привычку --</option>
                     {userHabits.map(habit => (
-                      <option key={habit.habit_id} value={habit.habit_title}>
-                        {habit.habit_title}
+                      <option key={habit.habit_id} value={habit.habit_id}>
+                        {habit.title} (с {new Date(habit.start_date).toLocaleDateString('ru-RU')})
                       </option>
                     ))}
                   </select>
+                  
+                  {formData.habitId && (
+                    <div className="selected-habit-info">
+                      <p><strong>Выбрано:</strong> {formData.habitTitle}</p>
+                      <p className="habit-hint">
+                        Эта привычка будет использоваться для соревнования. 
+                        Оба участника будут отслеживать её выполнение.
+                      </p>
+                    </div>
+                  )}
                 </div>
               )}
               
               <div className="form-group">
-                <label className="form-label">Выберите друга</label>
-                <select
-                  value={formData.friendUsername}
-                  onChange={(e) => handleChange('friendUsername', e.target.value)}
-                  className="form-select"
-                  disabled={friends.length === 0}
-                >
-                  <option value="">Выберите друга</option>
-                  {friends.map(friend => (
-                    <option key={friend.friendship_id} value={friend.username}>
-                      {friend.username}
-                    </option>
-                  ))}
-                </select>
-                {friends.length === 0 && (
-                  <p className="form-hint">У вас пока нет друзей. Добавьте друзей во вкладке "Друзья".</p>
+                <label className="form-label">Выберите друга *</label>
+                {friends.length === 0 ? (
+                  <div className="no-friends-warning">
+                    <p><strong>У вас пока нет друзей.</strong></p>
+                    <p>Добавьте друзей во вкладке "Друзья", чтобы создавать соревнования.</p>
+                  </div>
+                ) : (
+                  <select
+                    value={formData.friendUsername}
+                    onChange={(e) => handleChange('friendUsername', e.target.value)}
+                    className="form-select"
+                    required
+                  >
+                    <option value="">-- Выберите друга --</option>
+                    {friends.map(friend => (
+                      <option key={friend.friendship_id} value={friend.username}>
+                        {friend.username}
+                      </option>
+                    ))}
+                  </select>
                 )}
               </div>
             </div>
@@ -970,58 +1065,98 @@ function CreateCompetitionModal({ setShowCreateForm, friends, onCompetitionCreat
             <div className="step-content">
               <h4>Настройки соревнования</h4>
               <div className="form-group">
-                <label className="form-label">Длительность (дней)</label>
+                <label className="form-label">Длительность соревнования *</label>
                 <div className="duration-options">
-                  {[7, 14, 21, 30, 60].map(days => (
+                  {[
+                    { days: 7, label: '1 неделя' },
+                    { days: 14, label: '2 недели' },
+                    { days: 21, label: '3 недели' },
+                    { days: 30, label: '1 месяц' },
+                    { days: 60, label: '2 месяца' }
+                  ].map(option => (
                     <button
-                      key={days}
+                      key={option.days}
                       type="button"
-                      className={`duration-option ${formData.duration === days ? 'selected' : ''}`}
-                      onClick={() => handleChange('duration', days)}
+                      className={`duration-option ${formData.duration === option.days ? 'selected' : ''}`}
+                      onClick={() => handleChange('duration', option.days)}
                     >
-                      {days} дней
+                      {option.label}
                     </button>
                   ))}
                 </div>
+                <p className="form-hint">Соревнование завершится, когда один из участников выполнит привычку заданное количество дней</p>
               </div>
               
               <div className="form-group">
-                <label className="form-label">Дата начала</label>
+                <label className="form-label">Дата начала *</label>
                 <input
                   type="date"
                   value={formData.startDate}
                   onChange={(e) => handleChange('startDate', e.target.value)}
                   className="form-input"
                   min={new Date().toISOString().split('T')[0]}
+                  required
                 />
+                <p className="form-hint">Соревнование начнется с этой даты. Нельзя выбрать прошедшую дату.</p>
               </div>
             </div>
           )}
           
           {step === 3 && (
             <div className="step-content">
-              <h4>Создание ставки (опционально)</h4>
+              <h4>Подтверждение</h4>
+              
               <div className="form-group">
-                <label className="form-label">Ставка для проигравшего</label>
+                <label className="form-label">Ставка для проигравшего (опционально)</label>
                 <input
                   type="text"
                   value={formData.stake}
                   onChange={(e) => handleChange('stake', e.target.value)}
-                  placeholder="например, 'угостить кофе' или 'помыть посуду'"
+                  placeholder="например, 'угостить кофе', 'помыть посуду', 'сделать массаж'"
                   className="form-input"
                 />
-                <p className="form-hint">Ставка добавляет мотивации и делает игру интереснее</p>
+                <p className="form-hint">Добавьте ставку, чтобы сделать соревнование более интересным и мотивирующим.</p>
               </div>
               
-              <div className="summary">
-                <h5>Сводка:</h5>
-                <ul>
-                  <li><strong>Привычка:</strong> {formData.title}</li>
-                  <li><strong>Соперник:</strong> {formData.friendUsername}</li>
-                  <li><strong>Длительность:</strong> {formData.duration} дней</li>
-                  <li><strong>Начинаем:</strong> {new Date(formData.startDate).toLocaleDateString('ru-RU')}</li>
-                  {formData.stake && <li><strong>Ставка:</strong> {formData.stake}</li>}
-                </ul>
+              <div className="competition-summary">
+                <h5>Сводка соревнования:</h5>
+                <div className="summary-card">
+                  <div className="summary-row">
+                    <span className="summary-label">Привычка:</span>
+                    <span className="summary-value">{formData.habitTitle || 'Не выбрана'}</span>
+                  </div>
+                  <div className="summary-row">
+                    <span className="summary-label">Соперник:</span>
+                    <span className="summary-value">{formData.friendUsername || 'Не выбран'}</span>
+                  </div>
+                  <div className="summary-row">
+                    <span className="summary-label">Длительность:</span>
+                    <span className="summary-value">{formData.duration} дней</span>
+                  </div>
+                  <div className="summary-row">
+                    <span className="summary-label">Дата начала:</span>
+                    <span className="summary-value">
+                      {formData.startDate ? new Date(formData.startDate).toLocaleDateString('ru-RU') : 'Не указана'}
+                    </span>
+                  </div>
+                  {formData.stake && (
+                    <div className="summary-row">
+                      <span className="summary-label">Ставка:</span>
+                      <span className="summary-value stake-value">«{formData.stake}»</span>
+                    </div>
+                  )}
+                </div>
+                
+                <div className="summary-note">
+                  <p><strong>Как это работает:</strong></p>
+                  <ul className="summary-list">
+                    <li>Вы и ваш друг будете ежедневно отмечать выполнение привычки</li>
+                    <li>Тот, кто выполнит привычку больше дней, побеждает</li>
+                    <li>Соревнование автоматически завершится через {formData.duration} дней</li>
+                    <li>Вы можете видеть прогресс друг друга в реальном времени</li>
+                    <li>Привычку нужно отмечать в разделе "Привычки"</li>
+                  </ul>
+                </div>
               </div>
             </div>
           )}
@@ -1042,7 +1177,7 @@ function CreateCompetitionModal({ setShowCreateForm, friends, onCompetitionCreat
             onClick={handleNext}
             disabled={
               creating || 
-              (step === 1 && (!formData.title || !formData.friendUsername)) ||
+              (step === 1 && (!formData.habitId || !formData.friendUsername || friends.length === 0)) ||
               (step === 1 && userHabits.length === 0)
             }
           >
