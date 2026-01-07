@@ -771,49 +771,175 @@
 
 .calendar-day.empty {
   background: rgba(102, 126, 234, 0.05);
-  color: #b2bec3;
+  color: transparent;
   border: 1px dashed rgba(102, 126, 234, 0.1);
+  cursor: default;
+  opacity: 0.5;
 }
 
 .calendar-day.completed {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
-  transform: scale(1.05);
-  border: 1px solid rgba(255, 255, 255, 0.3);
+  background: linear-gradient(135deg, #4CAF50 0%, #2E7D32 100%) !important;
+  color: white !important;
+  box-shadow: 0 4px 12px rgba(76, 175, 80, 0.4) !important;
+  transform: scale(1.05) !important;
+  border: 2px solid rgba(255, 255, 255, 0.5) !important;
+  position: relative !important;
+  font-weight: 800 !important;
+  animation: completedPulse 3s ease-in-out infinite !important;
+  z-index: 2 !important;
 }
 
-.calendar-day.today {
-  border: 2px solid #667eea;
-  background: rgba(102, 126, 234, 0.15);
-  font-weight: 700;
-  animation: todayPulse 2s infinite;
+.calendar-day.completed::after {
+  content: '';
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  font-size: 9px;
+  font-weight: 900;
+  color: rgba(255, 255, 255, 0.95);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  background: rgba(0, 0, 0, 0.2);
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  z-index: 3;
 }
 
-@keyframes todayPulse {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(102, 126, 234, 0.4); }
-  50% { box-shadow: 0 0 0 4px rgba(102, 126, 234, 0); }
+@keyframes completedPulse {
+  0%, 100% { 
+    transform: scale(1.05);
+    box-shadow: 0 4px 12px rgba(76, 175, 80, 0.4);
+  }
+  50% { 
+    transform: scale(1.08);
+    box-shadow: 0 6px 16px rgba(76, 175, 80, 0.6);
+  }
 }
 
 .calendar-day.today.completed {
-  border: 2px solid white;
-  box-shadow: 0 0 0 2px #667eea, 0 4px 12px rgba(102, 126, 234, 0.3);
+  background: linear-gradient(135deg, #4CAF50 0%, #388E3C 100%) !important;
+  border: 2px solid white !important;
+  box-shadow: 0 0 0 2px #4CAF50, 0 4px 16px rgba(76, 175, 80, 0.5) !important;
+  animation: todayCompletedPulse 2s infinite !important;
+}
+
+@keyframes todayCompletedPulse {
+  0%, 100% { 
+    box-shadow: 0 0 0 2px #4CAF50, 0 4px 16px rgba(76, 175, 80, 0.5);
+  }
+  50% { 
+    box-shadow: 0 0 0 3px #4CAF50, 0 6px 20px rgba(76, 175, 80, 0.7);
+  }
+}
+
+.calendar-day.today {
+  border: 2px solid #667eea !important;
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.2), rgba(118, 75, 162, 0.15)) !important;
+  font-weight: 800 !important;
+  animation: todayPulse 2s infinite !important;
+  color: #2d3436 !important;
+  position: relative;
+}
+
+@keyframes todayPulse {
+  0%, 100% { 
+    box-shadow: 0 0 0 0 rgba(102, 126, 234, 0.4);
+    transform: scale(1);
+  }
+  50% { 
+    box-shadow: 0 0 0 4px rgba(102, 126, 234, 0);
+    transform: scale(1.05);
+  }
+}
+
+.calendar-section:last-child .calendar-day.completed {
+  background: linear-gradient(135deg, #9C27B0 0%, #7B1FA2 100%) !important;
+  border-color: rgba(255, 255, 255, 0.5) !important;
+}
+
+.calendar-section:last-child .calendar-day.today.completed {
+  background: linear-gradient(135deg, #9C27B0 0%, #6A1B9A 100%) !important;
+  border: 2px solid white !important;
+  box-shadow: 0 0 0 2px #9C27B0, 0 4px 16px rgba(156, 39, 176, 0.5) !important;
+}
+
+.calendar-day:not(.empty):not(.completed):not(.today) {
+  background: rgba(255, 255, 255, 0.85) !important;
+  color: #636e72 !important;
+  border: 1px solid rgba(102, 126, 234, 0.15) !important;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.calendar-day:not(.empty):not(.completed):not(.today):hover {
+  background: rgba(102, 126, 234, 0.1) !important;
+  transform: scale(1.02);
+  border-color: rgba(102, 126, 234, 0.25) !important;
+  cursor: default;
+}
+
+.today-indicator {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  font-size: 7px;
+  color: #667eea;
+  font-weight: 900;
+  background: rgba(255, 255, 255, 0.9);
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  z-index: 1;
+}
+
+.calendar-day.completed .today-indicator {
+  color: white;
+  background: rgba(0, 0, 0, 0.3);
 }
 
 .day-number {
   font-weight: 700;
   position: relative;
   z-index: 1;
+  font-size: 13px;
+  font-weight: 600;
 }
 
-.today-indicator {
-  position: absolute;
-  top: 3px;
-  right: 3px;
-  font-size: 8px;
-  color: #667eea;
-  animation: pulse 2s infinite;
+.calendar-day.completed .day-number {
+  color: white;
   font-weight: 800;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.calendar-stats {
+  margin-top: 12px;
+  text-align: center;
+  font-size: 13px;
+  font-weight: 600;
+  color: #636e72;
+  padding: 10px;
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.05), rgba(118, 75, 162, 0.08));
+  border-radius: 12px;
+  border: 1px solid rgba(102, 126, 234, 0.15);
+}
+
+.calendar-section:first-child .calendar-stats {
+  color: #4CAF50;
+  background: linear-gradient(135deg, rgba(76, 175, 80, 0.08), rgba(46, 125, 50, 0.12));
+  border-color: rgba(76, 175, 80, 0.2);
+}
+
+.calendar-section:last-child .calendar-stats {
+  color: #9C27B0;
+  background: linear-gradient(135deg, rgba(156, 39, 176, 0.08), rgba(123, 31, 162, 0.12));
+  border-color: rgba(156, 39, 176, 0.2);
 }
 
 /* Loading states */
@@ -2231,4 +2357,249 @@
   .nav-text {
     font-size: 10px;
   }
+}
+
+/* Индикатор "сегодня" в календаре */
+.today-indicator {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  font-size: 7px;
+  color: #667eea;
+  font-weight: 900;
+  background: rgba(255, 255, 255, 0.9);
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  z-index: 1;
+}
+
+.calendar-day.completed .today-indicator {
+  color: white;
+  background: rgba(0, 0, 0, 0.3);
+}
+
+/* Галочка в выполненном дне */
+.calendar-day.completed::after {
+  content: '✓';
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  font-size: 9px;
+  font-weight: 900;
+  color: rgba(255, 255, 255, 0.95);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  background: rgba(0, 0, 0, 0.2);
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  z-index: 3;
+}
+
+/* Календарная статистика */
+.calendar-stats {
+  margin-top: 12px;
+  text-align: center;
+  font-size: 13px;
+  font-weight: 600;
+  color: #636e72;
+  padding: 10px;
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.05), rgba(118, 75, 162, 0.08));
+  border-radius: 12px;
+  border: 1px solid rgba(102, 126, 234, 0.15);
+}
+
+.calendar-section:first-child .calendar-stats {
+  color: #4CAF50;
+  background: linear-gradient(135deg, rgba(76, 175, 80, 0.08), rgba(46, 125, 50, 0.12));
+  border-color: rgba(76, 175, 80, 0.2);
+}
+
+.calendar-section:last-child .calendar-stats {
+  color: #9C27B0;
+  background: linear-gradient(135deg, rgba(156, 39, 176, 0.08), rgba(123, 31, 162, 0.12));
+  border-color: rgba(156, 39, 176, 0.2);
+}
+
+/* ИСПРАВЛЕНИЯ ДЛЯ КАЛЕНДАРЯ - убираем лишние тени и кружки */
+
+/* Убираем лишние кружки и тени у выполненного дня */
+.calendar-day.completed {
+  background: linear-gradient(135deg, #4CAF50 0%, #2E7D32 100%) !important;
+  color: white !important;
+  box-shadow: 0 3px 8px rgba(76, 175, 80, 0.3) !important;
+  border: 2px solid rgba(255, 255, 255, 0.6) !important;
+  font-weight: 800 !important;
+  z-index: 2 !important;
+  
+  /* Убираем лишние анимации */
+  animation: none !important;
+  transform: scale(1) !important;
+}
+
+/* Упрощаем галочку - делаем её менее заметной */
+.calendar-day.completed::after {
+  content: '✓';
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  font-size: 8px;
+  font-weight: 900;
+  color: rgba(255, 255, 255, 0.9);
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  z-index: 3;
+  background: none !important;
+  text-shadow: none !important;
+}
+
+/* Исправляем для второго календаря (друга) */
+.calendar-section:last-child .calendar-day.completed {
+  background: linear-gradient(135deg, #9C27B0 0%, #7B1FA2 100%) !important;
+  border: 2px solid rgba(255, 255, 255, 0.6) !important;
+  box-shadow: 0 3px 8px rgba(156, 39, 176, 0.3) !important;
+}
+
+/* Сегодняшний день (выполненный) - упрощаем */
+.calendar-day.today.completed {
+  background: linear-gradient(135deg, #4CAF50 0%, #388E3C 100%) !important;
+  border: 2px solid white !important;
+  box-shadow: 0 0 0 2px #4CAF50, 0 3px 8px rgba(76, 175, 80, 0.4) !important;
+  animation: none !important;
+}
+
+.calendar-section:last-child .calendar-day.today.completed {
+  background: linear-gradient(135deg, #9C27B0 0%, #6A1B9A 100%) !important;
+  border: 2px solid white !important;
+  box-shadow: 0 0 0 2px #9C27B0, 0 3px 8px rgba(156, 39, 176, 0.4) !important;
+}
+
+/* Убираем лишние индикаторы сегодняшнего дня */
+.calendar-day.completed .today-indicator {
+  display: none !important;
+}
+
+/* Убираем лишние тени у невыполненных дней */
+.calendar-day:not(.empty):not(.completed):not(.today) {
+  background: rgba(255, 255, 255, 0.9) !important;
+  color: #636e72 !important;
+  border: 1px solid rgba(102, 126, 234, 0.2) !important;
+  transition: all 0.2s ease !important;
+}
+
+.calendar-day:not(.empty):not(.completed):not(.today):hover {
+  background: rgba(102, 126, 234, 0.05) !important;
+  transform: scale(1.02);
+  border-color: rgba(102, 126, 234, 0.3) !important;
+  cursor: default;
+}
+
+/* Упрощаем анимацию для сегодняшнего дня (невыполненного) */
+.calendar-day.today {
+  border: 2px solid #667eea !important;
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.08)) !important;
+  font-weight: 800 !important;
+  animation: todayPulseSimple 3s infinite !important;
+  color: #2d3436 !important;
+  position: relative;
+}
+
+@keyframes todayPulseSimple {
+  0%, 100% { 
+    box-shadow: 0 0 0 0 rgba(102, 126, 234, 0.2);
+  }
+  50% { 
+    box-shadow: 0 0 0 4px rgba(102, 126, 234, 0);
+  }
+}
+
+/* Убираем индикатор сегодняшнего дня для пустых ячеек */
+.calendar-day.empty .today-indicator {
+  display: none !important;
+}
+
+/* Улучшаем отображение числа в ячейке */
+.calendar-day .day-number {
+  font-weight: 600;
+  position: relative;
+  z-index: 2;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.calendar-day.completed .day-number {
+  color: white !important;
+  font-weight: 800 !important;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.2) !important;
+}
+
+/* Делаем сетку дней более равномерной */
+.calendar-week {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px !important; /* Уменьшаем gap для более компактного отображения */
+  margin-bottom: 4px !important;
+}
+
+.calendar-day {
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px !important; /* Немного уменьшаем радиус */
+  font-size: 13px;
+  position: relative;
+  transition: all 0.2s ease;
+}
+
+/* УБИРАЕМ ГАЛОЧКИ ВО ВСЕХ КАЛЕНДАРЯХ */
+.calendar-day.completed::after,
+.calendar-day.completed::before,
+.calendar-section:first-child .calendar-day.completed::after,
+.calendar-section:first-child .calendar-day.completed::before,
+.calendar-section:last-child .calendar-day.completed::after,
+.calendar-section:last-child .calendar-day.completed::before {
+  content: none !important;
+  display: none !important;
+  background: none !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+/* Упрощаем стили выполненного дня */
+.calendar-day.completed {
+  background: linear-gradient(135deg, #4CAF50 0%, #2E7D32 100%);
+  color: white;
+  font-weight: 700;
+  border: 2px solid rgba(255, 255, 255, 0.8);
+  box-shadow: 0 2px 6px rgba(76, 175, 80, 0.3);
+  position: relative;
+  z-index: 1;
+}
+
+.calendar-section:last-child .calendar-day.completed {
+  background: linear-gradient(135deg, #9C27B0 0%, #7B1FA2 100%);
+  border: 2px solid rgba(255, 255, 255, 0.8);
+  box-shadow: 0 2px 6px rgba(156, 39, 176, 0.3);
+}
+
+/* Убираем все кружки и значки */
+.calendar-day.completed .day-number {
+  color: white;
+  font-weight: 700;
+  position: relative;
+  z-index: 2;
 }

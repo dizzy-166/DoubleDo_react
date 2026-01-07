@@ -1,5 +1,5 @@
 // src/pages/CompetitionsPage.jsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '../services/supabase';
 import './CompetitionsPage.css';
 
@@ -57,30 +57,35 @@ function CompetitionsPage() {
   }, [user]);
 
   // Загрузка соревнований
-  useEffect(() => {
-    const loadCompetitions = async () => {
-      if (!user) return;
-      
-      try {
-        const { data, error } = await supabase.rpc('get_user_competitions');
-        
-        if (error) throw error;
-        setCompetitions(data || []);
-      } catch (error) {
-        console.error('Error loading competitions:', error);
-        setCompetitions([]);
-      }
-    };
+  const loadCompetitions = async () => {
+    if (!user) return;
     
-    if (user) loadCompetitions();
+    try {
+      const { data, error } = await supabase.rpc('get_user_competitions');
+      
+      if (error) throw error;
+      setCompetitions(data || []);
+    } catch (error) {
+      console.error('Error loading competitions:', error);
+      setCompetitions([]);
+    }
+  };
+
+  useEffect(() => {
+    if (user) {
+      loadCompetitions();
+    }
   }, [user]);
 
-  // Подписка на изменения в прогрессии привычек
+  // Подписка на изменения в прогрессии привычек - улучшенная версия
   useEffect(() => {
     if (!user) return;
 
-    const channel = supabase
-      .channel('competition_progress_changes')
+    let channels = [];
+
+    // Подписка на изменения своих привычек
+    const userChannel = supabase
+      .channel('user_habit_progress_changes')
       .on(
         'postgres_changes',
         {
@@ -90,17 +95,35 @@ function CompetitionsPage() {
           filter: `user_id=eq.${user.id}`
         },
         (payload) => {
-          console.log('Progress changed:', payload);
-          // При изменении прогресса перезагружаем соревнования
-          supabase.rpc('get_user_competitions').then(({ data }) => {
-            if (data) setCompetitions(data);
-          });
+          console.log('User progress changed:', payload);
+          loadCompetitions();
         }
       )
       .subscribe();
+    channels.push(userChannel);
+
+    // Подписка на изменения в соревнованиях
+    const competitionChannel = supabase
+      .channel('competitions_changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'competitions'
+        },
+        (payload) => {
+          console.log('Competition changed:', payload);
+          loadCompetitions();
+        }
+      )
+      .subscribe();
+    channels.push(competitionChannel);
 
     return () => {
-      supabase.removeChannel(channel);
+      channels.forEach(channel => {
+        supabase.removeChannel(channel);
+      });
     };
   }, [user]);
 
@@ -344,6 +367,7 @@ function CompetitionsPage() {
                     key={competition.competition_id} 
                     competition={competition} 
                     user={user}
+                    onRefresh={loadCompetitions}
                   />
                 ))}
               </div>
@@ -473,9 +497,7 @@ function CompetitionsPage() {
             friends={friends}
             onCompetitionCreated={() => {
               // Обновляем список соревнований после создания
-              supabase.rpc('get_user_competitions').then(({ data }) => {
-                setCompetitions(data || []);
-              });
+              loadCompetitions();
             }}
           />
         )}
@@ -487,7 +509,6 @@ function CompetitionsPage() {
           onClick={() => setActiveTab('competitions')}
         >
           <span className="nav-icon">🏆</span>
-          {/* <span className="nav-text">Соревнования</span> */}
         </button>
         
         <button 
@@ -495,7 +516,6 @@ function CompetitionsPage() {
           onClick={() => window.location.href = '/habits'}
         >
           <span className="nav-icon">✅</span>
-          {/* <span className="nav-text">Привычки</span> */}
         </button>
         
         <button 
@@ -503,7 +523,6 @@ function CompetitionsPage() {
           onClick={() => window.location.href = '/profile'}
         >
           <span className="nav-icon">👤</span>
-          {/* <span className="nav-text">Профиль</span> */}
         </button>
       </nav>
     </div>
@@ -511,9 +530,12 @@ function CompetitionsPage() {
 }
 
 // Компонент карточки соревнования
-function CompetitionCard({ competition, user }) {
+function CompetitionCard({ competition, user, onRefresh }) {
   const [calendarData, setCalendarData] = useState(null);
   const [loadingCalendar, setLoadingCalendar] = useState(false);
+  const [lastUpdate, setLastUpdate] = useState(Date.now());
+  const [myCompletedDays, setMyCompletedDays] = useState([]);
+  const [friendCompletedDays, setFriendCompletedDays] = useState([]);
   
   const dayNames = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
   
@@ -532,42 +554,82 @@ function CompetitionCard({ competition, user }) {
     return remaining;
   };
 
+  // Функция для загрузки данных календаря
+  const loadCalendarData = async () => {
+    if (!competition.competition_id) return;
+    
+    setLoadingCalendar(true);
+    try {
+      const { data, error } = await supabase.rpc('get_competition_calendar_data_fixed', {
+        p_competition_id: competition.competition_id
+      });
+      
+      if (error) throw error;
+      
+      const calendarData = data?.[0];
+      if (calendarData) {
+        setCalendarData(calendarData);
+        setMyCompletedDays(calendarData.my_completed_days || []);
+        setFriendCompletedDays(calendarData.friend_completed_days || []);
+      }
+    } catch (error) {
+      console.error('Error loading calendar data:', error);
+    } finally {
+      setLoadingCalendar(false);
+    }
+  };
+
   // Загрузка данных календаря
   useEffect(() => {
-    const loadCalendarData = async () => {
-      if (!competition.competition_id) return;
-      
-      setLoadingCalendar(true);
-      try {
-        const { data, error } = await supabase.rpc('get_competition_calendar_data_fixed', {
-          p_competition_id: competition.competition_id
-        });
-        
-        if (error) throw error;
-        setCalendarData(data?.[0] || null);
-      } catch (error) {
-        console.error('Error loading calendar data:', error);
-      } finally {
-        setLoadingCalendar(false);
-      }
-    };
-    
     loadCalendarData();
+    
+    // Подписка на изменения привычек для этого соревнования
+    const channel = supabase
+      .channel(`competition-${competition.competition_id}-progress`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'habit_progress',
+          filter: `habit_id=eq.${competition.habit_id}`
+        },
+        (payload) => {
+          console.log('Habit progress updated:', payload);
+          // Обновляем календарь с небольшой задержкой для синхронизации
+          setTimeout(() => {
+            loadCalendarData();
+          }, 500);
+        }
+      )
+      .subscribe();
     
     // Периодическое обновление данных
     const interval = setInterval(() => {
       if (competition.status === 'active') {
         loadCalendarData();
       }
-    }, 30000); // Обновляем каждые 30 секунд
+    }, 30000);
     
-    return () => clearInterval(interval);
-  }, [competition.competition_id, competition.status]);
+    // Слушатель глобальных событий обновления привычек
+    const handleHabitCompleted = () => {
+      loadCalendarData();
+    };
+    
+    window.addEventListener('habit-completed', handleHabitCompleted);
+    
+    return () => {
+      supabase.removeChannel(channel);
+      clearInterval(interval);
+      window.removeEventListener('habit-completed', handleHabitCompleted);
+    };
+  }, [competition.competition_id, competition.habit_id, competition.status, lastUpdate]);
 
   // Генерация календаря для текущего месяца
   const currentMonth = new Date().getMonth();
   const currentYear = new Date().getFullYear();
   const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+  const today = new Date().getDate();
   
   // Создаем сетку дней (1-31)
   const days = Array.from({ length: daysInMonth }, (_, i) => i + 1);
@@ -593,20 +655,11 @@ function CompetitionCard({ competition, user }) {
     weeks.push(week);
   }
 
-  // Функция для получения текущего прогресса
-  const getMyCompletedDays = () => {
-    if (!calendarData) return [];
-    
-    // Используем данные из RPC функции
-    return calendarData.my_completed_days || [];
-  };
-
-  // Функция для получения прогресса друга
-  const getFriendCompletedDays = () => {
-    if (!calendarData) return [];
-    
-    // Используем данные из RPC функции
-    return calendarData.friend_completed_days || [];
+  // Функция для принудительного обновления
+  const handleRefreshCalendar = () => {
+    setLastUpdate(Date.now());
+    loadCalendarData();
+    if (onRefresh) onRefresh();
   };
 
   return (
@@ -621,6 +674,14 @@ function CompetitionCard({ competition, user }) {
             )}
           </div>
         </div>
+        {/* <button 
+          className="refresh-calendar-btn"
+          onClick={handleRefreshCalendar}
+          title="Обновить календарь"
+          disabled={loadingCalendar}
+        >
+          {loadingCalendar ? '🔄' : '🔄'}
+        </button> */}
       </div>
 
       <div className="competition-score">
@@ -644,92 +705,94 @@ function CompetitionCard({ competition, user }) {
         </div>
       </div>
 
-      {!loadingCalendar && calendarData && (
-        <div className="competition-calendars">
-          <div className="calendar-section">
-            <div className="calendar-title">● Ваш календарь</div>
-            <div className="calendar-grid">
-              <div className="weekdays-row">
-                {dayNames.map((dayName, index) => (
-                  <div key={index} className="weekday-cell">
-                    {dayName}
-                  </div>
-                ))}
-              </div>
-              
-              {weeks.map((week, weekIndex) => (
-                <div key={weekIndex} className="calendar-week">
-                  {week.map((day, dayIndex) => {
-                    if (day === null) {
-                      return <div key={dayIndex} className="calendar-day empty"></div>;
-                    }
-                    
-                    const myCompletedDays = getMyCompletedDays();
-                    const completed = myCompletedDays.includes(day);
-                    const isToday = day === new Date().getDate();
-                    
-                    return (
-                      <div 
-                        key={dayIndex} 
-                        className={`calendar-day ${completed ? 'completed' : 'empty'} ${isToday ? 'today' : ''}`}
-                      >
-                        <span className="day-number">{day}</span>
-                      </div>
-                    );
-                  })}
+      <div className="competition-calendars">
+        <div className="calendar-section">
+          <div className="calendar-title">● Ваш календарь</div>
+          <div className="calendar-grid">
+            <div className="weekdays-row">
+              {dayNames.map((dayName, index) => (
+                <div key={index} className="weekday-cell">
+                  {dayName}
                 </div>
               ))}
             </div>
+            
+            {weeks.map((week, weekIndex) => (
+              <div key={weekIndex} className="calendar-week">
+                {week.map((day, dayIndex) => {
+                  if (day === null) {
+                    return <div key={dayIndex} className="calendar-day empty"></div>;
+                  }
+                  
+                  const completed = myCompletedDays.includes(day);
+                  const isToday = day === today;
+                  
+                  return (
+                    <div 
+                      key={dayIndex} 
+                      className={`calendar-day ${completed ? 'completed' : ''} ${isToday ? 'today' : ''}`}
+                      title={`${day} ${currentMonth + 1}.${currentYear} - ${completed ? 'Выполнено' : 'Не выполнено'}`}
+                    >
+                      <span className="day-number">{day}</span>
+                      {completed && <div className="completion-check"></div>}
+                    </div>
+                  );
+                })}
+              </div>
+            ))}
           </div>
-
-          <div className="calendar-section">
-            <div className="calendar-title">● Календарь {competition.friend_username}</div>
-            <div className="calendar-grid">
-              <div className="weekdays-row">
-                {dayNames.map((dayName, index) => (
-                  <div key={index} className="weekday-cell">
-                    {dayName}
-                  </div>
-                ))}
-              </div>
-              
-              {weeks.map((week, weekIndex) => (
-                <div key={weekIndex} className="calendar-week">
-                  {week.map((day, dayIndex) => {
-                    if (day === null) {
-                      return <div key={dayIndex} className="calendar-day empty"></div>;
-                    }
-                    
-                    const friendCompletedDays = getFriendCompletedDays();
-                    const completed = friendCompletedDays.includes(day);
-                    const isToday = day === new Date().getDate();
-                    
-                    return (
-                      <div 
-                        key={dayIndex} 
-                        className={`calendar-day ${completed ? 'completed' : 'empty'} ${isToday ? 'today' : ''}`}
-                      >
-                        <span className="day-number">{day}</span>
-                      </div>
-                    );
-                  })}
-                </div>
-              ))}
-            </div>
+          <div className="calendar-stats">
+            Выполнено дней в этом месяце: {myCompletedDays.length}
           </div>
         </div>
-      )}
+
+        <div className="calendar-section">
+          <div className="calendar-title">● Календарь {competition.friend_username}</div>
+          <div className="calendar-grid">
+            <div className="weekdays-row">
+              {dayNames.map((dayName, index) => (
+                <div key={index} className="weekday-cell">
+                  {dayName}
+                </div>
+              ))}
+            </div>
+            
+            {weeks.map((week, weekIndex) => (
+              <div key={weekIndex} className="calendar-week">
+                {week.map((day, dayIndex) => {
+                  if (day === null) {
+                    return <div key={dayIndex} className="calendar-day empty"></div>;
+                  }
+                  
+                  const completed = friendCompletedDays.includes(day);
+                  const isToday = day === today;
+                  
+                  return (
+                    <div 
+                      key={dayIndex} 
+                      className={`calendar-day ${completed ? 'completed' : ''} ${isToday ? 'today' : ''}`}
+                      title={`${day} ${currentMonth + 1}.${currentYear} - ${completed ? 'Выполнено' : 'Не выполнено'}`}
+                    >
+                      <span className="day-number">{day}</span>
+                      {completed && <div className="completion-check"></div>}
+                    </div>
+                  );
+                })}
+              </div>
+            ))}
+          </div>
+          <div className="calendar-stats">
+            Выполнено дней в этом месяце: {friendCompletedDays.length}
+          </div>
+        </div>
+      </div>
 
       {/* <div className="competition-actions">
-        <button className="action-btn secondary">
-          Подробнее
-        </button>
-        
         <button 
           className="action-btn primary"
-          onClick={() => window.location.href = '/habits'}
+          onClick={() => window.location.href = `/habits?habit=${competition.habit_id}`}
         >
-          ➔ Отметить выполнение в привычках
+          ➔ Отметить выполнение
         </button>
         
         {competition.status === 'pending' && (
@@ -814,8 +877,8 @@ function FriendRequestItem({ request, onAccept, onDecline }) {
 function CreateCompetitionModal({ setShowCreateForm, friends, onCompetitionCreated }) {
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState({
-    habitId: '', // Изменено: теперь храним ID привычки, а не title
-    habitTitle: '', // Добавлено: для отображения названия
+    habitId: '',
+    habitTitle: '',
     friendUsername: '',
     duration: 30,
     startDate: new Date().toISOString().split('T')[0],
@@ -834,38 +897,29 @@ function CreateCompetitionModal({ setShowCreateForm, friends, onCompetitionCreat
         
         if (error) throw error;
         
-        console.log('✅ Привычки получены:', data);
+        console.log('Привычки получены:', data);
         
         // Фильтруем привычки:
-        // 1. Только привычки, где пользователь является владельцем (role = 'owner')
-        // 2. Не являются частью активного соревнования
         const availableHabits = (data || []).filter(habit => {
           const isOwner = habit.role === 'owner';
           const hasActiveCompetition = habit.competition_id && 
                                       habit.competition_status === 'active';
           
-          console.log('Фильтр привычки:', {
-            title: habit.habit_title,
-            isOwner,
-            hasActiveCompetition,
-            competition_status: habit.competition_status
-          });
-          
           return isOwner && !hasActiveCompetition;
         });
         
-        console.log('✅ Доступные привычки для соревнования:', availableHabits);
+        console.log('Доступные привычки для соревнования:', availableHabits);
         setUserHabits(availableHabits);
         
         if (availableHabits.length > 0 && !formData.habitId) {
           setFormData(prev => ({
             ...prev,
             habitId: availableHabits[0].habit_id,
-            habitTitle: availableHabits[0].habit_title
+            habitTitle: availableHabits[0].title || availableHabits[0].habit_title
           }));
         }
       } catch (error) {
-        console.error('❌ Ошибка загрузки привычек:', error);
+        console.error('Ошибка загрузки привычек:', error);
         setUserHabits([]);
       } finally {
         setLoadingHabits(false);
@@ -899,7 +953,7 @@ function CreateCompetitionModal({ setShowCreateForm, friends, onCompetitionCreat
       setFormData(prev => ({
         ...prev,
         habitId: selectedHabit.habit_id,
-        habitTitle: selectedHabit.habit_title
+        habitTitle: selectedHabit.title || selectedHabit.habit_title
       }));
     }
   };
@@ -913,7 +967,7 @@ function CreateCompetitionModal({ setShowCreateForm, friends, onCompetitionCreat
 
   // Функция создания соревнования
   const handleCreateCompetition = async () => {
-    console.log('🎯 Создание соревнования с данными:', formData);
+    console.log('Создание соревнования с данными:', formData);
     
     if (!formData.habitId || !formData.friendUsername) {
       alert('Пожалуйста, заполните все обязательные поля');
@@ -922,17 +976,16 @@ function CreateCompetitionModal({ setShowCreateForm, friends, onCompetitionCreat
 
     setCreating(true);
     try {
-      // Создаем соревнование
       const { data, error } = await supabase.rpc('create_competition', {
         p_habit_id: formData.habitId,
         p_friend_username: formData.friendUsername,
         p_total_days: formData.duration
       });
 
-      console.log('📤 Результат создания соревнования:', { data, error });
+      console.log('Результат создания соревнования:', { data, error });
 
       if (error) {
-        console.error('❌ Ошибка RPC:', error);
+        console.error('Ошибка RPC:', error);
         throw error;
       }
 
@@ -942,13 +995,16 @@ function CreateCompetitionModal({ setShowCreateForm, friends, onCompetitionCreat
         if (onCompetitionCreated) {
           onCompetitionCreated();
         }
+        
+        // Отправляем событие об обновлении
+        window.dispatchEvent(new CustomEvent('competition-created'));
       } else {
         const errorMessage = data?.message || 'Неизвестная ошибка';
-        console.error('❌ Ошибка создания:', errorMessage);
+        console.error('Ошибка создания:', errorMessage);
         alert(`Ошибка: ${errorMessage}`);
       }
     } catch (error) {
-      console.error('❌ Ошибка при создании соревнования:', error);
+      console.error('Ошибка при создании соревнования:', error);
       alert(`Ошибка: ${error.message || 'Неизвестная ошибка'}`);
     } finally {
       setCreating(false);
@@ -1018,7 +1074,7 @@ function CreateCompetitionModal({ setShowCreateForm, friends, onCompetitionCreat
                     <option value="">-- Выберите привычку --</option>
                     {userHabits.map(habit => (
                       <option key={habit.habit_id} value={habit.habit_id}>
-                        {habit.title} (с {new Date(habit.start_date).toLocaleDateString('ru-RU')})
+                        {habit.title || habit.habit_title} (с {new Date(habit.start_date).toLocaleDateString('ru-RU')})
                       </option>
                     ))}
                   </select>
