@@ -51,119 +51,133 @@
   border-color: rgba(255, 255, 255, 0.6);
 }
 
-/* Вкладки */
-.main-tabs {
-  display: flex;
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  border-radius: 16px 16px 12px 12px;
-  margin: 0 -12px;
-  padding: 0;
+/* Прозрачные вкладки на градиентном фоне */
+.tabs-on-gradient {
+  padding: 0 12px;
+  margin: 16px 0 0 0; /* Убираем отрицательные margin */
   position: relative;
-  z-index: 6;
-  overflow: hidden;
-  box-shadow: none;
-  border-bottom: none;
-  margin-bottom: 0;
+  z-index: 20;
 }
 
-.tab-button {
-  flex: 1;
-  padding: 16px 0;
-  background: none;
-  border: none;
-  font-size: 14px;
-  font-weight: 600;
-  color: #6c757d;
+.gradient-tabs {
+  display: flex;
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-radius: 18px;
+  padding: 6px;
+  gap: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 
+    0 8px 32px rgba(0, 0, 0, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
   position: relative;
+  z-index: 25;
+}
+
+.gradient-tab {
+  flex: 1;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
+  gap: 10px;
+  padding: 16px 12px;
+  background: transparent;
+  border: none;
+  border-radius: 14px;
+  font-size: 15px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.9);
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
 }
 
-.tab-button::before {
+.gradient-tab::before {
   content: '';
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background: linear-gradient(135deg, rgba(102, 126, 234, 0.05), transparent);
+  background: rgba(255, 255, 255, 0.1);
   opacity: 0;
   transition: opacity 0.3s ease;
 }
 
-.tab-button:hover::before {
+.gradient-tab:hover::before {
   opacity: 1;
 }
 
-.tab-button.active {
+.gradient-tab:hover {
+  color: white;
+  transform: translateY(-2px);
+}
+
+.gradient-tab.active {
+  background: rgba(255, 255, 255, 0.95);
   color: #667eea;
+  box-shadow: 
+    0 8px 24px rgba(0, 0, 0, 0.2),
+    0 4px 12px rgba(255, 255, 255, 0.3);
+  transform: translateY(0);
+}
+
+.gradient-tab.active:hover {
+  background: white;
+  transform: translateY(-2px);
+  box-shadow: 
+    0 12px 32px rgba(0, 0, 0, 0.25),
+    0 6px 16px rgba(255, 255, 255, 0.4);
+}
+
+.gradient-tab .tab-icon {
+  font-size: 18px;
+  transition: transform 0.3s ease;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+}
+
+.gradient-tab.active .tab-icon {
+  transform: scale(1.1);
+  filter: drop-shadow(0 2px 6px rgba(102, 126, 234, 0.3));
+}
+
+.gradient-tab .tab-text {
   font-weight: 700;
+  letter-spacing: 0.3px;
 }
 
-.tab-button.active::after {
-  content: '';
-  position: absolute;
-  bottom: 0;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 70%;
-  height: 3px;
-  background: linear-gradient(90deg, #667eea, #764ba2);
-  border-radius: 3px 3px 0 0;
-  box-shadow: 0 -2px 8px rgba(102, 126, 234, 0.3);
-}
-
-.badge {
+.tab-badge {
   background: linear-gradient(135deg, #FF3B30 0%, #FF9500 100%);
   color: white;
-  font-size: 10px;
-  font-weight: 700;
+  font-size: 11px;
+  font-weight: 800;
   padding: 3px 8px;
   border-radius: 10px;
-  min-width: 20px;
+  min-width: 18px;
   text-align: center;
-  animation: pulse 1.5s ease-in-out infinite;
-  box-shadow: 0 2px 8px rgba(255, 59, 48, 0.3);
-  border: 1px solid rgba(255, 255, 255, 0.3);
+  margin-left: 6px;
+  box-shadow: 0 4px 12px rgba(255, 59, 48, 0.4);
+  border: 2px solid rgba(255, 255, 255, 0.6);
+  animation: badgePulse 1.5s ease-in-out infinite;
 }
 
-@keyframes pulse {
-  0% { transform: scale(1); box-shadow: 0 2px 8px rgba(255, 59, 48, 0.3); }
-  50% { transform: scale(1.08); box-shadow: 0 4px 12px rgba(255, 59, 48, 0.4); }
-  100% { transform: scale(1); box-shadow: 0 2px 8px rgba(255, 59, 48, 0.3); }
+@keyframes badgePulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.08); }
 }
 
+/* Основной контент - ИСПРАВЛЕНО */
 .competitions-main {
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(248, 249, 255, 0.95));
-  border-radius: 0 0 20px 20px;
-  padding: 20px 16px;
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.15);
-  min-height: calc(100vh - 180px);
-  margin-top: -10px;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(248, 249, 255, 0.98));
+  border-radius: 24px 24px 0 0;
+  padding: 24px 20px;
+  box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.1);
+  min-height: calc(100vh - 200px);
+  margin-top: 12px; /* Добавляем отступ сверху */
   position: relative;
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  border-top: none;
   z-index: 5;
-}
-
-.competitions-main::before {
-  content: '';
-  position: absolute;
-  top: -10px;
-  left: 0;
-  right: 0;
-  height: 10px;
-  background: linear-gradient(
-    to bottom,
-    rgba(255, 255, 255, 0.98),
-    rgba(255, 255, 255, 0)
-  );
 }
 
 /* Заголовок соревнований */
@@ -778,106 +792,62 @@
 }
 
 .calendar-day.completed {
-  background: linear-gradient(135deg, #4CAF50 0%, #2E7D32 100%) !important;
-  color: white !important;
-  box-shadow: 0 4px 12px rgba(76, 175, 80, 0.4) !important;
-  transform: scale(1.05) !important;
-  border: 2px solid rgba(255, 255, 255, 0.5) !important;
-  position: relative !important;
-  font-weight: 800 !important;
-  animation: completedPulse 3s ease-in-out infinite !important;
-  z-index: 2 !important;
-}
-
-.calendar-day.completed::after {
-  content: '';
-  position: absolute;
-  top: 3px;
-  right: 3px;
-  font-size: 9px;
-  font-weight: 900;
-  color: rgba(255, 255, 255, 0.95);
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
-  background: rgba(0, 0, 0, 0.2);
-  width: 14px;
-  height: 14px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  line-height: 1;
-  z-index: 3;
-}
-
-@keyframes completedPulse {
-  0%, 100% { 
-    transform: scale(1.05);
-    box-shadow: 0 4px 12px rgba(76, 175, 80, 0.4);
-  }
-  50% { 
-    transform: scale(1.08);
-    box-shadow: 0 6px 16px rgba(76, 175, 80, 0.6);
-  }
+  background: linear-gradient(135deg, #4CAF50 0%, #2E7D32 100%);
+  color: white;
+  font-weight: 700;
+  border: 2px solid rgba(255, 255, 255, 0.8);
+  box-shadow: 0 2px 6px rgba(76, 175, 80, 0.3);
+  position: relative;
+  z-index: 1;
 }
 
 .calendar-day.today.completed {
-  background: linear-gradient(135deg, #4CAF50 0%, #388E3C 100%) !important;
-  border: 2px solid white !important;
-  box-shadow: 0 0 0 2px #4CAF50, 0 4px 16px rgba(76, 175, 80, 0.5) !important;
-  animation: todayCompletedPulse 2s infinite !important;
-}
-
-@keyframes todayCompletedPulse {
-  0%, 100% { 
-    box-shadow: 0 0 0 2px #4CAF50, 0 4px 16px rgba(76, 175, 80, 0.5);
-  }
-  50% { 
-    box-shadow: 0 0 0 3px #4CAF50, 0 6px 20px rgba(76, 175, 80, 0.7);
-  }
+  background: linear-gradient(135deg, #4CAF50 0%, #388E3C 100%);
+  border: 2px solid white;
+  box-shadow: 0 0 0 2px #4CAF50, 0 3px 8px rgba(76, 175, 80, 0.4);
 }
 
 .calendar-day.today {
-  border: 2px solid #667eea !important;
-  background: linear-gradient(135deg, rgba(102, 126, 234, 0.2), rgba(118, 75, 162, 0.15)) !important;
-  font-weight: 800 !important;
-  animation: todayPulse 2s infinite !important;
-  color: #2d3436 !important;
+  border: 2px solid #667eea;
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.08));
+  font-weight: 800;
+  animation: todayPulseSimple 3s infinite;
+  color: #2d3436;
   position: relative;
 }
 
-@keyframes todayPulse {
+@keyframes todayPulseSimple {
   0%, 100% { 
-    box-shadow: 0 0 0 0 rgba(102, 126, 234, 0.4);
-    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(102, 126, 234, 0.2);
   }
   50% { 
     box-shadow: 0 0 0 4px rgba(102, 126, 234, 0);
-    transform: scale(1.05);
   }
 }
 
 .calendar-section:last-child .calendar-day.completed {
-  background: linear-gradient(135deg, #9C27B0 0%, #7B1FA2 100%) !important;
-  border-color: rgba(255, 255, 255, 0.5) !important;
+  background: linear-gradient(135deg, #9C27B0 0%, #7B1FA2 100%);
+  border: 2px solid rgba(255, 255, 255, 0.8);
+  box-shadow: 0 2px 6px rgba(156, 39, 176, 0.3);
 }
 
 .calendar-section:last-child .calendar-day.today.completed {
-  background: linear-gradient(135deg, #9C27B0 0%, #6A1B9A 100%) !important;
-  border: 2px solid white !important;
-  box-shadow: 0 0 0 2px #9C27B0, 0 4px 16px rgba(156, 39, 176, 0.5) !important;
+  background: linear-gradient(135deg, #9C27B0 0%, #6A1B9A 100%);
+  border: 2px solid white;
+  box-shadow: 0 0 0 2px #9C27B0, 0 3px 8px rgba(156, 39, 176, 0.4);
 }
 
 .calendar-day:not(.empty):not(.completed):not(.today) {
-  background: rgba(255, 255, 255, 0.85) !important;
-  color: #636e72 !important;
-  border: 1px solid rgba(102, 126, 234, 0.15) !important;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  background: rgba(255, 255, 255, 0.9);
+  color: #636e72;
+  border: 1px solid rgba(102, 126, 234, 0.2);
+  transition: all 0.2s ease;
 }
 
 .calendar-day:not(.empty):not(.completed):not(.today):hover {
-  background: rgba(102, 126, 234, 0.1) !important;
+  background: rgba(102, 126, 234, 0.05);
   transform: scale(1.02);
-  border-color: rgba(102, 126, 234, 0.25) !important;
+  border-color: rgba(102, 126, 234, 0.3);
   cursor: default;
 }
 
@@ -900,22 +870,24 @@
 }
 
 .calendar-day.completed .today-indicator {
-  color: white;
-  background: rgba(0, 0, 0, 0.3);
+  display: none;
+}
+
+.calendar-day.empty .today-indicator {
+  display: none;
 }
 
 .day-number {
-  font-weight: 700;
-  position: relative;
-  z-index: 1;
-  font-size: 13px;
   font-weight: 600;
+  position: relative;
+  z-index: 2;
+  font-size: 13px;
 }
 
 .calendar-day.completed .day-number {
   color: white;
   font-weight: 800;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.2);
 }
 
 .calendar-stats {
@@ -2292,6 +2264,38 @@
     margin: 0 6px;
     padding: 10px;
   }
+  
+  /* Мобильные исправления */
+  .tabs-on-gradient {
+    padding: 0 8px;
+    margin: 12px 0 0 0;
+  }
+  
+  .gradient-tabs {
+    border-radius: 16px;
+    padding: 4px;
+  }
+  
+  .gradient-tab {
+    padding: 14px 8px;
+    font-size: 14px;
+    gap: 8px;
+  }
+  
+  .gradient-tab .tab-icon {
+    font-size: 16px;
+  }
+  
+  .tab-badge {
+    font-size: 10px;
+    padding: 2px 6px;
+  }
+  
+  .competitions-main {
+    border-radius: 20px 20px 0 0;
+    padding: 20px 16px;
+    margin-top: 12px;
+  }
 }
 
 @media (max-width: 480px) {
@@ -2305,11 +2309,6 @@
   
   .friends-header h2 {
     font-size: 20px;
-  }
-  
-  .tab-button {
-    font-size: 13px;
-    padding: 14px 0;
   }
   
   .friends-tab {
@@ -2357,251 +2356,6 @@
   .nav-text {
     font-size: 10px;
   }
-}
-
-/* Индикатор "сегодня" в календаре */
-.today-indicator {
-  position: absolute;
-  top: 2px;
-  right: 2px;
-  font-size: 7px;
-  color: #667eea;
-  font-weight: 900;
-  background: rgba(255, 255, 255, 0.9);
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  line-height: 1;
-  z-index: 1;
-}
-
-.calendar-day.completed .today-indicator {
-  color: white;
-  background: rgba(0, 0, 0, 0.3);
-}
-
-/* Галочка в выполненном дне */
-.calendar-day.completed::after {
-  content: '✓';
-  position: absolute;
-  top: 3px;
-  right: 3px;
-  font-size: 9px;
-  font-weight: 900;
-  color: rgba(255, 255, 255, 0.95);
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
-  background: rgba(0, 0, 0, 0.2);
-  width: 14px;
-  height: 14px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  line-height: 1;
-  z-index: 3;
-}
-
-/* Календарная статистика */
-.calendar-stats {
-  margin-top: 12px;
-  text-align: center;
-  font-size: 13px;
-  font-weight: 600;
-  color: #636e72;
-  padding: 10px;
-  background: linear-gradient(135deg, rgba(102, 126, 234, 0.05), rgba(118, 75, 162, 0.08));
-  border-radius: 12px;
-  border: 1px solid rgba(102, 126, 234, 0.15);
-}
-
-.calendar-section:first-child .calendar-stats {
-  color: #4CAF50;
-  background: linear-gradient(135deg, rgba(76, 175, 80, 0.08), rgba(46, 125, 50, 0.12));
-  border-color: rgba(76, 175, 80, 0.2);
-}
-
-.calendar-section:last-child .calendar-stats {
-  color: #9C27B0;
-  background: linear-gradient(135deg, rgba(156, 39, 176, 0.08), rgba(123, 31, 162, 0.12));
-  border-color: rgba(156, 39, 176, 0.2);
-}
-
-/* ИСПРАВЛЕНИЯ ДЛЯ КАЛЕНДАРЯ - убираем лишние тени и кружки */
-
-/* Убираем лишние кружки и тени у выполненного дня */
-.calendar-day.completed {
-  background: linear-gradient(135deg, #4CAF50 0%, #2E7D32 100%) !important;
-  color: white !important;
-  box-shadow: 0 3px 8px rgba(76, 175, 80, 0.3) !important;
-  border: 2px solid rgba(255, 255, 255, 0.6) !important;
-  font-weight: 800 !important;
-  z-index: 2 !important;
-  
-  /* Убираем лишние анимации */
-  animation: none !important;
-  transform: scale(1) !important;
-}
-
-/* Упрощаем галочку - делаем её менее заметной */
-.calendar-day.completed::after {
-  content: '✓';
-  position: absolute;
-  top: 2px;
-  right: 2px;
-  font-size: 8px;
-  font-weight: 900;
-  color: rgba(255, 255, 255, 0.9);
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  line-height: 1;
-  z-index: 3;
-  background: none !important;
-  text-shadow: none !important;
-}
-
-/* Исправляем для второго календаря (друга) */
-.calendar-section:last-child .calendar-day.completed {
-  background: linear-gradient(135deg, #9C27B0 0%, #7B1FA2 100%) !important;
-  border: 2px solid rgba(255, 255, 255, 0.6) !important;
-  box-shadow: 0 3px 8px rgba(156, 39, 176, 0.3) !important;
-}
-
-/* Сегодняшний день (выполненный) - упрощаем */
-.calendar-day.today.completed {
-  background: linear-gradient(135deg, #4CAF50 0%, #388E3C 100%) !important;
-  border: 2px solid white !important;
-  box-shadow: 0 0 0 2px #4CAF50, 0 3px 8px rgba(76, 175, 80, 0.4) !important;
-  animation: none !important;
-}
-
-.calendar-section:last-child .calendar-day.today.completed {
-  background: linear-gradient(135deg, #9C27B0 0%, #6A1B9A 100%) !important;
-  border: 2px solid white !important;
-  box-shadow: 0 0 0 2px #9C27B0, 0 3px 8px rgba(156, 39, 176, 0.4) !important;
-}
-
-/* Убираем лишние индикаторы сегодняшнего дня */
-.calendar-day.completed .today-indicator {
-  display: none !important;
-}
-
-/* Убираем лишние тени у невыполненных дней */
-.calendar-day:not(.empty):not(.completed):not(.today) {
-  background: rgba(255, 255, 255, 0.9) !important;
-  color: #636e72 !important;
-  border: 1px solid rgba(102, 126, 234, 0.2) !important;
-  transition: all 0.2s ease !important;
-}
-
-.calendar-day:not(.empty):not(.completed):not(.today):hover {
-  background: rgba(102, 126, 234, 0.05) !important;
-  transform: scale(1.02);
-  border-color: rgba(102, 126, 234, 0.3) !important;
-  cursor: default;
-}
-
-/* Упрощаем анимацию для сегодняшнего дня (невыполненного) */
-.calendar-day.today {
-  border: 2px solid #667eea !important;
-  background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.08)) !important;
-  font-weight: 800 !important;
-  animation: todayPulseSimple 3s infinite !important;
-  color: #2d3436 !important;
-  position: relative;
-}
-
-@keyframes todayPulseSimple {
-  0%, 100% { 
-    box-shadow: 0 0 0 0 rgba(102, 126, 234, 0.2);
-  }
-  50% { 
-    box-shadow: 0 0 0 4px rgba(102, 126, 234, 0);
-  }
-}
-
-/* Убираем индикатор сегодняшнего дня для пустых ячеек */
-.calendar-day.empty .today-indicator {
-  display: none !important;
-}
-
-/* Улучшаем отображение числа в ячейке */
-.calendar-day .day-number {
-  font-weight: 600;
-  position: relative;
-  z-index: 2;
-  font-size: 13px;
-  font-weight: 600;
-}
-
-.calendar-day.completed .day-number {
-  color: white !important;
-  font-weight: 800 !important;
-  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.2) !important;
-}
-
-/* Делаем сетку дней более равномерной */
-.calendar-week {
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  gap: 4px !important; /* Уменьшаем gap для более компактного отображения */
-  margin-bottom: 4px !important;
-}
-
-.calendar-day {
-  aspect-ratio: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 8px !important; /* Немного уменьшаем радиус */
-  font-size: 13px;
-  position: relative;
-  transition: all 0.2s ease;
-}
-
-/* УБИРАЕМ ГАЛОЧКИ ВО ВСЕХ КАЛЕНДАРЯХ */
-.calendar-day.completed::after,
-.calendar-day.completed::before,
-.calendar-section:first-child .calendar-day.completed::after,
-.calendar-section:first-child .calendar-day.completed::before,
-.calendar-section:last-child .calendar-day.completed::after,
-.calendar-section:last-child .calendar-day.completed::before {
-  content: none !important;
-  display: none !important;
-  background: none !important;
-  border: none !important;
-  box-shadow: none !important;
-}
-
-/* Упрощаем стили выполненного дня */
-.calendar-day.completed {
-  background: linear-gradient(135deg, #4CAF50 0%, #2E7D32 100%);
-  color: white;
-  font-weight: 700;
-  border: 2px solid rgba(255, 255, 255, 0.8);
-  box-shadow: 0 2px 6px rgba(76, 175, 80, 0.3);
-  position: relative;
-  z-index: 1;
-}
-
-.calendar-section:last-child .calendar-day.completed {
-  background: linear-gradient(135deg, #9C27B0 0%, #7B1FA2 100%);
-  border: 2px solid rgba(255, 255, 255, 0.8);
-  box-shadow: 0 2px 6px rgba(156, 39, 176, 0.3);
-}
-
-/* Убираем все кружки и значки */
-.calendar-day.completed .day-number {
-  color: white;
-  font-weight: 700;
-  position: relative;
-  z-index: 2;
 }
 
 /* Стили для запросов в друзья */
@@ -2661,92 +2415,4 @@
 
 .cancel-btn:hover {
   background-color: #f57c00;
-}
-
-/* Стили для поиска друзей */
-.friend-search-container {
-  display: flex;
-  gap: 10px;
-  margin: 15px 0;
-}
-
-.friend-search-input {
-  flex: 1;
-  padding: 10px 15px;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  font-size: 14px;
-}
-
-.search-btn {
-  padding: 10px 20px;
-  background-color: #4CAF50;
-  color: white;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  font-size: 14px;
-  transition: background-color 0.2s;
-}
-
-.search-btn:hover {
-  background-color: #45a049;
-}
-
-.search-btn:disabled {
-  background-color: #cccccc;
-  cursor: not-allowed;
-}
-
-/* Стили для результатов поиска */
-.search-results {
-  margin-bottom: 20px;
-  padding: 15px;
-  background-color: #f8f9fa;
-  border-radius: 10px;
-}
-
-.search-result-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 12px;
-  margin-bottom: 10px;
-  background-color: white;
-  border-radius: 8px;
-  border: 1px solid #eaeaea;
-}
-
-.search-result-info {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.search-result-actions .add-friend-btn-small {
-  padding: 6px 12px;
-  background-color: #4CAF50;
-  color: white;
-  border: none;
-  border-radius: 6px;
-  font-size: 14px;
-  cursor: pointer;
-  transition: background-color 0.2s;
-}
-
-.search-result-actions .add-friend-btn-small:hover {
-  background-color: #45a049;
-}
-
-.pending-badge {
-  padding: 4px 8px;
-  background-color: #ff9800;
-  color: white;
-  border-radius: 12px;
-  font-size: 12px;
-}
-
-.already-friend {
-  color: #4CAF50;
-  font-weight: 500;
 }

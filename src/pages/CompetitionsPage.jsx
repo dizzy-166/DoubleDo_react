@@ -332,23 +332,27 @@ function CompetitionsPage() {
         </div>
       </header>
 
-      {/* Вкладки */}
-      <div className="main-tabs">
-        <button 
-          className={`tab-button ${activeTab === 'competitions' ? 'active' : ''}`}
-          onClick={() => setActiveTab('competitions')}
-        >
-          🏆 Соревнования
-        </button>
-        <button 
-          className={`tab-button ${activeTab === 'friends' ? 'active' : ''}`}
-          onClick={() => setActiveTab('friends')}
-        >
-          👥 Друзья
-          {totalRequestsCount > 0 && (
-            <span className="badge">{totalRequestsCount}</span>
-          )}
-        </button>
+            {/* Вкладки */}
+      <div className="tabs-on-gradient">
+        <div className="gradient-tabs">
+          <button 
+            className={`gradient-tab ${activeTab === 'competitions' ? 'active' : ''}`}
+            onClick={() => setActiveTab('competitions')}
+          >
+            <span className="tab-icon">🏆</span>
+            <span className="tab-text">Соревнования</span>
+          </button>
+          <button 
+            className={`gradient-tab ${activeTab === 'friends' ? 'active' : ''}`}
+            onClick={() => setActiveTab('friends')}
+          >
+            <span className="tab-icon">👥</span>
+            <span className="tab-text">Друзья</span>
+            {totalRequestsCount > 0 && (
+              <span className="tab-badge">{totalRequestsCount}</span>
+            )}
+          </button>
+        </div>
       </div>
 
       <main className="competitions-main">
