@@ -401,7 +401,7 @@ const handleSubmit = async (e) => {
             <div className="auth-progress">
               <div className="progress-step">
                 <div className="step-number">1</div>
-                <span className="step-label">Ввод email</span>
+                <span className="step-label">email</span>
               </div>
               <div className="progress-line"></div>
               <div className="progress-step active">
@@ -543,7 +543,7 @@ const handleSubmit = async (e) => {
           <div className="auth-progress">
             <div className="progress-step active">
               <div className="step-number">1</div>
-              <span className="step-label">Ввод email</span>
+              <span className="step-label"> email</span>
             </div>
             <div className="progress-line"></div>
             <div className="progress-step">

@@ -168,8 +168,8 @@ body {
 .progress-line {
   position: absolute;
   top: 18px;
-  left: 20%;
-  right: 20%;
+  left: 50px; /* Отступ от первого кружка */
+  right: 50px; /* Отступ от второго кружка */
   height: 2px;
   background: var(--light-gray);
   z-index: 1;
