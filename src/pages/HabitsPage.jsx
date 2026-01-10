@@ -11,9 +11,16 @@ function HabitsPage() {
     title: '',
     startDate: new Date()
   });
+  const [editingHabit, setEditingHabit] = useState(null);
+  const [editForm, setEditForm] = useState({
+    title: '',
+    startDate: null
+  });
 
   const [showCreateForm, setShowCreateForm] = useState(false);
+  const [showEditForm, setShowEditForm] = useState(false);
   const [showDatePicker, setShowDatePicker] = useState(false);
+  const [editDatePicker, setEditDatePicker] = useState(false);
   const [loading, setLoading] = useState(false);
   const [datePickerMonth, setDatePickerMonth] = useState(new Date().getMonth());
   const [datePickerYear, setDatePickerYear] = useState(new Date().getFullYear());
@@ -21,8 +28,10 @@ function HabitsPage() {
   const [progressData, setProgressData] = useState({});
   const [isInitialized, setIsInitialized] = useState(false);
   const [creatingHabit, setCreatingHabit] = useState(false);
+  const [updatingHabit, setUpdatingHabit] = useState(false);
   
   const datePickerRef = useRef(null);
+  const editDatePickerRef = useRef(null);
 
   const getActiveTab = () => {
     const path = location.pathname;
@@ -284,15 +293,18 @@ function HabitsPage() {
       if (datePickerRef.current && !datePickerRef.current.contains(event.target)) {
         setShowDatePicker(false);
       }
+      if (editDatePickerRef.current && !editDatePickerRef.current.contains(event.target)) {
+        setEditDatePicker(false);
+      }
     }
     
-    if (showDatePicker) {
+    if (showDatePicker || editDatePicker) {
       document.addEventListener('mousedown', handleClickOutside);
       return () => {
         document.removeEventListener('mousedown', handleClickOutside);
       };
     }
-  }, [showDatePicker]);
+  }, [showDatePicker, editDatePicker]);
 
   // Генерация календаря для date picker
   const generateDatePickerCalendar = () => {
@@ -396,7 +408,7 @@ function HabitsPage() {
     }
   };
 
-  // Выбор даты
+  // Выбор даты для создания
   const handleDateSelect = (day) => {
     const selectedDate = new Date(Date.UTC(datePickerYear, datePickerMonth, day));
     const now = new Date();
@@ -407,6 +419,93 @@ function HabitsPage() {
       setShowDatePicker(false);
     } else {
       alert('Нельзя выбрать прошедшую дату. Минимальная дата - сегодня.');
+    }
+  };
+
+  // Выбор даты для редактирования
+  const handleEditDateSelect = (day) => {
+    const selectedDate = new Date(Date.UTC(datePickerYear, datePickerMonth, day));
+    const now = new Date();
+    const todayUTC = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
+    
+    if (selectedDate >= todayUTC) {
+      setEditForm({...editForm, startDate: selectedDate});
+      setEditDatePicker(false);
+    } else {
+      alert('Нельзя выбрать прошедшую дату. Минимальная дата - сегодня.');
+    }
+  };
+
+  // Открытие формы редактирования
+  const handleEditClick = (habit) => {
+    setEditingHabit(habit);
+    setEditForm({
+      title: habit.title,
+      startDate: new Date(habit.startDate)
+    });
+    setShowEditForm(true);
+  };
+
+  // Сохранение изменений привычки
+  const handleUpdateHabit = async (e) => {
+    e.preventDefault();
+    
+    if (!editForm.title.trim()) {
+      alert('Введите название привычки');
+      return;
+    }
+
+    if (!editingHabit) {
+      alert('Привычка не выбрана для редактирования');
+      return;
+    }
+
+    setUpdatingHabit(true);
+    
+    try {
+      const formattedDate = editForm.startDate.toISOString().split('T')[0];
+      
+      // Обновляем привычку в базе данных
+      const { data, error } = await supabase
+        .from('habits')
+        .update({
+          title: editForm.title.trim(),
+          start_date: formattedDate,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', editingHabit.id)
+        .select();
+      
+      if (error) {
+        console.error('Ошибка обновления привычки:', error);
+        throw error;
+      }
+      
+      console.log('✅ Привычка обновлена:', data);
+      
+      // Обновляем локально
+      setHabits(habits.map(habit => 
+        habit.id === editingHabit.id 
+          ? { 
+              ...habit, 
+              title: editForm.title.trim(),
+              startDate: editForm.startDate
+            }
+          : habit
+      ));
+      
+      // Закрываем форму
+      setShowEditForm(false);
+      setEditingHabit(null);
+      setEditForm({ title: '', startDate: null });
+      
+      alert('Привычка успешно обновлена!');
+      
+    } catch (error) {
+      console.error('🔥 ОШИБКА ОБНОВЛЕНИЯ ПРИВЫЧКИ:', error);
+      alert(`Ошибка: ${error.message}`);
+    } finally {
+      setUpdatingHabit(false);
     }
   };
 
@@ -421,11 +520,29 @@ function HabitsPage() {
     );
   };
 
-  // Проверка, выбран ли день в date picker
+  // Проверка, выбран ли день в date picker для создания
   const isSelectedInDatePicker = (day) => {
     if (!newHabit.startDate) return false;
     
     const selectedDate = new Date(newHabit.startDate);
+    const selectedUTC = new Date(Date.UTC(
+      selectedDate.getFullYear(),
+      selectedDate.getMonth(),
+      selectedDate.getDate()
+    ));
+    
+    return (
+      day === selectedUTC.getDate() &&
+      datePickerMonth === selectedUTC.getMonth() &&
+      datePickerYear === selectedUTC.getFullYear()
+    );
+  };
+
+  // Проверка, выбран ли день в date picker для редактирования
+  const isSelectedInEditDatePicker = (day) => {
+    if (!editForm.startDate) return false;
+    
+    const selectedDate = new Date(editForm.startDate);
     const selectedUTC = new Date(Date.UTC(
       selectedDate.getFullYear(),
       selectedDate.getMonth(),
@@ -873,6 +990,7 @@ function HabitsPage() {
               progressData={progressData}
               getDayStatus={getDayStatus}
               getDaysWord={getDaysWord}
+              onEditClick={handleEditClick}
             />
           ))}
         </div>
@@ -934,6 +1052,29 @@ function HabitsPage() {
           dayNames={dayNames}
         />
       )}
+
+      {showEditForm && editingHabit && (
+        <EditHabitModal
+          editForm={editForm}
+          setEditForm={setEditForm}
+          handleUpdateHabit={handleUpdateHabit}
+          setShowEditForm={setShowEditForm}
+          loading={updatingHabit}
+          editDatePicker={editDatePicker}
+          setEditDatePicker={setEditDatePicker}
+          datePickerRef={editDatePickerRef}
+          datePickerMonth={datePickerMonth}
+          datePickerYear={datePickerYear}
+          handlePrevMonth={handlePrevMonth}
+          handleNextMonth={handleNextMonth}
+          datePickerWeeks={datePickerWeeks}
+          handleDateSelect={handleEditDateSelect}
+          isTodayInDatePicker={isTodayInDatePicker}
+          isSelectedInDatePicker={isSelectedInEditDatePicker}
+          isPastDayInDatePicker={isPastDayInDatePicker}
+          dayNames={dayNames}
+        />
+      )}
     </div>
   );
 }
@@ -953,9 +1094,12 @@ function HabitCard({
   deleteHabit,
   progressData,
   getDayStatus,
-  getDaysWord
+  getDaysWord,
+  onEditClick
 }) {
   const [isLoading, setIsLoading] = useState(false);
+  const [showMenu, setShowMenu] = useState(false);
+  const menuRef = useRef(null);
   const progress = progressData[habit.id] || [];
 
   const now = new Date();
@@ -979,6 +1123,17 @@ function HabitCard({
   // Проверяем, выполнена ли привычка сегодня
   const isTodayCompleted = progress.find(p => p.completed_date === todayStr && p.is_completed);
 
+  // Закрытие меню при клике снаружи
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (menuRef.current && !menuRef.current.contains(event.target)) {
+        setShowMenu(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
   const handleComplete = async () => {
     if (!isTodayActive) return;
     
@@ -988,6 +1143,18 @@ function HabitCard({
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleEdit = () => {
+    onEditClick(habit);
+    setShowMenu(false);
+  };
+
+  const handleDelete = () => {
+    if (confirm(`Удалить привычку "${habit.title}"?`)) {
+      deleteHabit(habit.id);
+    }
+    setShowMenu(false);
   };
 
   // Определяем текст для кнопки
@@ -1013,19 +1180,54 @@ function HabitCard({
     return `${baseClass} disabled future-habit`;
   };
 
-  console.log('🃏 Карточка привычки:', {
-    id: habit.id,
-    title: habit.title,
-    isTodayActive,
-    isTodayCompleted,
-    daysUntilStart
-  });
-
   return (
     <div className="habit-card">
       <div className="habit-card-header">
         <div className="habit-title-section">
-          <h3 className="habit-card-title">{habit.title}</h3>
+          <div className="habit-title-with-menu">
+            {/* Меню действий СЛЕВА от названия */}
+            {habit.role === 'owner' && (
+              <div className="habit-menu-container" ref={menuRef}>
+                <button 
+                  className="habit-menu-toggle simple"
+                  onClick={() => setShowMenu(!showMenu)}
+                  title="Действия"
+                >
+                  ⋮
+                </button>
+                
+                {showMenu && (
+                  <div className="habit-menu-dropdown">
+                    <button 
+                      className="menu-item"
+                      onClick={handleEdit}
+                    >
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M11 4H4C3.46957 4 2.96086 4.21071 2.58579 4.58579C2.21071 4.96086 2 5.46957 2 6V20C2 20.5304 2.21071 21.0391 2.58579 21.4142C2.96086 21.7893 3.46957 22 4 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V13" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                        <path d="M18.5 2.5C18.8978 2.10217 19.4374 1.87868 20 1.87868C20.5626 1.87868 21.1022 2.10217 21.5 2.5C21.8978 2.89782 22.1213 3.43739 22.1213 4C22.1213 4.56261 21.8978 5.10217 21.5 5.5L12 15L8 16L9 12L18.5 2.5Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                      <span>Редактировать</span>
+                    </button>
+                    <button 
+                      className="menu-item delete"
+                      onClick={handleDelete}
+                    >
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M3 6H5H21" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                        <path d="M8 6V4C8 3.46957 8.21071 2.96086 8.58579 2.58579C8.96086 2.21071 9.46957 2 10 2H14C14.5304 2 15.0391 2.21071 15.4142 2.58579C15.7893 2.96086 16 3.46957 16 4V6M19 6V20C19 20.5304 18.7893 21.0391 18.4142 21.4142C18.0391 21.7893 17.5304 22 17 22H7C6.46957 22 5.96086 21.7893 5.58579 21.4142C5.21071 21.0391 5 20.5304 5 20V6H19Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                        <path d="M10 11V17" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                        <path d="M14 11V17" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                      <span>Удалить</span>
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+            
+            <h3 className="habit-card-title">{habit.title}</h3>
+          </div>
+          
           <div className="habit-created-date">
             C {formatDisplayDate(habit.startDate)}
             {habit.source_type === 'competition' && habit.friend_username && (
@@ -1087,14 +1289,6 @@ function HabitCard({
             <span className="streak-badge">
               🏆 {habit.my_score || 0} : {habit.friend_score || 0}
             </span>
-          )}
-          {habit.role === 'owner' && (
-            <button 
-              className="delete-habit-btn"
-              onClick={() => deleteHabit(habit.id)}
-            >
-              ✕
-            </button>
           )}
         </div>
       </div>
@@ -1263,6 +1457,175 @@ function CreateHabitModal({
               disabled={loading || !newHabit.title.trim()}
             >
               {loading ? 'Создание...' : 'Создать привычку'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+// Компонент модального окна редактирования привычки
+function EditHabitModal({
+  editForm,
+  setEditForm,
+  handleUpdateHabit,
+  setShowEditForm,
+  loading,
+  editDatePicker,
+  setEditDatePicker,
+  datePickerRef,
+  datePickerMonth,
+  datePickerYear,
+  handlePrevMonth,
+  handleNextMonth,
+  datePickerWeeks,
+  handleDateSelect,
+  isTodayInDatePicker,
+  isSelectedInDatePicker,
+  isPastDayInDatePicker,
+  dayNames
+}) {
+  const monthNamesEn = [
+    'January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December'
+  ];
+
+  return (
+    <div className="modal-overlay" onClick={() => !loading && setShowEditForm(false)}>
+      <div className="modal-content edit-habit-modal" onClick={(e) => e.stopPropagation()}>
+        <div className="modal-header">
+          <h3>Редактировать привычку</h3>
+          <button 
+            className="modal-close"
+            onClick={() => setShowEditForm(false)}
+            disabled={loading}
+          >
+            ×
+          </button>
+        </div>
+        
+        <form onSubmit={handleUpdateHabit} className="edit-habit-form">
+          <div className="form-group">
+            <label className="form-label">Название привычки</label>
+            <input
+              type="text"
+              value={editForm.title}
+              onChange={(e) => setEditForm({...editForm, title: e.target.value})}
+              placeholder="Введите новое название"
+              required
+              autoFocus
+              className="form-input"
+              disabled={loading}
+            />
+          </div>
+          
+          <div className="form-group">
+            <label className="form-label">Дата начала</label>
+            <div className="date-picker-container">
+              <div 
+                className="date-picker-input"
+                onClick={() => setEditDatePicker(!editDatePicker)}
+              >
+                <span className="date-value">
+                  {editForm.startDate ? editForm.startDate.toLocaleDateString('ru-RU') : 'Выберите дату'}
+                </span>
+                <span className="date-icon">📅</span>
+              </div>
+              
+              {editDatePicker && (
+                <div className="custom-date-picker" ref={datePickerRef}>
+                  <div className="custom-datepicker-header">
+                    <button 
+                      type="button"
+                      className="nav-button prev"
+                      onClick={handlePrevMonth}
+                    >
+                      ‹
+                    </button>
+                    <div className="current-month-year">
+                      <div className="current-month">
+                        {monthNamesEn[datePickerMonth]} {datePickerYear}
+                      </div>
+                    </div>
+                    <button 
+                      type="button"
+                      className="nav-button next"
+                      onClick={handleNextMonth}
+                    >
+                      ›
+                    </button>
+                  </div>
+                  
+                  <div className="datepicker-calendar">
+                    <div className="datepicker-weekdays">
+                      {dayNames.map((dayName, index) => (
+                        <div key={index} className="weekday-name">
+                          {dayName}
+                        </div>
+                      ))}
+                    </div>
+                    
+                    <div className="datepicker-days">
+                      {datePickerWeeks.map((week, weekIndex) => (
+                        <div key={weekIndex} className="datepicker-week">
+                          {week.map((day, dayIndex) => {
+                            if (day === null) {
+                              return (
+                                <div
+                                  key={dayIndex}
+                                  className="datepicker-day outside-month"
+                                >
+                                  {day}
+                                </div>
+                              );
+                            }
+                            
+                            const isToday = isTodayInDatePicker(day);
+                            const isSelected = isSelectedInDatePicker(day);
+                            const isPast = isPastDayInDatePicker(day);
+                            
+                            return (
+                              <button
+                                key={dayIndex}
+                                type="button"
+                                className={`datepicker-day ${isSelected ? 'selected' : ''} ${isPast ? 'disabled' : ''} ${isToday ? 'today' : ''}`}
+                                onClick={() => !isPast && handleDateSelect(day)}
+                                disabled={isPast}
+                              >
+                                {day}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+            
+            <div className="date-note">
+              <p>⚠️ Привычку можно будет выполнять только начиная с этой даты.</p>
+              <p>Если вы выберете будущую дату, кнопка "ВЫПОЛНИТЬ" будет неактивна до её наступления.</p>
+            </div>
+          </div>
+          
+          <div className="modal-actions">
+            <button 
+              type="button"
+              className="btn-secondary"
+              onClick={() => setShowEditForm(false)}
+              disabled={loading}
+            >
+              Отмена
+            </button>
+            <button 
+              type="submit"
+              className="btn-primary"
+              disabled={loading || !editForm.title.trim() || !editForm.startDate}
+            >
+              {loading ? 'Сохранение...' : 'Сохранить изменения'}
             </button>
           </div>
         </form>
