@@ -71,6 +71,7 @@ const sendOTPCode = async (email, isSignup = false) => {
   }
 };
 
+
 // Функция проверки OTP кода
 const verifyOTPCode = async (email, token) => {
   try {
@@ -112,6 +113,7 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [formErrors, setFormErrors] = useState({});
   const [canResend, setCanResend] = useState(true);
+  const [transitioning, setTransitioning] = useState(false);
 
   // Проверяем, что пользователь имеет username
   useEffect(() => {
@@ -144,6 +146,17 @@ function App() {
     if (!email) return 'Email обязателен';
     if (!/\S+@\S+\.\S+/.test(email)) return 'Некорректный email';
     return null;
+  };
+
+  // Функция для переключения режима аутентификации
+  const toggleAuthMode = () => {
+    setTransitioning(true);
+    setTimeout(() => {
+      setIsLogin(!isLogin);
+      setFormErrors({});
+      setEmail('');
+      setTransitioning(false);
+    }, 300);
   };
 
   // Обработчик отправки формы (регистрация/вход)
@@ -233,6 +246,98 @@ function App() {
     }
   };
 
+  // Функция для обработки ввода OTP
+  const handleOTPInput = (value, index) => {
+    const newCode = confirmationCode.split('');
+    
+    if (value === '') {
+      // Удаляем цифру
+      newCode[index] = '';
+    } else {
+      // Вставляем новую цифру
+      newCode[index] = value;
+    }
+    
+    const finalCode = newCode.join('');
+    setConfirmationCode(finalCode);
+  };
+
+  // Обработчик клавиш для OTP полей
+  const handleKeyDown = (e, index) => {
+    if (e.key === 'Backspace') {
+      e.preventDefault();
+      
+      // Если поле пустое, переходим к предыдущему полю
+      if (!confirmationCode[index] && index > 0) {
+        // Удаляем цифру из предыдущего поля
+        const newCode = confirmationCode.split('');
+        newCode[index - 1] = '';
+        setConfirmationCode(newCode.join(''));
+        
+        // Фокусируемся на предыдущем поле
+        setTimeout(() => {
+          const inputs = document.querySelectorAll('.otp-input');
+          if (inputs[index - 1]) {
+            inputs[index - 1].focus();
+          }
+        }, 0);
+      } else if (confirmationCode[index]) {
+        // Если в текущем поле есть цифра, очищаем его
+        handleOTPInput('', index);
+      }
+    } else if (e.key === 'ArrowLeft' && index > 0) {
+      e.preventDefault();
+      const inputs = document.querySelectorAll('.otp-input');
+      inputs[index - 1].focus();
+    } else if (e.key === 'ArrowRight' && index < 5) {
+      e.preventDefault();
+      const inputs = document.querySelectorAll('.otp-input');
+      inputs[index + 1].focus();
+    }
+  };
+
+  // Обработчик изменения OTP поля
+  const handleOTPChange = (e, index) => {
+    const value = e.target.value.replace(/\D/g, '');
+    
+    if (value) {
+      handleOTPInput(value[0], index);
+      
+      // Автопереход к следующему полю
+      if (index < 5) {
+        setTimeout(() => {
+          const inputs = document.querySelectorAll('.otp-input');
+          if (inputs[index + 1]) {
+            inputs[index + 1].focus();
+          }
+        }, 0);
+      }
+    } else {
+      // Если значение пустое
+      handleOTPInput('', index);
+    }
+  };
+
+  // Фокусировка на следующем поле
+  const focusNextInput = (index) => {
+    if (index < 5) {
+      const inputs = document.querySelectorAll('.otp-input');
+      if (inputs[index + 1]) {
+        inputs[index + 1].focus();
+      }
+    }
+  };
+
+  // Фокусировка на предыдущем поле
+  const focusPrevInput = (index) => {
+    if (index > 0) {
+      const inputs = document.querySelectorAll('.otp-input');
+      if (inputs[index - 1]) {
+        inputs[index - 1].focus();
+      }
+    }
+  };
+
   const handleResendCode = async () => {
     if (!canResend) {
       setFormErrors({ general: 'Подождите 60 секунд перед повторной отправкой' });
@@ -266,47 +371,43 @@ function App() {
       return (
         <div className="app">
           <div className="auth-container">
+            <div className="auth-progress">
+              <div className="progress-step">
+                <div className="step-number">1</div>
+                <span className="step-label">Ввод email</span>
+              </div>
+              <div className="progress-line"></div>
+              <div className="progress-step active">
+                <div className="step-number">2</div>
+                <span className="step-label">Подтверждение</span>
+              </div>
+            </div>
+
             <div className="auth-header">
               <div className="logo">
                 <div className="logo-icon">DD</div>
                 <div className="logo-text">DoubleDo</div>
               </div>
-              <p className="auth-subtitle">Подтверждение email</p>
+              <div className="auth-welcome">
+                <h1 className="auth-title">Подтверждение email</h1>
+              </div>
+              <p className="auth-subtitle">Завершите вход в ваш аккаунт</p>
             </div>
 
-            <div style={{
-              textAlign: 'center',
-              marginBottom: '32px',
-              color: 'var(--dark)'
-            }}>
-              <p style={{ 
-                fontSize: '18px', 
-                fontWeight: '500',
-                marginBottom: '8px',
-                wordBreak: 'break-all'
-              }}>
-                {pendingEmail}
-              </p>
-              <p style={{ 
-                color: 'var(--dark-gray)',
-                lineHeight: '1.5',
-                marginBottom: '8px'
-              }}>
+            <div className="otp-info">
+              <p className="otp-email">{pendingEmail}</p>
+              <p className="otp-text">
                 Мы отправили 6-значный код подтверждения на вашу почту
               </p>
-              {!isLogin && (
-                <p style={{ 
-                  color: 'var(--primary)',
-                  fontSize: '14px',
-                  marginTop: '12px',
-                  padding: '8px',
-                  backgroundColor: 'rgba(0, 150, 255, 0.1)',
-                  borderRadius: '8px'
-                }}>
+            </div>
+
+            {!isLogin && (
+              <div className="username-notice">
+                <p className="username-notice-text">
                   После регистрации ваш никнейм будет создан автоматически
                 </p>
-              )}
-            </div>
+              </div>
+            )}
 
             {formErrors.general && (
               <div className="error-message" style={{ marginBottom: '16px' }}>
@@ -316,28 +417,24 @@ function App() {
 
             <form onSubmit={handleVerifyOTP} className="auth-form">
               <div className="form-group">
-                <label className="form-label">Код из email</label>
-                <input
-                  type="text"
-                  inputMode="numeric"
-                  pattern="[0-9]*"
-                  className={`form-input ${formErrors.confirmation ? 'error' : ''}`}
-                  placeholder="Введите 6-значный код"
-                  value={confirmationCode}
-                  onChange={(e) => {
-                    const value = e.target.value.replace(/\D/g, '').slice(0, 6);
-                    setConfirmationCode(value);
-                  }}
-                  disabled={loading}
-                  style={{
-                    letterSpacing: '8px',
-                    fontSize: '24px',
-                    textAlign: 'center',
-                    fontWeight: '600',
-                    padding: '15px'
-                  }}
-                  autoFocus
-                />
+                <label className="form-label"></label>
+                <div className="otp-container">
+                  {[...Array(6)].map((_, index) => (
+                    <input
+                      key={index}
+                      type="text"
+                      inputMode="numeric"
+                      maxLength="1"
+                      className={`otp-input ${confirmationCode[index] ? 'filled' : ''} ${formErrors.confirmation ? 'error' : ''}`}
+                      value={confirmationCode[index] || ''}
+                      onChange={(e) => handleOTPChange(e, index)}
+                      onKeyDown={(e) => handleKeyDown(e, index)}
+                      onFocus={(e) => e.target.select()}
+                      disabled={loading}
+                      autoFocus={index === 0}
+                    />
+                  ))}
+                </div>
                 {formErrors.confirmation && (
                   <div className="error-message">{formErrors.confirmation}</div>
                 )}
@@ -345,19 +442,28 @@ function App() {
 
               <button 
                 type="submit" 
-                className="auth-button"
+                className={`auth-button ${loading ? 'loading' : ''}`}
                 disabled={loading || confirmationCode.length !== 6}
-                style={{
-                  opacity: confirmationCode.length !== 6 ? 0.5 : 1
-                }}
               >
-                {loading ? (
-                  <div className="loading-spinner"></div>
-                ) : 'Подтвердить'}
+                <span className="button-content">
+                  {loading ? (
+                    <>
+                      <div className="loading-spinner-small"></div>
+                      <span>Проверка...</span>
+                    </>
+                  ) : (
+                    <>
+                      <span>Подтвердить</span>
+                      <svg className="button-icon" width="20" height="20" viewBox="0 0 24 24">
+                        <path fill="currentColor" d="M10 17l5-5-5-5v10z"/>
+                      </svg>
+                    </>
+                  )}
+                </span>
               </button>
             </form>
 
-            <div className="auth-toggle">
+            {/* <div className="auth-toggle">
               <span className="toggle-text">
                 Не пришел код?
               </span>
@@ -366,32 +472,20 @@ function App() {
                 className="toggle-button"
                 onClick={handleResendCode}
                 disabled={!canResend || loading}
-                style={{
-                  opacity: !canResend ? 0.5 : 1
-                }}
               >
                 {canResend ? 'Отправить снова' : 'Подождите 60 сек'}
               </button>
-            </div>
+            </div> */}
 
-            <div style={{
-              textAlign: 'center',
-              marginTop: '24px',
-              paddingTop: '24px',
-              borderTop: '1px solid var(--light-gray)'
-            }}>
+            <div className="back-container">
               <button
                 type="button"
-                className="toggle-button"
+                className="back-button"
                 onClick={() => {
                   setNeedsConfirmation(false);
                   setFormErrors({});
                   setConfirmationCode('');
                   setEmail(pendingEmail);
-                }}
-                style={{
-                  fontSize: '14px',
-                  color: 'var(--dark-gray)'
                 }}
               >
                 ← Вернуться к {isLogin ? 'входу' : 'регистрации'}
@@ -405,11 +499,28 @@ function App() {
     // Основная форма (регистрация/вход)
     return (
       <div className="app">
-        <div className="auth-container">
+        <div className={`auth-container ${transitioning ? 'fade-out' : 'fade-in'}`}>
+          <div className="auth-progress">
+            <div className="progress-step active">
+              <div className="step-number">1</div>
+              <span className="step-label">Ввод email</span>
+            </div>
+            <div className="progress-line"></div>
+            <div className="progress-step">
+              <div className="step-number">2</div>
+              <span className="step-label">Подтверждение</span>
+            </div>
+          </div>
+
           <div className="auth-header">
             <div className="logo">
               <div className="logo-icon">DD</div>
               <div className="logo-text">DoubleDo</div>
+            </div>
+            <div className="auth-welcome">
+              <h1 className="auth-title">
+                {isLogin ? 'С возвращением!' : 'Присоединяйтесь к сообществу'}
+              </h1>
             </div>
             <p className="auth-subtitle">
               {isLogin 
@@ -428,74 +539,52 @@ function App() {
           <form onSubmit={handleSubmit} className="auth-form">
             <div className="form-group">
               <label className="form-label">Email</label>
-              <input
-                type="email" 
-                className={`form-input ${formErrors.email ? 'error' : ''}`}
-                placeholder="your@email.com"
-                value={email}
-                onChange={(e) => {
-                  setEmail(e.target.value);
-                  if (formErrors.email) {
-                    setFormErrors({ ...formErrors, email: '' });
-                  }
-                }}
-                disabled={loading}
-                autoFocus
-              />
+              <div className="input-with-icon">
+                <svg className="input-icon" width="20" height="20" viewBox="0 0 24 24" fill="none">
+                  <path d="M20 4H4C2.9 4 2 4.9 2 6V18C2 19.1 2.9 20 4 20H20C21.1 20 22 19.1 22 18V6C22 4.9 21.1 4 20 4ZM20 8L12 13L4 8V6L12 11L20 6V8Z" 
+                    fill="var(--gray)"/>
+                </svg>
+                <input
+                  type="email" 
+                  className={`form-input ${formErrors.email ? 'error' : ''}`}
+                  placeholder="your@email.com"
+                  value={email}
+                  onChange={(e) => {
+                    setEmail(e.target.value);
+                    if (formErrors.email) {
+                      setFormErrors({ ...formErrors, email: '' });
+                    }
+                  }}
+                  disabled={loading}
+                  autoFocus
+                />
+              </div>
               {formErrors.email && (
                 <div className="error-message">{formErrors.email}</div>
               )}
             </div>
 
-            {/* {!isLogin && (
-              <div style={{
-                marginBottom: '16px',
-                padding: '12px',
-                backgroundColor: 'rgba(0, 150, 255, 0.1)',
-                borderRadius: '8px',
-                fontSize: '14px',
-                color: 'var(--dark)',
-                textAlign: 'center'
-              }}>
-                <p style={{ margin: 0 }}>
-                  Ваш никнейм будет автоматически создан из вашего email
-                </p>
-                <p style={{ 
-                  margin: '4px 0 0 0',
-                  fontSize: '12px',
-                  color: 'var(--dark-gray)'
-                }}>
-                  Например: obeme22864@gmail.com → obeme22864
-                </p>
-              </div>
-            )} */}
-
             <button 
               type="submit" 
-              className="auth-button"
+              className={`auth-button ${loading ? 'loading' : ''}`}
               disabled={loading || !email.trim()}
-              style={{
-                opacity: !email.trim() ? 0.5 : 1,
-                marginTop: '20px'
-              }}
             >
-              {loading ? (
-                <div className="loading-spinner"></div>
-              ) : isLogin ? 'Войти' : 'Зарегистрироваться'}
+              <span className="button-content">
+                {loading ? (
+                  <>
+                    <div className="loading-spinner-small"></div>
+                    <span>Отправка...</span>
+                  </>
+                ) : (
+                  <>
+                    <span>{isLogin ? 'Войти' : 'Зарегистрироваться'}</span>
+                    <svg className="button-icon" width="20" height="20" viewBox="0 0 24 24">
+                      <path fill="currentColor" d="M10 17l5-5-5-5v10z"/>
+                    </svg>
+                  </>
+                )}
+              </span>
             </button>
-
-            {/* <div style={{
-              fontSize: '12px',
-              color: 'var(--gray)',
-              marginTop: '12px',
-              textAlign: 'center',
-              padding: '8px',
-              backgroundColor: 'var(--light)',
-              borderRadius: '8px',
-              border: '1px solid var(--light-gray)'
-            }}>
-              <span>Безопасный вход по email (без пароля)</span>
-            </div> */}
           </form>
 
           <div className="auth-toggle">
@@ -505,11 +594,7 @@ function App() {
             <button
               type="button"
               className="toggle-button"
-              onClick={() => {
-                setIsLogin(!isLogin);
-                setFormErrors({});
-                setEmail('');
-              }}
+              onClick={toggleAuthMode}
               disabled={loading}
             >
               {isLogin ? 'Создать аккаунт' : 'Войти'}
@@ -525,16 +610,16 @@ function App() {
     <Router>
       <Routes>
         {user && !needsConfirmation ? (
-  <>
-    <Route path="/habits" element={<HabitsPage />} />
-    <Route path="/competitions" element={<CompetitionsPage />} />
-    <Route path="/profile" element={<ProfilePage />} /> {/* Добавьте эту строку */}
-    <Route path="/" element={<Navigate to="/competitions" replace />} />
-    <Route path="*" element={<Navigate to="/competitions" replace />} />
-  </>
-) : (
-  <Route path="*" element={renderAuthScreen()} />
-)}
+          <>
+            <Route path="/habits" element={<HabitsPage />} />
+            <Route path="/competitions" element={<CompetitionsPage />} />
+            <Route path="/profile" element={<ProfilePage />} />
+            <Route path="/" element={<Navigate to="/competitions" replace />} />
+            <Route path="*" element={<Navigate to="/competitions" replace />} />
+          </>
+        ) : (
+          <Route path="*" element={renderAuthScreen()} />
+        )}
       </Routes>
     </Router>
   );
