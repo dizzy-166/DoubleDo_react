@@ -845,7 +845,7 @@ function HabitsPage() {
 
       <main className="habits-main">
         <div className="habits-list-header">
-          <h2>Мои привычки ({habits.length})</h2>
+          <h2>Мои привычки</h2>
           <button 
             className="add-habit-btn"
             onClick={() => setShowCreateForm(true)}

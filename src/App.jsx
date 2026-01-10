@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from './context/AuthContext.jsx';
 import { supabase } from './services/supabase';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
@@ -59,8 +59,7 @@ const sendOTPCode = async (email, isSignup = false) => {
     }
 
     return {
-      success: true,
-      message: '6-значный код отправлен на email. Проверьте почту.'
+      success: true
     };
   } catch (err) {
     console.error('OTP error:', err);
@@ -70,7 +69,6 @@ const sendOTPCode = async (email, isSignup = false) => {
     };
   }
 };
-
 
 // Функция проверки OTP кода
 const verifyOTPCode = async (email, token) => {
@@ -114,6 +112,12 @@ function App() {
   const [formErrors, setFormErrors] = useState({});
   const [canResend, setCanResend] = useState(true);
   const [transitioning, setTransitioning] = useState(false);
+  const otpRefs = useRef([]);
+
+  // Инициализируем рефы для OTP полей
+  useEffect(() => {
+    otpRefs.current = otpRefs.current.slice(0, 6);
+  }, []);
 
   // Проверяем, что пользователь имеет username
   useEffect(() => {
@@ -160,39 +164,40 @@ function App() {
   };
 
   // Обработчик отправки формы (регистрация/вход)
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  
+  const emailError = validateEmail(email);
+  if (emailError) {
+    setFormErrors({ email: emailError });
+    return;
+  }
+  
+  setLoading(true);
+  setFormErrors({});
+  
+  try {
+    const result = await sendOTPCode(email, !isLogin);
     
-    const emailError = validateEmail(email);
-    if (emailError) {
-      setFormErrors({ email: emailError });
-      return;
-    }
-    
-    setLoading(true);
-    setFormErrors({});
-    
-    try {
-      const result = await sendOTPCode(email, !isLogin);
+    if (result.success) {
+      setNeedsConfirmation(true);
+      setPendingEmail(email);
+      setCanResend(false);
       
-      if (result.success) {
-        setNeedsConfirmation(true);
-        setPendingEmail(email);
-        setCanResend(false);
-        
-        setTimeout(() => setCanResend(true), 60000);
-        
-        alert(result.message);
-      } else {
-        setFormErrors({ general: result.message });
-      }
-    } catch (err) {
-      setFormErrors({ general: 'Произошла ошибка. Попробуйте снова.' });
-      console.error('OTP error:', err);
-    } finally {
-      setLoading(false);
+      setTimeout(() => setCanResend(true), 60000);
+      
+      // Убрали alert(result.message);
+      // Теперь просто переходим к экрану подтверждения
+    } else {
+      setFormErrors({ general: result.message });
     }
-  };
+  } catch (err) {
+    setFormErrors({ general: 'Произошла ошибка. Попробуйте снова.' });
+    console.error('OTP error:', err);
+  } finally {
+    setLoading(false);
+  }
+};
 
   // Обработчик подтверждения OTP
   const handleVerifyOTP = async (e) => {
@@ -276,9 +281,8 @@ function App() {
         
         // Фокусируемся на предыдущем поле
         setTimeout(() => {
-          const inputs = document.querySelectorAll('.otp-input');
-          if (inputs[index - 1]) {
-            inputs[index - 1].focus();
+          if (otpRefs.current[index - 1]) {
+            otpRefs.current[index - 1].focus();
           }
         }, 0);
       } else if (confirmationCode[index]) {
@@ -287,12 +291,37 @@ function App() {
       }
     } else if (e.key === 'ArrowLeft' && index > 0) {
       e.preventDefault();
-      const inputs = document.querySelectorAll('.otp-input');
-      inputs[index - 1].focus();
+      if (otpRefs.current[index - 1]) {
+        otpRefs.current[index - 1].focus();
+      }
     } else if (e.key === 'ArrowRight' && index < 5) {
       e.preventDefault();
-      const inputs = document.querySelectorAll('.otp-input');
-      inputs[index + 1].focus();
+      if (otpRefs.current[index + 1]) {
+        otpRefs.current[index + 1].focus();
+      }
+    } else if ((e.ctrlKey || e.metaKey) && e.key === 'v') {
+      // Разрешаем вставку из буфера
+      e.preventDefault();
+      
+      // Получаем текст из буфера обмена
+      navigator.clipboard.readText()
+        .then(text => {
+          const cleanedText = text.replace(/\D/g, '').slice(0, 6);
+          if (cleanedText.length > 0) {
+            setConfirmationCode(cleanedText);
+            
+            // Фокусируемся на последнем заполненном поле
+            setTimeout(() => {
+              const lastIndex = Math.min(5, cleanedText.length - 1);
+              if (otpRefs.current[lastIndex]) {
+                otpRefs.current[lastIndex].focus();
+              }
+            }, 0);
+          }
+        })
+        .catch(err => {
+          console.error('Ошибка при чтении из буфера обмена:', err);
+        });
     }
   };
 
@@ -306,9 +335,8 @@ function App() {
       // Автопереход к следующему полю
       if (index < 5) {
         setTimeout(() => {
-          const inputs = document.querySelectorAll('.otp-input');
-          if (inputs[index + 1]) {
-            inputs[index + 1].focus();
+          if (otpRefs.current[index + 1]) {
+            otpRefs.current[index + 1].focus();
           }
         }, 0);
       }
@@ -318,23 +346,22 @@ function App() {
     }
   };
 
-  // Фокусировка на следующем поле
-  const focusNextInput = (index) => {
-    if (index < 5) {
-      const inputs = document.querySelectorAll('.otp-input');
-      if (inputs[index + 1]) {
-        inputs[index + 1].focus();
-      }
-    }
-  };
-
-  // Фокусировка на предыдущем поле
-  const focusPrevInput = (index) => {
-    if (index > 0) {
-      const inputs = document.querySelectorAll('.otp-input');
-      if (inputs[index - 1]) {
-        inputs[index - 1].focus();
-      }
+  // Обработчик вставки из буфера обмена для OTP
+  const handleOTPPaste = (e) => {
+    e.preventDefault();
+    const pastedText = e.clipboardData.getData('text');
+    const cleanedText = pastedText.replace(/\D/g, '').slice(0, 6);
+    
+    if (cleanedText.length > 0) {
+      setConfirmationCode(cleanedText);
+      
+      // Фокусируемся на последнем заполненном поле
+      setTimeout(() => {
+        const lastIndex = Math.min(5, cleanedText.length - 1);
+        if (otpRefs.current[lastIndex]) {
+          otpRefs.current[lastIndex].focus();
+        }
+      }, 0);
     }
   };
 
@@ -399,6 +426,14 @@ function App() {
               <p className="otp-text">
                 Мы отправили 6-значный код подтверждения на вашу почту
               </p>
+              <div className="paste-hint" style={{
+                fontSize: '13px',
+                color: 'var(--gray)',
+                marginTop: '8px',
+                fontStyle: 'italic'
+              }}>
+                {/* Можно вставить код через Ctrl+V или правой кнопкой → Вставить */}
+              </div>
             </div>
 
             {!isLogin && (
@@ -417,13 +452,18 @@ function App() {
 
             <form onSubmit={handleVerifyOTP} className="auth-form">
               <div className="form-group">
-                <label className="form-label"></label>
-                <div className="otp-container">
+                <label className="form-label">Код из email</label>
+                <div 
+                  className="otp-container"
+                  onPaste={handleOTPPaste}
+                >
                   {[...Array(6)].map((_, index) => (
                     <input
                       key={index}
+                      ref={el => otpRefs.current[index] = el}
                       type="text"
                       inputMode="numeric"
+                      pattern="[0-9]*"
                       maxLength="1"
                       className={`otp-input ${confirmationCode[index] ? 'filled' : ''} ${formErrors.confirmation ? 'error' : ''}`}
                       value={confirmationCode[index] || ''}
