@@ -2604,3 +2604,149 @@
   z-index: 2;
 }
 
+/* Стили для запросов в друзья */
+.request-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.request-type-icon {
+  font-size: 16px;
+  opacity: 0.7;
+}
+
+.request-time {
+  font-size: 12px;
+  color: #666;
+  margin-top: 2px;
+}
+
+.friend-request-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.accept-btn, .decline-btn, .cancel-btn {
+  padding: 6px 12px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s;
+}
+
+.accept-btn {
+  background-color: #4CAF50;
+  color: white;
+}
+
+.accept-btn:hover {
+  background-color: #45a049;
+}
+
+.decline-btn {
+  background-color: #f44336;
+  color: white;
+}
+
+.decline-btn:hover {
+  background-color: #d32f2f;
+}
+
+.cancel-btn {
+  background-color: #ff9800;
+  color: white;
+}
+
+.cancel-btn:hover {
+  background-color: #f57c00;
+}
+
+/* Стили для поиска друзей */
+.friend-search-container {
+  display: flex;
+  gap: 10px;
+  margin: 15px 0;
+}
+
+.friend-search-input {
+  flex: 1;
+  padding: 10px 15px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 14px;
+}
+
+.search-btn {
+  padding: 10px 20px;
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.2s;
+}
+
+.search-btn:hover {
+  background-color: #45a049;
+}
+
+.search-btn:disabled {
+  background-color: #cccccc;
+  cursor: not-allowed;
+}
+
+/* Стили для результатов поиска */
+.search-results {
+  margin-bottom: 20px;
+  padding: 15px;
+  background-color: #f8f9fa;
+  border-radius: 10px;
+}
+
+.search-result-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px;
+  margin-bottom: 10px;
+  background-color: white;
+  border-radius: 8px;
+  border: 1px solid #eaeaea;
+}
+
+.search-result-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.search-result-actions .add-friend-btn-small {
+  padding: 6px 12px;
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.search-result-actions .add-friend-btn-small:hover {
+  background-color: #45a049;
+}
+
+.pending-badge {
+  padding: 4px 8px;
+  background-color: #ff9800;
+  color: white;
+  border-radius: 12px;
+  font-size: 12px;
+}
+
+.already-friend {
+  color: #4CAF50;
+  font-weight: 500;
+}

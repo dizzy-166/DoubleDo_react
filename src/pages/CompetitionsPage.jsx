@@ -11,6 +11,7 @@ function CompetitionsPage() {
   const [activeTab, setActiveTab] = useState('competitions');
   const [friends, setFriends] = useState([]);
   const [friendRequests, setFriendRequests] = useState([]);
+  const [sentFriendRequests, setSentFriendRequests] = useState([]);
   const [friendsTab, setFriendsTab] = useState('friends');
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
@@ -27,33 +28,42 @@ function CompetitionsPage() {
     checkUser();
   }, []);
 
-  // Загрузка друзей
-  useEffect(() => {
-    const loadFriends = async () => {
-      if (!user) return;
-      
-      try {
-        // Загрузка списка друзей
-        const { data: friendsData, error: friendsError } = await supabase.rpc('get_friends', {
-          status_filter: 'accepted'
-        });
-        
-        if (friendsError) throw friendsError;
-        setFriends(friendsData || []);
-        
-        // Загрузка входящих запросов в друзья
-        const { data: requestsData, error: requestsError } = await supabase.rpc('get_pending_friend_requests');
-        
-        if (requestsError) throw requestsError;
-        setFriendRequests(requestsData || []);
-      } catch (error) {
-        console.error('Error loading friends:', error);
-        setFriends([]);
-        setFriendRequests([]);
-      }
-    };
+  // Загрузка друзей и запросов
+  const loadFriendsAndRequests = async () => {
+    if (!user) return;
     
-    if (user) loadFriends();
+    try {
+      // Загрузка списка друзей
+      const { data: friendsData, error: friendsError } = await supabase.rpc('get_friends', {
+        status_filter: 'accepted'
+      });
+      
+      if (friendsError) throw friendsError;
+      setFriends(friendsData || []);
+      
+      // Загрузка входящих запросов в друзья
+      const { data: requestsData, error: requestsError } = await supabase.rpc('get_pending_friend_requests');
+      
+      if (requestsError) throw requestsError;
+      setFriendRequests(requestsData || []);
+      
+      // Загрузка исходящих запросов в друзья
+      const { data: sentRequestsData, error: sentRequestsError } = await supabase.rpc('get_sent_friend_requests');
+      
+      if (sentRequestsError) throw sentRequestsError;
+      setSentFriendRequests(sentRequestsData || []);
+    } catch (error) {
+      console.error('Error loading friends:', error);
+      setFriends([]);
+      setFriendRequests([]);
+      setSentFriendRequests([]);
+    }
+  };
+
+  useEffect(() => {
+    if (user) {
+      loadFriendsAndRequests();
+    }
   }, [user]);
 
   // Загрузка соревнований
@@ -77,13 +87,12 @@ function CompetitionsPage() {
     }
   }, [user]);
 
-  // Подписка на изменения в прогрессии привычек - улучшенная версия
+  // Подписка на изменения в прогрессии привычек
   useEffect(() => {
     if (!user) return;
 
     let channels = [];
 
-    // Подписка на изменения своих привычек
     const userChannel = supabase
       .channel('user_habit_progress_changes')
       .on(
@@ -102,7 +111,6 @@ function CompetitionsPage() {
       .subscribe();
     channels.push(userChannel);
 
-    // Подписка на изменения в соревнованиях
     const competitionChannel = supabase
       .channel('competitions_changes')
       .on(
@@ -160,11 +168,8 @@ function CompetitionsPage() {
       
       if (data.success) {
         alert('Запрос в друзья отправлен!');
-        // Обновляем список друзей
-        const { data: friendsData } = await supabase.rpc('get_friends', {
-          status_filter: 'accepted'
-        });
-        setFriends(friendsData || []);
+        // Обновляем списки
+        await loadFriendsAndRequests();
       } else {
         alert(`Ошибка: ${data.message}`);
       }
@@ -187,13 +192,7 @@ function CompetitionsPage() {
       if (data.success) {
         alert('Запрос в друзья принят!');
         // Обновляем списки
-        const { data: friendsData } = await supabase.rpc('get_friends', {
-          status_filter: 'accepted'
-        });
-        setFriends(friendsData || []);
-        
-        const { data: requestsData } = await supabase.rpc('get_pending_friend_requests');
-        setFriendRequests(requestsData || []);
+        await loadFriendsAndRequests();
       }
     } catch (error) {
       console.error('Error accepting friend request:', error);
@@ -214,12 +213,33 @@ function CompetitionsPage() {
       if (data.success) {
         alert('Запрос в друзья отклонен');
         // Обновляем список запросов
-        const { data: requestsData } = await supabase.rpc('get_pending_friend_requests');
-        setFriendRequests(requestsData || []);
+        await loadFriendsAndRequests();
       }
     } catch (error) {
       console.error('Error declining friend request:', error);
       alert('Ошибка при отклонении запроса');
+    }
+  };
+
+  // Функция отмены отправленного запроса
+  const handleCancelSentRequest = async (friendshipId) => {
+    if (!confirm('Вы уверены, что хотите отменить запрос в друзья?')) return;
+    
+    try {
+      const { data, error } = await supabase.rpc('cancel_friend_request', {
+        friendship_id: friendshipId
+      });
+      
+      if (error) throw error;
+      
+      if (data.success) {
+        alert('Запрос отменен');
+        // Обновляем списки
+        await loadFriendsAndRequests();
+      }
+    } catch (error) {
+      console.error('Error canceling friend request:', error);
+      alert('Ошибка при отмене запроса');
     }
   };
 
@@ -237,10 +257,7 @@ function CompetitionsPage() {
       if (data.success) {
         alert('Друг удален');
         // Обновляем список друзей
-        const { data: friendsData } = await supabase.rpc('get_friends', {
-          status_filter: 'accepted'
-        });
-        setFriends(friendsData || []);
+        await loadFriendsAndRequests();
       }
     } catch (error) {
       console.error('Error removing friend:', error);
@@ -295,6 +312,15 @@ function CompetitionsPage() {
     // Можно предзаполнить поле друга в форме
   };
 
+  // Общее количество запросов для бейджа
+  const totalRequestsCount = friendRequests.length + sentFriendRequests.length;
+
+  // Объединенные запросы для отображения в одной вкладке
+  const allRequests = [
+    ...friendRequests.map(req => ({ ...req, type: 'incoming' })),
+    ...sentFriendRequests.map(req => ({ ...req, type: 'outgoing' }))
+  ];
+
   return (
     <div className="competitions-page">
       <header className="competitions-header">
@@ -319,8 +345,8 @@ function CompetitionsPage() {
           onClick={() => setActiveTab('friends')}
         >
           👥 Друзья
-          {friendRequests.length > 0 && (
-            <span className="badge">{friendRequests.length}</span>
+          {totalRequestsCount > 0 && (
+            <span className="badge">{totalRequestsCount}</span>
           )}
         </button>
       </div>
@@ -448,7 +474,7 @@ function CompetitionsPage() {
                 className={`friends-tab ${friendsTab === 'requests' ? 'active' : ''}`}
                 onClick={() => setFriendsTab('requests')}
               >
-                Запросы ({friendRequests.length})
+                Запросы ({totalRequestsCount})
               </button>
             </div>
 
@@ -472,18 +498,20 @@ function CompetitionsPage() {
               </div>
             ) : (
               <div className="friend-requests-list">
-                {friendRequests.map(request => (
+                {allRequests.map(request => (
                   <FriendRequestItem 
                     key={request.friendship_id} 
                     request={request} 
-                    onAccept={() => handleAcceptFriendRequest(request.friendship_id)}
-                    onDecline={() => handleDeclineFriendRequest(request.friendship_id)}
+                    type={request.type}
+                    onAccept={request.type === 'incoming' ? () => handleAcceptFriendRequest(request.friendship_id) : null}
+                    onDecline={request.type === 'incoming' ? () => handleDeclineFriendRequest(request.friendship_id) : null}
+                    onCancel={request.type === 'outgoing' ? () => handleCancelSentRequest(request.friendship_id) : null}
                   />
                 ))}
                 
-                {friendRequests.length === 0 && (
+                {allRequests.length === 0 && (
                   <div className="no-requests">
-                    <p>Нет новых запросов в друзья</p>
+                    <p>Нет запросов в друзья</p>
                   </div>
                 )}
               </div>
@@ -496,7 +524,6 @@ function CompetitionsPage() {
             setShowCreateForm={setShowCreateForm}
             friends={friends}
             onCompetitionCreated={() => {
-              // Обновляем список соревнований после создания
               loadCompetitions();
             }}
           />
@@ -596,7 +623,6 @@ function CompetitionCard({ competition, user, onRefresh }) {
         },
         (payload) => {
           console.log('Habit progress updated:', payload);
-          // Обновляем календарь с небольшой задержкой для синхронизации
           setTimeout(() => {
             loadCalendarData();
           }, 500);
@@ -604,14 +630,12 @@ function CompetitionCard({ competition, user, onRefresh }) {
       )
       .subscribe();
     
-    // Периодическое обновление данных
     const interval = setInterval(() => {
       if (competition.status === 'active') {
         loadCalendarData();
       }
     }, 30000);
     
-    // Слушатель глобальных событий обновления привычек
     const handleHabitCompleted = () => {
       loadCalendarData();
     };
@@ -674,14 +698,6 @@ function CompetitionCard({ competition, user, onRefresh }) {
             )}
           </div>
         </div>
-        {/* <button 
-          className="refresh-calendar-btn"
-          onClick={handleRefreshCalendar}
-          title="Обновить календарь"
-          disabled={loadingCalendar}
-        >
-          {loadingCalendar ? '🔄' : '🔄'}
-        </button> */}
       </div>
 
       <div className="competition-score">
@@ -786,19 +802,6 @@ function CompetitionCard({ competition, user, onRefresh }) {
           </div>
         </div>
       </div>
-
-      {/* <div className="competition-actions">
-        <button 
-          className="action-btn primary"
-          onClick={() => window.location.href = `/habits?habit=${competition.habit_id}`}
-        >
-          ➔ Отметить выполнение
-        </button>
-        
-        {competition.status === 'pending' && (
-          <span className="pending-notice">Ожидает подтверждения друга</span>
-        )}
-      </div> */}
     </div>
   );
 }
@@ -838,8 +841,8 @@ function FriendItem({ friend, onCreateCompetition, onRemoveFriend }) {
   );
 }
 
-// Компонент запроса в друзья
-function FriendRequestItem({ request, onAccept, onDecline }) {
+// Компонент запроса в друзья (объединенный для входящих и исходящих)
+function FriendRequestItem({ request, type = "incoming", onAccept, onDecline, onCancel }) {
   return (
     <div className="friend-request-item">
       <div className="friend-avatar">
@@ -847,27 +850,46 @@ function FriendRequestItem({ request, onAccept, onDecline }) {
       </div>
       
       <div className="friend-request-info">
-        <h4 className="friend-name">{request.username}</h4>
+        <div className="request-header">
+          <h4 className="friend-name">{request.username}</h4>
+          {type === 'incoming' ? (
+            <span className="request-type-icon" title="Входящий запрос">⬇️</span>
+          ) : (
+            <span className="request-type-icon" title="Исходящий запрос">⬆️</span>
+          )}
+        </div>
         <p className="request-time">
-          Запрос отправлен {new Date(request.created_at).toLocaleDateString('ru-RU')}
+          {type === 'incoming' ? 'Получен' : 'Отправлен'} {new Date(request.created_at).toLocaleDateString('ru-RU')}
         </p>
       </div>
       
       <div className="friend-request-actions">
-        <button 
-          className="accept-btn" 
-          title="Принять запрос"
-          onClick={onAccept}
-        >
-          ✓
-        </button>
-        <button 
-          className="decline-btn" 
-          title="Отклонить запрос"
-          onClick={onDecline}
-        >
-          ✕
-        </button>
+        {type === "incoming" ? (
+          <>
+            <button 
+              className="accept-btn" 
+              title="Принять запрос"
+              onClick={onAccept}
+            >
+              ✓
+            </button>
+            <button 
+              className="decline-btn" 
+              title="Отклонить запрос"
+              onClick={onDecline}
+            >
+              ✕
+            </button>
+          </>
+        ) : (
+          <button 
+            className="cancel-btn" 
+            title="Отменить запрос"
+            onClick={onCancel}
+          >
+            Отменить
+          </button>
+        )}
       </div>
     </div>
   );
@@ -899,7 +921,6 @@ function CreateCompetitionModal({ setShowCreateForm, friends, onCompetitionCreat
         
         console.log('Привычки получены:', data);
         
-        // Фильтруем привычки:
         const availableHabits = (data || []).filter(habit => {
           const isOwner = habit.role === 'owner';
           const hasActiveCompetition = habit.competition_id && 
@@ -996,7 +1017,6 @@ function CreateCompetitionModal({ setShowCreateForm, friends, onCompetitionCreat
           onCompetitionCreated();
         }
         
-        // Отправляем событие об обновлении
         window.dispatchEvent(new CustomEvent('competition-created'));
       } else {
         const errorMessage = data?.message || 'Неизвестная ошибка';

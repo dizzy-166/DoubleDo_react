@@ -436,13 +436,13 @@ const handleSubmit = async (e) => {
               </div>
             </div>
 
-            {!isLogin && (
+            {/* {!isLogin && (
               <div className="username-notice">
                 <p className="username-notice-text">
                   После регистрации ваш никнейм будет создан автоматически
                 </p>
               </div>
-            )}
+            )} */}
 
             {formErrors.general && (
               <div className="error-message" style={{ marginBottom: '16px' }}>
