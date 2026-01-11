@@ -40,11 +40,45 @@ const sendOTPCode = async (email, isSignup = false) => {
   try {
     console.log('Sending OTP to:', email, 'isSignup:', isSignup);
     
+    const cleanEmail = email.trim().toLowerCase();
+    
+    // 🔥 ВАЖНО: Всегда сначала проверяем существование пользователя
+    try {
+      // Проверяем через вашу БД
+      const { data: checkResult, error: checkError } = await supabase
+        .from('users')
+        .select('id')
+        .eq('email', cleanEmail)
+        .single();
+      
+      // Если пользователь не найден И мы пытаемся войти (не регистрироваться)
+      if (isLogin && (checkError || !checkResult)) {
+        return {
+          success: false,
+          message: 'Пользователь не зарегистрирован в системе'
+        };
+      }
+      
+      // Если пользователь найден И мы пытаемся зарегистрироваться
+      if (!isLogin && checkResult) {
+        return {
+          success: false,
+          message: 'Пользователь с таким email уже зарегистрирован'
+        };
+      }
+    } catch (checkErr) {
+      console.error('Check email error:', checkErr);
+      // Если не удалось проверить, продолжаем
+    }
+    
+    // 🔥 КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ: Правильно настраиваем shouldCreateUser
     const authOptions = {
-      email: email.trim(),
+      email: cleanEmail,
       options: {
         emailRedirectTo: window.location.origin,
-        shouldCreateUser: isSignup
+        shouldCreateUser: !isLogin // 🔥 Это ключевое изменение!
+        // false для входа (не создавать пользователя)
+        // true для регистрации (создать пользователя)
       }
     };
 
@@ -52,9 +86,23 @@ const sendOTPCode = async (email, isSignup = false) => {
 
     if (error) {
       console.error('OTP send error:', error);
+      
+      // 🔥 Переводим ошибки на русский
+      let userMessage = error.message || 'Не удалось отправить код';
+      
+      if (error.message?.includes('Signups not allowed')) {
+        userMessage = 'Пользователь не зарегистрирован в системе';
+      } else if (error.message?.includes('rate limit')) {
+        userMessage = 'Слишком много запросов. Попробуйте позже.';
+      } else if (error.message?.includes('invalid email')) {
+        userMessage = 'Некорректный email адрес';
+      } else if (error.message?.includes('email link is valid')) {
+        userMessage = 'Ссылка для подтверждения email уже отправлена';
+      }
+      
       return {
         success: false,
-        message: error.message || 'Не удалось отправить код'
+        message: userMessage
       };
     }
 
@@ -177,6 +225,33 @@ const handleSubmit = async (e) => {
   setFormErrors({});
   
   try {
+    // 🔥 Проверка существования пользователя
+    const { data: existingUsers, error: checkError } = await supabase
+      .from('users')
+      .select('id')
+      .eq('email', email.trim().toLowerCase())
+      .limit(1);
+    
+    if (checkError) {
+      console.error('Error checking user:', checkError);
+    }
+    
+    // Если пытаемся войти, но пользователь не найден
+    if (isLogin && (!existingUsers || existingUsers.length === 0)) {
+      setFormErrors({ general: 'Пользователь не зарегистрирован в системе' });
+      setLoading(false);
+      return;
+    }
+    
+    // Если пытаемся зарегистрироваться, но пользователь уже существует
+    if (!isLogin && existingUsers && existingUsers.length > 0) {
+      setFormErrors({ general: 'Пользователь с таким email уже зарегистрирован' });
+      setLoading(false);
+      return;
+    }
+    
+    // Отправляем OTP с правильным shouldCreateUser
+    // !isLogin = true для регистрации, false для входа
     const result = await sendOTPCode(email, !isLogin);
     
     if (result.success) {
@@ -185,9 +260,6 @@ const handleSubmit = async (e) => {
       setCanResend(false);
       
       setTimeout(() => setCanResend(true), 60000);
-      
-      // Убрали alert(result.message);
-      // Теперь просто переходим к экрану подтверждения
     } else {
       setFormErrors({ general: result.message });
     }
@@ -481,26 +553,26 @@ const handleSubmit = async (e) => {
               </div>
 
               <button 
-                type="submit" 
-                className={`auth-button ${loading ? 'loading' : ''}`}
-                disabled={loading || confirmationCode.length !== 6}
-              >
-                <span className="button-content">
-                  {loading ? (
-                    <>
-                      <div className="loading-spinner-small"></div>
-                      <span>Проверка...</span>
-                    </>
-                  ) : (
-                    <>
-                      <span>Подтвердить</span>
-                      <svg className="button-icon" width="20" height="20" viewBox="0 0 24 24">
-                        <path fill="currentColor" d="M10 17l5-5-5-5v10z"/>
-                      </svg>
-                    </>
-                  )}
-                </span>
-              </button>
+  type="submit" 
+  className={`auth-button ${loading ? 'loading' : ''}`}
+  disabled={loading || !email.trim()}
+>
+  <span className="button-content">
+    {loading ? (
+      <>
+        <div className="loading-spinner-small"></div>
+        <span>{isLogin ? 'Вход...' : 'Регистрация...'}</span>
+      </>
+    ) : (
+      <>
+        <span>{isLogin ? 'Войти с помощью OTP' : 'Зарегистрироваться с помощью OTP'}</span>
+        <svg className="button-icon" width="20" height="20" viewBox="0 0 24 24">
+          <path fill="currentColor" d="M10 17l5-5-5-5v10z"/>
+        </svg>
+      </>
+    )}
+  </span>
+</button>
             </form>
 
             {/* <div className="auth-toggle">
