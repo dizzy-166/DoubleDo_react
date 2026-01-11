@@ -394,278 +394,283 @@ function CompetitionsPage() {
         </div>
       </header>
 
-      {/* Вкладки */}
-      <div className="tabs-on-gradient">
-        <div className="gradient-tabs">
-          <button 
-            className={`gradient-tab ${activeTab === 'competitions' ? 'active' : ''}`}
-            onClick={() => setActiveTab('competitions')}
-          >
-            <span className="tab-icon">🏆</span>
-            <span className="tab-text">Соревнования</span>
-          </button>
-          <button 
-            className={`gradient-tab ${activeTab === 'friends' ? 'active' : ''}`}
-            onClick={() => setActiveTab('friends')}
-          >
-            <span className="tab-icon">👥</span>
-            <span className="tab-text">Друзья</span>
-            {totalRequestsCount > 0 && (
-              <span className="tab-badge">{totalRequestsCount}</span>
-            )}
-          </button>
-        </div>
-      </div>
-
-      <main className="competitions-main">
-        {activeTab === 'competitions' ? (
-          <>
-            <div className="competitions-list-header">
-              <h2>Соревнования</h2>
+      {/* Скрываем вкладки при открытой форме создания соревнования */}
+      {!showCreateForm && (
+        <>
+          {/* Вкладки */}
+          <div className="tabs-on-gradient">
+            <div className="gradient-tabs">
               <button 
-                className="add-competition-btn"
-                onClick={() => setShowCreateForm(true)}
-                disabled={loading}
+                className={`gradient-tab ${activeTab === 'competitions' ? 'active' : ''}`}
+                onClick={() => setActiveTab('competitions')}
               >
-                {loading ? '...' : '+'}
+                <span className="tab-icon">🏆</span>
+                <span className="tab-text">Соревнования</span>
+              </button>
+              <button 
+                className={`gradient-tab ${activeTab === 'friends' ? 'active' : ''}`}
+                onClick={() => setActiveTab('friends')}
+              >
+                <span className="tab-icon">👥</span>
+                <span className="tab-text">Друзья</span>
+                {totalRequestsCount > 0 && (
+                  <span className="tab-badge">{totalRequestsCount}</span>
+                )}
               </button>
             </div>
+          </div>
 
-            {competitions.length === 0 ? (
-              <div className="empty-competitions-container">
-                <div className="empty-competitions-content">
-                  <div className="empty-competitions-icon">
-                    <span className="icon-circle">🏆</span>
-                  </div>
-                  <h2 className="empty-competitions-title">
-                    У вас пока нет соревнований
-                  </h2>
-                  <p className="empty-competitions-description">
-                    Создайте соревнование с другом и следите за прогрессом вместе!
-                  </p>
-                  
+          <main className="competitions-main">
+            {activeTab === 'competitions' ? (
+              <>
+                <div className="competitions-list-header">
+                  <h2>Соревнования</h2>
                   <button 
-                    className="create-first-competition-btn"
+                    className="add-competition-btn"
                     onClick={() => setShowCreateForm(true)}
+                    disabled={loading}
                   >
-                    + Создать соревнование
+                    {loading ? '...' : '+'}
                   </button>
                 </div>
-              </div>
-            ) : (
-              <div className="competitions-list">
-                {competitions.map(competition => (
-                  <CompetitionCard 
-                    key={competition.competition_id} 
-                    competition={competition} 
-                    user={user}
-                    onRefresh={loadCompetitions}
-                  />
-                ))}
-              </div>
-            )}
-          </>
-        ) : (
-          <div className="friends-container">
-            <div className="friends-header">
-              <h2>Друзья</h2>
-              
-              {/* Поиск пользователей */}
-              <div className="friend-search-container">
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Поиск по username..."
-                  className="friend-search-input"
-                  onKeyPress={(e) => e.key === 'Enter' && handleSearchUsers()}
-                />
-                <button 
-                  className="search-btn"
-                  onClick={handleSearchUsers}
-                  disabled={searching}
-                >
-                  {searching ? 'Поиск...' : 'Найти'}
-                </button>
-              </div>
-            </div>
 
-            {/* Результаты поиска */}
-            {searchResults.length > 0 && (
-              <div className="search-results">
-                <h3>Результаты поиска:</h3>
-                {searchResults.map(user => (
-                  <div key={user.id} className="search-result-item">
-                    <div className="search-result-info">
-                      <div className="friend-avatar">
-                        <span>{user.username?.charAt(0).toUpperCase() || '👤'}</span>
+                {competitions.length === 0 ? (
+                  <div className="empty-competitions-container">
+                    <div className="empty-competitions-content">
+                      <div className="empty-competitions-icon">
+                        <span className="icon-circle">🏆</span>
                       </div>
-                      <div>
-                        <h4>{user.username}</h4>
-                        <p className="friend-status-info">
-                          {user.is_friend ? 'Уже в друзьях' : 
-                           user.friendship_status === 'pending' ? 'Запрос отправлен' : 
-                           'Не в друзьях'}
-                        </p>
-                      </div>
+                      <h2 className="empty-competitions-title">
+                        У вас пока нет соревнований
+                      </h2>
+                      <p className="empty-competitions-description">
+                        Создайте соревнование с другом и следите за прогрессом вместе!
+                      </p>
+                      
+                      <button 
+                        className="create-first-competition-btn"
+                        onClick={() => setShowCreateForm(true)}
+                      >
+                        + Создать соревнование
+                      </button>
                     </div>
-                    
-                    <div className="search-result-actions">
-                      {!user.is_friend && user.friendship_status !== 'pending' ? (
-                        <button 
-                          className="add-friend-btn-small"
-                          onClick={() => handleSendFriendRequest(user.username)}
-                        >
-                          Добавить в друзья
-                        </button>
-                      ) : user.friendship_status === 'pending' ? (
-                        <span className="pending-badge">Ожидание</span>
-                      ) : (
-                        <span className="already-friend">✓ Друг</span>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {/* Входящие запросы в друзья */}
-            {friendRequests.length > 0 && (
-              <div className="section-container">
-                <div className="section-header">
-                  <h3>Входящие запросы ({friendRequests.length})</h3>
-                </div>
-                <div className="friend-requests-list">
-                  {friendRequests.map(request => (
-                    <FriendRequestItem 
-                      key={request.friendship_id} 
-                      request={request} 
-                      type="incoming"
-                      onAccept={() => handleAcceptFriendRequest(request.friendship_id)}
-                      onDecline={() => handleDeclineFriendRequest(request.friendship_id)}
-                    />
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Исходящие запросы в друзья */}
-            {sentFriendRequests.length > 0 && (
-              <div className="section-container">
-                <div className="section-header">
-                  <h3>Исходящие запросы ({sentFriendRequests.length})</h3>
-                </div>
-                <div className="friend-requests-list">
-                  {sentFriendRequests.map(request => (
-                    <FriendRequestItem 
-                      key={request.friendship_id} 
-                      request={request} 
-                      type="outgoing"
-                      onCancel={() => handleCancelSentRequest(request.friendship_id)}
-                    />
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Список друзей */}
-            <div className="section-container">
-              <div className="section-header">
-                <h3>Мои друзья ({friends.length})</h3>
-              </div>
-              
-              <div className="friends-list">
-                {friends.map(friend => (
-                  <FriendItem 
-                    key={friend.friendship_id} 
-                    friend={friend} 
-                    onCreateCompetition={() => handleCreateCompetitionWithFriend(friend.username)}
-                    onRemoveFriend={() => handleRemoveFriend(friend.friendship_id)}
-                  />
-                ))}
-                
-                {friends.length === 0 && (
-                  <div className="no-friends">
-                    <div className="no-friends-icon">👤</div>
-                    <p><strong>У вас пока нет друзей</strong></p>
-                    <p className="hint">Используйте поиск выше, чтобы найти друзей</p>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Рекомендации друзей - показываем если мало друзей или есть рекомендации */}
-            {(friends.length < 3 || recommendedUsers.length > 0) && showRecommendations && (
-              <div className="section-container recommendations-section">
-                <div className="section-header">
-                  <h3>Возможно, вы знакомы</h3>
-                  <div className="section-header-actions">
-                    <button 
-                      className="refresh-recommendations-btn"
-                      onClick={loadRecommendedUsers}
-                      disabled={loadingRecommendations}
-                      title="Обновить рекомендации"
-                    >
-                      {loadingRecommendations ? '🔄' : '🔄'}
-                    </button>
-                    <button 
-                      className="hide-recommendations-btn"
-                      onClick={() => setShowRecommendations(false)}
-                      title="Скрыть рекомендации"
-                    >
-                      ✕
-                    </button>
-                  </div>
-                </div>
-                
-                {loadingRecommendations ? (
-                  <div className="loading-recommendations">
-                    <div className="loading-spinner-small"></div>
-                    <p>Загрузка рекомендаций...</p>
-                  </div>
-                ) : recommendedUsers.length === 0 ? (
-                  <div className="no-recommendations">
-                    <p>Нет доступных рекомендаций</p>
-                    <p className="hint">Попробуйте обновить позже</p>
                   </div>
                 ) : (
-                  <div className="recommendations-grid">
-                    {recommendedUsers.map(user => (
-                      <RecommendedUserItem 
-                        key={user.id} 
-                        user={user} 
-                        onSendRequest={() => handleSendFriendRequest(user.username)}
+                  <div className="competitions-list">
+                    {competitions.map(competition => (
+                      <CompetitionCard 
+                        key={competition.competition_id} 
+                        competition={competition} 
+                        user={user}
+                        onRefresh={loadCompetitions}
                       />
                     ))}
                   </div>
                 )}
+              </>
+            ) : (
+              <div className="friends-container">
+                <div className="friends-header">
+                  <h2>Друзья</h2>
+                  
+                  {/* Поиск пользователей */}
+                  <div className="friend-search-container">
+                    <input
+                      type="text"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      placeholder="Поиск по username..."
+                      className="friend-search-input"
+                      onKeyPress={(e) => e.key === 'Enter' && handleSearchUsers()}
+                    />
+                    <button 
+                      className="search-btn"
+                      onClick={handleSearchUsers}
+                      disabled={searching}
+                    >
+                      {searching ? 'Поиск...' : 'Найти'}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Результаты поиска */}
+                {searchResults.length > 0 && (
+                  <div className="search-results">
+                    <h3>Результаты поиска:</h3>
+                    {searchResults.map(user => (
+                      <div key={user.id} className="search-result-item">
+                        <div className="search-result-info">
+                          <div className="friend-avatar">
+                            <span>{user.username?.charAt(0).toUpperCase() || '👤'}</span>
+                          </div>
+                          <div>
+                            <h4>{user.username}</h4>
+                            <p className="friend-status-info">
+                              {user.is_friend ? 'Уже в друзьях' : 
+                               user.friendship_status === 'pending' ? 'Запрос отправлен' : 
+                               'Не в друзьях'}
+                            </p>
+                          </div>
+                        </div>
+                        
+                        <div className="search-result-actions">
+                          {!user.is_friend && user.friendship_status !== 'pending' ? (
+                            <button 
+                              className="add-friend-btn-small"
+                              onClick={() => handleSendFriendRequest(user.username)}
+                            >
+                              Добавить в друзья
+                            </button>
+                          ) : user.friendship_status === 'pending' ? (
+                            <span className="pending-badge">Ожидание</span>
+                          ) : (
+                            <span className="already-friend">✓ Друг</span>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Входящие запросы в друзья */}
+                {friendRequests.length > 0 && (
+                  <div className="section-container">
+                    <div className="section-header">
+                      <h3>Входящие запросы ({friendRequests.length})</h3>
+                    </div>
+                    <div className="friend-requests-list">
+                      {friendRequests.map(request => (
+                        <FriendRequestItem 
+                          key={request.friendship_id} 
+                          request={request} 
+                          type="incoming"
+                          onAccept={() => handleAcceptFriendRequest(request.friendship_id)}
+                          onDecline={() => handleDeclineFriendRequest(request.friendship_id)}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Исходящие запросы в друзья */}
+                {sentFriendRequests.length > 0 && (
+                  <div className="section-container">
+                    <div className="section-header">
+                      <h3>Исходящие запросы ({sentFriendRequests.length})</h3>
+                    </div>
+                    <div className="friend-requests-list">
+                      {sentFriendRequests.map(request => (
+                        <FriendRequestItem 
+                          key={request.friendship_id} 
+                          request={request} 
+                          type="outgoing"
+                          onCancel={() => handleCancelSentRequest(request.friendship_id)}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Список друзей */}
+                <div className="section-container">
+                  <div className="section-header">
+                    <h3>Мои друзья ({friends.length})</h3>
+                  </div>
+                  
+                  <div className="friends-list">
+                    {friends.map(friend => (
+                      <FriendItem 
+                        key={friend.friendship_id} 
+                        friend={friend} 
+                        onCreateCompetition={() => handleCreateCompetitionWithFriend(friend.username)}
+                        onRemoveFriend={() => handleRemoveFriend(friend.friendship_id)}
+                      />
+                    ))}
+                    
+                    {friends.length === 0 && (
+                      <div className="no-friends">
+                        <div className="no-friends-icon">👤</div>
+                        <p><strong>У вас пока нет друзей</strong></p>
+                        <p className="hint">Используйте поиск выше, чтобы найти друзей</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Рекомендации друзей - показываем если мало друзей или есть рекомендации */}
+                {(friends.length < 3 || recommendedUsers.length > 0) && showRecommendations && (
+                  <div className="section-container recommendations-section">
+                    <div className="section-header">
+                      <h3>Возможно, вы знакомы</h3>
+                      <div className="section-header-actions">
+                        <button 
+                          className="refresh-recommendations-btn"
+                          onClick={loadRecommendedUsers}
+                          disabled={loadingRecommendations}
+                          title="Обновить рекомендации"
+                        >
+                          {loadingRecommendations ? '🔄' : '🔄'}
+                        </button>
+                        <button 
+                          className="hide-recommendations-btn"
+                          onClick={() => setShowRecommendations(false)}
+                          title="Скрыть рекомендации"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    </div>
+                    
+                    {loadingRecommendations ? (
+                      <div className="loading-recommendations">
+                        <div className="loading-spinner-small"></div>
+                        <p>Загрузка рекомендаций...</p>
+                      </div>
+                    ) : recommendedUsers.length === 0 ? (
+                      <div className="no-recommendations">
+                        <p>Нет доступных рекомендаций</p>
+                        <p className="hint">Попробуйте обновить позже</p>
+                      </div>
+                    ) : (
+                      <div className="recommendations-grid">
+                        {recommendedUsers.map(user => (
+                          <RecommendedUserItem 
+                            key={user.id} 
+                            user={user} 
+                            onSendRequest={() => handleSendFriendRequest(user.username)}
+                          />
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Кнопка показа рекомендаций, если они скрыты */}
+                {!showRecommendations && (
+                  <div className="show-recommendations-container">
+                    <button 
+                      className="show-recommendations-btn"
+                      onClick={() => setShowRecommendations(true)}
+                    >
+                      Показать рекомендации друзей
+                    </button>
+                  </div>
+                )}
               </div>
             )}
+          </main>
+        </>
+      )}
 
-            {/* Кнопка показа рекомендаций, если они скрыты */}
-            {!showRecommendations && (
-              <div className="show-recommendations-container">
-                <button 
-                  className="show-recommendations-btn"
-                  onClick={() => setShowRecommendations(true)}
-                >
-                  Показать рекомендации друзей
-                </button>
-              </div>
-            )}
-          </div>
-        )}
-
-        {showCreateForm && (
-          <CreateCompetitionModal
-            setShowCreateForm={setShowCreateForm}
-            friends={friends}
-            onCompetitionCreated={() => {
-              loadCompetitions();
-            }}
-          />
-        )}
-      </main>
+      {showCreateForm && (
+        <CreateCompetitionModal
+          setShowCreateForm={setShowCreateForm}
+          friends={friends}
+          onCompetitionCreated={() => {
+            loadCompetitions();
+          }}
+        />
+      )}
 
       <nav className="bottom-nav">
         <button 
