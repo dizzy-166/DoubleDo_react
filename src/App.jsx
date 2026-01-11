@@ -36,9 +36,9 @@ const extractUsernameFromEmail = (email) => {
 };
 
 // Функция отправки OTP кода
-const sendOTPCode = async (email, isSignup = false) => {
+const sendOTPCode = async (email, shouldCreateUser, isLoginFlag) => { // Добавляем третий параметр
   try {
-    console.log('Sending OTP to:', email, 'isSignup:', isSignup);
+    console.log('Sending OTP to:', email, 'shouldCreateUser:', shouldCreateUser, 'isLoginFlag:', isLoginFlag);
     
     const cleanEmail = email.trim().toLowerCase();
     
@@ -52,7 +52,7 @@ const sendOTPCode = async (email, isSignup = false) => {
         .single();
       
       // Если пользователь не найден И мы пытаемся войти (не регистрироваться)
-      if (isLogin && (checkError || !checkResult)) {
+      if (isLoginFlag && (checkError || !checkResult)) { // Используем isLoginFlag
         return {
           success: false,
           message: 'Пользователь не зарегистрирован в системе'
@@ -60,7 +60,7 @@ const sendOTPCode = async (email, isSignup = false) => {
       }
       
       // Если пользователь найден И мы пытаемся зарегистрироваться
-      if (!isLogin && checkResult) {
+      if (!isLoginFlag && checkResult) { // Используем isLoginFlag
         return {
           success: false,
           message: 'Пользователь с таким email уже зарегистрирован'
@@ -76,9 +76,7 @@ const sendOTPCode = async (email, isSignup = false) => {
       email: cleanEmail,
       options: {
         emailRedirectTo: window.location.origin,
-        shouldCreateUser: !isLogin // 🔥 Это ключевое изменение!
-        // false для входа (не создавать пользователя)
-        // true для регистрации (создать пользователя)
+        shouldCreateUser: shouldCreateUser // Используем переданный параметр
       }
     };
 
@@ -252,7 +250,7 @@ const handleSubmit = async (e) => {
     
     // Отправляем OTP с правильным shouldCreateUser
     // !isLogin = true для регистрации, false для входа
-    const result = await sendOTPCode(email, !isLogin);
+    const result = await sendOTPCode(email, !isLogin, isLogin); // Добавляем третий параметр
     
     if (result.success) {
       setNeedsConfirmation(true);
@@ -565,7 +563,7 @@ const handleSubmit = async (e) => {
       </>
     ) : (
       <>
-        <span>{isLogin ? 'Войти с помощью OTP' : 'Зарегистрироваться с помощью OTP'}</span>
+        <span>{isLogin ? 'Войти с помощью OTP' : 'Отправить'}</span>
         <svg className="button-icon" width="20" height="20" viewBox="0 0 24 24">
           <path fill="currentColor" d="M10 17l5-5-5-5v10z"/>
         </svg>
