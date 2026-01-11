@@ -1279,7 +1279,7 @@ function CreateCompetitionModal({ setShowCreateForm, friends, onCompetitionCreat
                     className="form-select"
                     required
                   >
-                    <option value="">-- Выберите привычку --</option>
+                    {/* <option value="">-- Выберите привычку --</option> */}
                     {userHabits.map(habit => (
                       <option key={habit.habit_id} value={habit.habit_id}>
                         {habit.title || habit.habit_title} (с {new Date(habit.start_date).toLocaleDateString('ru-RU')})
