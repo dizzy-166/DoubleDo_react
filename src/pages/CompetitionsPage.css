@@ -6,6 +6,12 @@
   padding-bottom: 80px;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
   position: relative;
+  overflow-x: hidden;
+}
+
+.competitions-container {
+  position: relative;
+  z-index: 1;
 }
 
 .competitions-header {
@@ -43,6 +49,7 @@
   border: 2px solid rgba(255, 255, 255, 0.4);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   cursor: pointer;
+  outline: none;
 }
 
 .user-avatar:hover {
@@ -54,7 +61,7 @@
 /* Прозрачные вкладки на градиентном фоне */
 .tabs-on-gradient {
   padding: 0 12px;
-  margin: 16px 0 0 0; /* Убираем отрицательные margin */
+  margin: 16px 0 0 0;
   position: relative;
   z-index: 20;
 }
@@ -92,6 +99,7 @@
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
   overflow: hidden;
+  outline: none;
 }
 
 .gradient-tab::before {
@@ -168,16 +176,17 @@
   50% { transform: scale(1.08); }
 }
 
-/* Основной контент - ИСПРАВЛЕНО */
+/* Основной контент */
 .competitions-main {
   background: linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(248, 249, 255, 0.98));
   border-radius: 24px 24px 0 0;
   padding: 24px 20px;
   box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.1);
   min-height: calc(100vh - 200px);
-  margin-top: 12px; /* Добавляем отступ сверху */
+  margin-top: 12px;
   position: relative;
   z-index: 5;
+  overflow: visible;
 }
 
 /* Заголовок соревнований */
@@ -224,6 +233,7 @@
   box-shadow: 0 6px 20px rgba(108, 92, 231, 0.3);
   position: relative;
   overflow: hidden;
+  outline: none;
 }
 
 .refresh-btn::before {
@@ -260,6 +270,7 @@
   letter-spacing: 0.3px;
   position: relative;
   overflow: hidden;
+  outline: none;
 }
 
 .add-competition-btn::before {
@@ -388,6 +399,7 @@
   box-shadow: 0 8px 24px rgba(102, 126, 234, 0.3);
   position: relative;
   overflow: hidden;
+  outline: none;
 }
 
 .create-first-competition-btn::before {
@@ -422,6 +434,7 @@
   overflow: hidden;
   box-shadow: 0 10px 24px rgba(0, 0, 0, 0.1);
   backdrop-filter: blur(10px);
+  box-sizing: border-box;
 }
 
 .competition-card::before {
@@ -523,6 +536,7 @@
   justify-content: center;
   position: relative;
   overflow: hidden;
+  outline: none;
 }
 
 .refresh-card-btn::before {
@@ -561,6 +575,7 @@
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
   border: 1px solid rgba(102, 126, 234, 0.15);
   position: relative;
+  box-sizing: border-box;
 }
 
 .score-section {
@@ -571,6 +586,7 @@
   position: relative;
   overflow: hidden;
   border: 1px solid transparent;
+  box-sizing: border-box;
 }
 
 .score-section::before {
@@ -739,6 +755,7 @@
   padding: 20px;
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
   border: 1px solid rgba(102, 126, 234, 0.15);
+  box-sizing: border-box;
 }
 
 .weekdays-row {
@@ -781,6 +798,7 @@
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   cursor: default;
   border: 1px solid transparent;
+  box-sizing: border-box;
 }
 
 .calendar-day.empty {
@@ -966,6 +984,7 @@
   cursor: pointer;
   transition: all 0.3s ease;
   font-size: 14px;
+  outline: none;
 }
 
 .calendar-error button:hover {
@@ -998,6 +1017,8 @@
   letter-spacing: 0.3px;
   position: relative;
   overflow: hidden;
+  outline: none;
+  box-sizing: border-box;
 }
 
 .action-btn::before {
@@ -1101,6 +1122,8 @@
   background: white;
   transition: all 0.3s ease;
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+  outline: none;
+  box-sizing: border-box;
 }
 
 .friend-search-input:focus {
@@ -1124,6 +1147,7 @@
   box-shadow: 0 6px 20px rgba(102, 126, 234, 0.3);
   position: relative;
   overflow: hidden;
+  outline: none;
 }
 
 .search-btn::before {
@@ -1160,6 +1184,7 @@
   margin-bottom: 24px;
   box-shadow: 0 6px 24px rgba(0, 0, 0, 0.1);
   border: 1px solid rgba(102, 126, 234, 0.15);
+  box-sizing: border-box;
 }
 
 .search-results h3 {
@@ -1179,6 +1204,7 @@
   margin-bottom: 10px;
   border: 1px solid rgba(102, 126, 234, 0.1);
   transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  box-sizing: border-box;
 }
 
 .search-result-item:hover {
@@ -1215,6 +1241,7 @@
   box-shadow: 0 6px 20px rgba(102, 126, 234, 0.3);
   position: relative;
   overflow: hidden;
+  outline: none;
 }
 
 .add-friend-btn-small::before {
@@ -1264,6 +1291,8 @@
   border-bottom: 2px solid rgba(102, 126, 234, 0.1);
   margin-bottom: 24px;
   padding: 0 6px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .friends-tab {
@@ -1277,6 +1306,8 @@
   font-weight: 600;
   transition: all 0.3s ease;
   border-radius: 12px 12px 0 0;
+  white-space: nowrap;
+  outline: none;
 }
 
 .friends-tab:hover {
@@ -1315,6 +1346,7 @@
   border: 1px solid rgba(102, 126, 234, 0.15);
   position: relative;
   overflow: hidden;
+  box-sizing: border-box;
 }
 
 .friend-item::before {
@@ -1407,6 +1439,7 @@
   color: #667eea;
   position: relative;
   overflow: hidden;
+  outline: none;
 }
 
 .friend-action-btn::before {
@@ -1424,7 +1457,7 @@
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   border-color: #667eea;
   color: white;
-  transform: translateY(-3px) scale(1.1);
+  transform: translateY(-3px);
   box-shadow: 0 8px 24px rgba(102, 126, 234, 0.3);
 }
 
@@ -1449,6 +1482,7 @@
   transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   border: 1px solid rgba(255, 107, 107, 0.15);
   position: relative;
+  box-sizing: border-box;
 }
 
 .friend-request-item:hover {
@@ -1496,6 +1530,7 @@
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
   position: relative;
   overflow: hidden;
+  outline: none;
 }
 
 .accept-btn::before, .decline-btn::before {
@@ -1516,7 +1551,7 @@
 
 .accept-btn:hover {
   background: linear-gradient(135deg, #45a049 0%, #3d8b40 100%);
-  transform: translateY(-3px) scale(1.1);
+  transform: translateY(-3px);
   box-shadow: 0 12px 28px rgba(76, 175, 80, 0.3);
 }
 
@@ -1531,7 +1566,7 @@
 
 .decline-btn:hover {
   background: linear-gradient(135deg, #FF5252 0%, #FF3B30 100%);
-  transform: translateY(-3px) scale(1.1);
+  transform: translateY(-3px);
   box-shadow: 0 12px 28px rgba(255, 107, 107, 0.3);
 }
 
@@ -1549,6 +1584,7 @@
   box-shadow: 0 6px 24px rgba(0, 0, 0, 0.08);
   border: 2px dashed rgba(102, 126, 234, 0.2);
   margin-top: 20px;
+  box-sizing: border-box;
 }
 
 .no-friends p, .no-requests p {
@@ -1593,6 +1629,7 @@
   border-radius: 16px;
   margin: 0 10px;
   position: relative;
+  outline: none;
 }
 
 .nav-item::before {
@@ -1679,6 +1716,7 @@
   box-shadow: 0 24px 48px rgba(0, 0, 0, 0.3);
   border: 1px solid rgba(255, 255, 255, 0.4);
   position: relative;
+  box-sizing: border-box;
 }
 
 @keyframes modalSlideIn {
@@ -1741,6 +1779,7 @@
   transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
   overflow: hidden;
+  outline: none;
 }
 
 .modal-close::before {
@@ -1757,7 +1796,7 @@
 .modal-close:hover {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
-  transform: rotate(90deg) scale(1.1);
+  transform: rotate(90deg);
   box-shadow: 0 8px 24px rgba(102, 126, 234, 0.3);
 }
 
@@ -1856,6 +1895,8 @@
   background: white;
   transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+  outline: none;
+  box-sizing: border-box;
 }
 
 .form-input:focus, .form-select:focus {
@@ -1892,6 +1933,7 @@
   text-align: center;
   position: relative;
   overflow: hidden;
+  outline: none;
 }
 
 .duration-option::before {
@@ -2094,6 +2136,7 @@
   transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
   overflow: hidden;
+  outline: none;
 }
 
 .btn-secondary::before {
@@ -2131,6 +2174,7 @@
   box-shadow: 0 8px 24px rgba(102, 126, 234, 0.3);
   position: relative;
   overflow: hidden;
+  outline: none;
 }
 
 .btn-primary::before {
@@ -2157,6 +2201,338 @@
   opacity: 0.5;
   cursor: not-allowed;
   transform: none !important;
+}
+
+/* Стили для запросов в друзья */
+.request-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.request-type-icon {
+  font-size: 16px;
+  opacity: 0.7;
+}
+
+.request-time {
+  font-size: 12px;
+  color: #666;
+  margin-top: 2px;
+}
+
+.friend-request-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.accept-btn, .decline-btn, .cancel-btn {
+  padding: 6px 12px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s;
+  outline: none;
+}
+
+.accept-btn {
+  background-color: #4CAF50;
+  color: white;
+}
+
+.accept-btn:hover {
+  background-color: #45a049;
+}
+
+.decline-btn {
+  background-color: #f44336;
+  color: white;
+}
+
+.decline-btn:hover {
+  background-color: #d32f2f;
+}
+
+.cancel-btn {
+  background-color: #ff9800;
+  color: white;
+}
+
+.cancel-btn:hover {
+  background-color: #f57c00;
+}
+
+/* УПРОЩЕННЫЙ ДИЗАЙН ДЛЯ СПИСКА РЕКОМЕНДАЦИЙ */
+
+/* Вкладки друзей */
+.friends-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 20px;
+  border-bottom: 2px solid rgba(102, 126, 234, 0.1);
+  padding: 0 6px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.friends-tab {
+  padding: 12px 20px;
+  background: none;
+  border: none;
+  font-size: 14px;
+  color: #636e72;
+  cursor: pointer;
+  position: relative;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  border-radius: 12px 12px 0 0;
+  white-space: nowrap;
+  outline: none;
+}
+
+.friends-tab:hover {
+  color: #667eea;
+  background: rgba(102, 126, 234, 0.05);
+}
+
+.friends-tab.active {
+  color: #667eea;
+  font-weight: 700;
+  background: rgba(102, 126, 234, 0.08);
+}
+
+.friends-tab.active::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #667eea, #764ba2);
+  border-radius: 3px 3px 0 0;
+  box-shadow: 0 -2px 8px rgba(102, 126, 234, 0.3);
+}
+
+/* Контейнер рекомендаций - упрощенный */
+.recommendations-section {
+  margin-bottom: 24px;
+}
+
+.recommendations-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(102, 126, 234, 0.1);
+}
+
+.recommendations-header h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 800;
+  color: #2d3436;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  letter-spacing: -0.2px;
+}
+
+.refresh-recommendations-btn {
+  background: rgba(102, 126, 234, 0.1);
+  border: 1px solid rgba(102, 126, 234, 0.2);
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  font-size: 16px;
+  cursor: pointer;
+  color: #667eea;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  outline: none;
+}
+
+.refresh-recommendations-btn:hover:not(:disabled) {
+  background: rgba(102, 126, 234, 0.15);
+  transform: rotate(90deg);
+}
+
+.refresh-recommendations-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Карточка рекомендованного пользователя - упрощенная */
+.recommended-user-item {
+  display: flex;
+  align-items: center;
+  padding: 16px;
+  background: white;
+  border-radius: 12px;
+  margin-bottom: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  border: 1px solid rgba(102, 126, 234, 0.1);
+  transition: all 0.3s ease;
+  box-sizing: border-box;
+}
+
+.recommended-user-item:hover {
+  border-color: rgba(102, 126, 234, 0.3);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(102, 126, 234, 0.15);
+}
+
+.recommended-user-avatar {
+  width: 48px;
+  height: 48px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  color: white;
+  font-size: 18px;
+  margin-right: 16px;
+  flex-shrink: 0;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.recommended-user-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.recommended-user-name {
+  margin: 0 0 6px 0;
+  font-size: 16px;
+  font-weight: 700;
+  color: #2d3436;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.common-interests {
+  margin: 4px 0;
+  font-size: 13px;
+  color: #667eea;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.recommendation-reason {
+  margin: 4px 0 0 0;
+  font-size: 12px;
+  color: #636e72;
+  font-style: italic;
+  line-height: 1.4;
+}
+
+.recommended-user-actions {
+  flex-shrink: 0;
+  margin-left: 12px;
+}
+
+.add-friend-recommended-btn {
+  background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 10px;
+  font-weight: 700;
+  cursor: pointer;
+  font-size: 13px;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+  box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
+  outline: none;
+}
+
+.add-friend-recommended-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(76, 175, 80, 0.4);
+}
+
+.add-friend-recommended-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none !important;
+}
+
+/* Загрузка рекомендаций */
+.loading-recommendations {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  text-align: center;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 16px;
+  border: 2px dashed rgba(102, 126, 234, 0.2);
+}
+
+.loading-spinner-small {
+  width: 32px;
+  height: 32px;
+  border: 3px solid rgba(102, 126, 234, 0.1);
+  border-top: 3px solid #667eea;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin-bottom: 16px;
+}
+
+/* Нет рекомендаций */
+.no-recommendations {
+  text-align: center;
+  padding: 40px 20px;
+  background: white;
+  border-radius: 16px;
+  border: 2px dashed rgba(102, 126, 234, 0.2);
+  margin: 20px 0;
+}
+
+.no-recommendations p {
+  margin: 0 0 10px 0;
+  font-size: 16px;
+  font-weight: 700;
+  color: #636e72;
+}
+
+.no-recommendations .hint {
+  font-size: 14px;
+  color: #b2bec3;
+  margin-top: 10px;
+}
+
+/* Информация о рекомендациях */
+.recommendations-info {
+  background: rgba(102, 126, 234, 0.05);
+  border-radius: 12px;
+  padding: 16px;
+  margin-top: 24px;
+  border: 1px solid rgba(102, 126, 234, 0.1);
+  border-left: 4px solid #667eea;
+}
+
+.info-note {
+  margin: 0;
+  font-size: 13px;
+  color: #636e72;
+  line-height: 1.6;
+  font-weight: 500;
+}
+
+/* Стили для списка друзей */
+.friends-list {
+  margin-top: 16px;
 }
 
 /* Responsive */
@@ -2296,6 +2672,55 @@
     padding: 20px 16px;
     margin-top: 12px;
   }
+  
+  .recommended-user-item {
+    flex-direction: column;
+    text-align: center;
+    padding: 20px;
+  }
+  
+  .recommended-user-avatar {
+    margin-right: 0;
+    margin-bottom: 16px;
+    width: 64px;
+    height: 64px;
+    font-size: 22px;
+  }
+  
+  .recommended-user-info {
+    text-align: center;
+    margin-bottom: 16px;
+    width: 100%;
+  }
+  
+  .recommended-user-actions {
+    margin-left: 0;
+    width: 100%;
+  }
+  
+  .add-friend-recommended-btn {
+    width: 100%;
+    padding: 12px;
+  }
+  
+  .recommended-user-name {
+    font-size: 18px;
+  }
+  
+  .common-interests,
+  .recommendation-reason {
+    font-size: 14px;
+  }
+  
+  .friends-tabs {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  .friends-tab {
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
 }
 
 @media (max-width: 480px) {
@@ -2312,7 +2737,7 @@
   }
   
   .friends-tab {
-    padding: 12px 16px;
+    padding: 10px 16px;
     font-size: 13px;
   }
   
@@ -2326,7 +2751,7 @@
     height: 44px;
     font-size: 18px;
     margin-right: 14px;
-    border-radius: 14px;
+    border-radius: 12px;
   }
   
   .friend-name {
@@ -2356,64 +2781,270 @@
   .nav-text {
     font-size: 10px;
   }
+  
+  .recommendations-header h3 {
+    font-size: 16px;
+  }
+  
+  .refresh-recommendations-btn {
+    width: 32px;
+    height: 32px;
+    font-size: 14px;
+  }
+  
+  .recommended-user-item {
+    padding: 16px;
+  }
+  
+  .recommended-user-avatar {
+    width: 56px;
+    height: 56px;
+    font-size: 20px;
+  }
+  
+  .add-friend-recommended-btn {
+    font-size: 13px;
+    padding: 10px;
+  }
 }
 
-/* Стили для запросов в друзья */
-.request-header {
+/* Анимация pulse */
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+/* Исправления для переполнения */
+.competitions-main,
+.modal-content,
+.competition-card {
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+/* Стили для кнопок управления рекомендациями */
+.section-header-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.hide-recommendations-btn {
+  background: rgba(255, 107, 107, 0.1);
+  border: 1px solid rgba(255, 107, 107, 0.15);
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  font-size: 14px;
+  cursor: pointer;
+  color: #FF6B6B;
+  transition: all 0.3s ease;
   display: flex;
   align-items: center;
-  gap: 8px;
+  justify-content: center;
+  font-weight: bold;
+  position: relative;
+  overflow: hidden;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  outline: none;
 }
 
-.request-type-icon {
-  font-size: 16px;
-  opacity: 0.7;
+.hide-recommendations-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.7s ease;
 }
 
-.request-time {
-  font-size: 12px;
-  color: #666;
-  margin-top: 2px;
+.hide-recommendations-btn:hover {
+  background: rgba(255, 107, 107, 0.15);
+  color: #FF5252;
+  transform: rotate(90deg);
+  border-color: rgba(255, 107, 107, 0.25);
+  box-shadow: 0 2px 8px rgba(255, 107, 107, 0.15);
 }
 
-.friend-request-actions {
-  display: flex;
-  gap: 8px;
+.hide-recommendations-btn:hover::before {
+  left: 100%;
 }
 
-.accept-btn, .decline-btn, .cancel-btn {
-  padding: 6px 12px;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
+.refresh-recommendations-btn {
+  background: rgba(102, 126, 234, 0.1);
+  border: 1px solid rgba(102, 126, 234, 0.15);
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
   font-size: 14px;
-  transition: all 0.2s;
+  cursor: pointer;
+  color: #667eea;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  outline: none;
 }
 
-.accept-btn {
-  background-color: #4CAF50;
-  color: white;
+.refresh-recommendations-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.7s ease;
 }
 
-.accept-btn:hover {
-  background-color: #45a049;
+.refresh-recommendations-btn:hover:not(:disabled) {
+  background: rgba(102, 126, 234, 0.15);
+  transform: rotate(120deg);
+  border-color: rgba(102, 126, 234, 0.25);
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.15);
 }
 
-.decline-btn {
-  background-color: #f44336;
-  color: white;
+.refresh-recommendations-btn:hover:not(:disabled)::before {
+  left: 100%;
 }
 
-.decline-btn:hover {
-  background-color: #d32f2f;
+.refresh-recommendations-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  animation: none;
 }
 
-.cancel-btn {
-  background-color: #ff9800;
-  color: white;
+/* Контейнер для кнопки показа рекомендаций */
+.show-recommendations-container {
+  margin: 24px 0;
+  text-align: center;
 }
 
-.cancel-btn:hover {
-  background-color: #f57c00;
+.show-recommendations-btn {
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.15));
+  border: 2px solid rgba(102, 126, 234, 0.2);
+  color: #667eea;
+  border-radius: 16px;
+  padding: 14px 28px;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  width: 100%;
+  position: relative;
+  overflow: hidden;
+  outline: none;
 }
 
+.show-recommendations-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.7s ease;
+}
+
+.show-recommendations-btn:hover {
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.15), rgba(118, 75, 162, 0.2));
+  border-color: rgba(102, 126, 234, 0.4);
+  transform: translateY(-3px);
+  box-shadow: 0 8px 24px rgba(102, 126, 234, 0.15);
+  color: #5a67d8;
+}
+
+.show-recommendations-btn:hover::before {
+  left: 100%;
+}
+
+/* Анимация для обновления рекомендаций */
+@keyframes refreshing {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.refreshing {
+  animation: refreshing 1s linear infinite;
+}
+
+/* Стили для заголовка раздела рекомендаций */
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(102, 126, 234, 0.1);
+}
+
+.section-header h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 800;
+  color: #2d3436;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  letter-spacing: -0.2px;
+}
+
+/* Фикс для перекрывающихся элементов */
+.competitions-main {
+  position: relative;
+  z-index: 1;
+}
+
+.friends-container {
+  position: relative;
+  z-index: 2;
+}
+
+.competition-card {
+  position: relative;
+  z-index: 1;
+}
+
+/* Улучшенные стили для кнопок */
+button, .action-btn, .gradient-tab, .friends-tab, .nav-item {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+/* Улучшения для мобильных устройств */
+@media (max-width: 768px) {
+  .hide-recommendations-btn,
+  .refresh-recommendations-btn {
+    width: 36px;
+    height: 36px;
+  }
+  
+  .section-header-actions {
+    gap: 6px;
+  }
+  
+  /* Убедимся, что кнопки не выходят за границы */
+  .section-header {
+    flex-wrap: nowrap;
+    overflow: visible;
+  }
+  
+  .section-header h3 {
+    flex-shrink: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}

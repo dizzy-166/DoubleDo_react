@@ -12,10 +12,12 @@ function CompetitionsPage() {
   const [friends, setFriends] = useState([]);
   const [friendRequests, setFriendRequests] = useState([]);
   const [sentFriendRequests, setSentFriendRequests] = useState([]);
-  const [friendsTab, setFriendsTab] = useState('friends');
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [searching, setSearching] = useState(false);
+  const [recommendedUsers, setRecommendedUsers] = useState([]);
+  const [loadingRecommendations, setLoadingRecommendations] = useState(false);
+  const [showRecommendations, setShowRecommendations] = useState(true); // Управление видимостью рекомендаций
 
   // Загрузка пользователя
   useEffect(() => {
@@ -27,6 +29,60 @@ function CompetitionsPage() {
     
     checkUser();
   }, []);
+
+  // Функция загрузки рекомендованных пользователей
+  const loadRecommendedUsers = async () => {
+    if (!user) return;
+    
+    setLoadingRecommendations(true);
+    try {
+      const { data, error } = await supabase.rpc('get_recommended_users', {
+        limit_count: 10
+      });
+      
+      if (error) {
+        console.error('Error loading recommended users:', error);
+        // Если функция не существует, используем запасной вариант
+        const fallbackData = await loadFallbackRecommendations();
+        setRecommendedUsers(fallbackData || []);
+      } else {
+        setRecommendedUsers(data || []);
+      }
+    } catch (error) {
+      console.error('Error loading recommendations:', error);
+      setRecommendedUsers([]);
+    } finally {
+      setLoadingRecommendations(false);
+    }
+  };
+
+  // Запасная функция для получения рекомендаций, если RPC функция не существует
+  const loadFallbackRecommendations = async () => {
+    try {
+      // Получаем случайных пользователей, которые не в друзьях
+      const { data: allUsers, error } = await supabase
+        .from('profiles')
+        .select('id, username, created_at')
+        .neq('id', user.id)
+        .limit(20);
+      
+      if (error) throw error;
+      
+      // Получаем список ID друзей и отправленных запросов
+      const friendIds = friends.map(f => f.id);
+      const requestIds = [...friendRequests, ...sentFriendRequests].map(r => r.id);
+      const excludedIds = [...friendIds, ...requestIds];
+      
+      // Фильтруем пользователей, исключая друзей и тех, кому уже отправлены запросы
+      const recommended = allUsers.filter(u => !excludedIds.includes(u.id));
+      
+      // Сортируем по дате создания (новые пользователи)
+      return recommended.sort((a, b) => new Date(b.created_at) - new Date(a.created_at)).slice(0, 5);
+    } catch (error) {
+      console.error('Error in fallback recommendations:', error);
+      return [];
+    }
+  };
 
   // Загрузка друзей и запросов
   const loadFriendsAndRequests = async () => {
@@ -63,6 +119,7 @@ function CompetitionsPage() {
   useEffect(() => {
     if (user) {
       loadFriendsAndRequests();
+      loadRecommendedUsers();
     }
   }, [user]);
 
@@ -170,6 +227,7 @@ function CompetitionsPage() {
         alert('Запрос в друзья отправлен!');
         // Обновляем списки
         await loadFriendsAndRequests();
+        await loadRecommendedUsers();
       } else {
         alert(`Ошибка: ${data.message}`);
       }
@@ -193,6 +251,7 @@ function CompetitionsPage() {
         alert('Запрос в друзья принят!');
         // Обновляем списки
         await loadFriendsAndRequests();
+        await loadRecommendedUsers();
       }
     } catch (error) {
       console.error('Error accepting friend request:', error);
@@ -214,6 +273,7 @@ function CompetitionsPage() {
         alert('Запрос в друзья отклонен');
         // Обновляем список запросов
         await loadFriendsAndRequests();
+        await loadRecommendedUsers();
       }
     } catch (error) {
       console.error('Error declining friend request:', error);
@@ -236,6 +296,7 @@ function CompetitionsPage() {
         alert('Запрос отменен');
         // Обновляем списки
         await loadFriendsAndRequests();
+        await loadRecommendedUsers();
       }
     } catch (error) {
       console.error('Error canceling friend request:', error);
@@ -258,12 +319,22 @@ function CompetitionsPage() {
         alert('Друг удален');
         // Обновляем список друзей
         await loadFriendsAndRequests();
+        await loadRecommendedUsers();
       }
     } catch (error) {
       console.error('Error removing friend:', error);
       alert('Ошибка при удалении друга');
     }
   };
+
+  // Общее количество запросов для бейджа
+  const totalRequestsCount = friendRequests.length + sentFriendRequests.length;
+
+  // Объединенные запросы для отображения в одной вкладке
+  const allRequests = [
+    ...friendRequests.map(req => ({ ...req, type: 'incoming' })),
+    ...sentFriendRequests.map(req => ({ ...req, type: 'outgoing' }))
+  ];
 
   // Если загрузка
   if (loading) {
@@ -312,15 +383,6 @@ function CompetitionsPage() {
     // Можно предзаполнить поле друга в форме
   };
 
-  // Общее количество запросов для бейджа
-  const totalRequestsCount = friendRequests.length + sentFriendRequests.length;
-
-  // Объединенные запросы для отображения в одной вкладке
-  const allRequests = [
-    ...friendRequests.map(req => ({ ...req, type: 'incoming' })),
-    ...sentFriendRequests.map(req => ({ ...req, type: 'outgoing' }))
-  ];
-
   return (
     <div className="competitions-page">
       <header className="competitions-header">
@@ -332,7 +394,7 @@ function CompetitionsPage() {
         </div>
       </header>
 
-            {/* Вкладки */}
+      {/* Вкладки */}
       <div className="tabs-on-gradient">
         <div className="gradient-tabs">
           <button 
@@ -467,22 +529,51 @@ function CompetitionsPage() {
               </div>
             )}
 
-            <div className="friends-tabs">
-              <button 
-                className={`friends-tab ${friendsTab === 'friends' ? 'active' : ''}`}
-                onClick={() => setFriendsTab('friends')}
-              >
-                Друзья ({friends.length})
-              </button>
-              <button 
-                className={`friends-tab ${friendsTab === 'requests' ? 'active' : ''}`}
-                onClick={() => setFriendsTab('requests')}
-              >
-                Запросы ({totalRequestsCount})
-              </button>
-            </div>
+            {/* Входящие запросы в друзья */}
+            {friendRequests.length > 0 && (
+              <div className="section-container">
+                <div className="section-header">
+                  <h3>Входящие запросы ({friendRequests.length})</h3>
+                </div>
+                <div className="friend-requests-list">
+                  {friendRequests.map(request => (
+                    <FriendRequestItem 
+                      key={request.friendship_id} 
+                      request={request} 
+                      type="incoming"
+                      onAccept={() => handleAcceptFriendRequest(request.friendship_id)}
+                      onDecline={() => handleDeclineFriendRequest(request.friendship_id)}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
 
-            {friendsTab === 'friends' ? (
+            {/* Исходящие запросы в друзья */}
+            {sentFriendRequests.length > 0 && (
+              <div className="section-container">
+                <div className="section-header">
+                  <h3>Исходящие запросы ({sentFriendRequests.length})</h3>
+                </div>
+                <div className="friend-requests-list">
+                  {sentFriendRequests.map(request => (
+                    <FriendRequestItem 
+                      key={request.friendship_id} 
+                      request={request} 
+                      type="outgoing"
+                      onCancel={() => handleCancelSentRequest(request.friendship_id)}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Список друзей */}
+            <div className="section-container">
+              <div className="section-header">
+                <h3>Мои друзья ({friends.length})</h3>
+              </div>
+              
               <div className="friends-list">
                 {friends.map(friend => (
                   <FriendItem 
@@ -495,29 +586,71 @@ function CompetitionsPage() {
                 
                 {friends.length === 0 && (
                   <div className="no-friends">
-                    <p>У вас пока нет друзей</p>
+                    <div className="no-friends-icon">👤</div>
+                    <p><strong>У вас пока нет друзей</strong></p>
                     <p className="hint">Используйте поиск выше, чтобы найти друзей</p>
                   </div>
                 )}
               </div>
-            ) : (
-              <div className="friend-requests-list">
-                {allRequests.map(request => (
-                  <FriendRequestItem 
-                    key={request.friendship_id} 
-                    request={request} 
-                    type={request.type}
-                    onAccept={request.type === 'incoming' ? () => handleAcceptFriendRequest(request.friendship_id) : null}
-                    onDecline={request.type === 'incoming' ? () => handleDeclineFriendRequest(request.friendship_id) : null}
-                    onCancel={request.type === 'outgoing' ? () => handleCancelSentRequest(request.friendship_id) : null}
-                  />
-                ))}
+            </div>
+
+            {/* Рекомендации друзей - показываем если мало друзей или есть рекомендации */}
+            {(friends.length < 3 || recommendedUsers.length > 0) && showRecommendations && (
+              <div className="section-container recommendations-section">
+                <div className="section-header">
+                  <h3>Возможно, вы знакомы</h3>
+                  <div className="section-header-actions">
+                    <button 
+                      className="refresh-recommendations-btn"
+                      onClick={loadRecommendedUsers}
+                      disabled={loadingRecommendations}
+                      title="Обновить рекомендации"
+                    >
+                      {loadingRecommendations ? '🔄' : '🔄'}
+                    </button>
+                    <button 
+                      className="hide-recommendations-btn"
+                      onClick={() => setShowRecommendations(false)}
+                      title="Скрыть рекомендации"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                </div>
                 
-                {allRequests.length === 0 && (
-                  <div className="no-requests">
-                    <p>Нет запросов в друзья</p>
+                {loadingRecommendations ? (
+                  <div className="loading-recommendations">
+                    <div className="loading-spinner-small"></div>
+                    <p>Загрузка рекомендаций...</p>
+                  </div>
+                ) : recommendedUsers.length === 0 ? (
+                  <div className="no-recommendations">
+                    <p>Нет доступных рекомендаций</p>
+                    <p className="hint">Попробуйте обновить позже</p>
+                  </div>
+                ) : (
+                  <div className="recommendations-grid">
+                    {recommendedUsers.map(user => (
+                      <RecommendedUserItem 
+                        key={user.id} 
+                        user={user} 
+                        onSendRequest={() => handleSendFriendRequest(user.username)}
+                      />
+                    ))}
                   </div>
                 )}
+              </div>
+            )}
+
+            {/* Кнопка показа рекомендаций, если они скрыты */}
+            {!showRecommendations && (
+              <div className="show-recommendations-container">
+                <button 
+                  className="show-recommendations-btn"
+                  onClick={() => setShowRecommendations(true)}
+                >
+                  Показать рекомендации друзей
+                </button>
               </div>
             )}
           </div>
@@ -894,6 +1027,52 @@ function FriendRequestItem({ request, type = "incoming", onAccept, onDecline, on
             Отменить
           </button>
         )}
+      </div>
+    </div>
+  );
+}
+
+// Компонент: Рекомендуемый пользователь
+function RecommendedUserItem({ user, onSendRequest }) {
+  const [sendingRequest, setSendingRequest] = useState(false);
+  
+  const handleSendRequest = async () => {
+    setSendingRequest(true);
+    try {
+      await onSendRequest();
+    } finally {
+      setSendingRequest(false);
+    }
+  };
+  
+  return (
+    <div className="recommended-user-item">
+      <div className="recommended-user-avatar">
+        <span>{user.username?.charAt(0).toUpperCase() || '👤'}</span>
+      </div>
+      
+      <div className="recommended-user-info">
+        <h4 className="recommended-user-name">{user.username}</h4>
+        {user.common_habits && user.common_habits > 0 && (
+          <p className="common-interests">
+            <span className="common-icon">✨</span> Общие привычки: {user.common_habits}
+          </p>
+        )}
+        {user.recommendation_reason && (
+          <p className="recommendation-reason">
+            {user.recommendation_reason}
+          </p>
+        )}
+      </div>
+      
+      <div className="recommended-user-actions">
+        <button 
+          className="add-friend-recommended-btn"
+          onClick={handleSendRequest}
+          disabled={sendingRequest}
+        >
+          {sendingRequest ? 'Отправка...' : 'Добавить в друзья'}
+        </button>
       </div>
     </div>
   );
