@@ -995,6 +995,17 @@ function HabitsPage() {
   }
 
   // Основной интерфейс с привычками
+  const todayStr = today.toISOString().split('T')[0];
+  const completedToday = habits.filter(h => {
+    const p = progressData[h.id] || [];
+    return p.find(pr => pr.completed_date === todayStr && pr.is_completed);
+  }).length;
+  const totalActive = habits.filter(h => {
+    const start = new Date(h.startDate).toISOString().split('T')[0];
+    return start <= todayStr;
+  }).length;
+  const allDoneToday = totalActive > 0 && completedToday === totalActive;
+
   return (
     <div className="habits-page">
       <header className="habits-header">
@@ -1004,6 +1015,19 @@ function HabitsPage() {
             <span>{user?.email?.charAt(0).toUpperCase() || 'U'}</span>
           </div>
         </div>
+        {totalActive > 0 && (
+          <div className="daily-progress">
+            <div className="daily-progress-bar">
+              <div
+                className="daily-progress-fill"
+                style={{ width: `${(completedToday / totalActive) * 100}%` }}
+              />
+            </div>
+            <span className="daily-progress-label">
+              {allDoneToday ? '🎉 Все выполнено!' : `${completedToday} из ${totalActive} сегодня`}
+            </span>
+          </div>
+        )}
       </header>
 
       <main className="habits-main">

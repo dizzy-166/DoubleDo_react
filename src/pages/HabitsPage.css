@@ -27,6 +27,31 @@
   font-weight: 700;
 }
 
+.daily-progress {
+  margin-top: 12px;
+}
+
+.daily-progress-bar {
+  height: 4px;
+  background: rgba(255, 255, 255, 0.25);
+  border-radius: 2px;
+  overflow: hidden;
+  margin-bottom: 6px;
+}
+
+.daily-progress-fill {
+  height: 100%;
+  background: white;
+  border-radius: 2px;
+  transition: width 0.5s ease;
+}
+
+.daily-progress-label {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.85);
+  font-weight: 500;
+}
+
 .user-avatar {
   width: 38px;
   height: 38px;
