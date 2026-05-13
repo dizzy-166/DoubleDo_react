@@ -688,6 +688,7 @@
   background: linear-gradient(135deg, rgba(102, 126, 234, 0.03), transparent);
   opacity: 0;
   transition: opacity 0.3s ease;
+  pointer-events: none;
 }
 
 .competition-card:hover {
