@@ -6,6 +6,7 @@ import { Toaster } from 'react-hot-toast';
 import HabitsPage from './pages/HabitsPage.jsx';
 import CompetitionsPage from './pages/CompetitionsPage.jsx';
 import ProfilePage from './pages/ProfilePage.jsx';
+import InvitePage from './pages/InvitePage.jsx';
 import Onboarding from './components/Onboarding.jsx';
 import './App.css';
 
@@ -732,6 +733,8 @@ const handleSubmit = async (e) => {
         }}
       />
       <Routes>
+        {/* Invite page is always accessible regardless of auth state */}
+        <Route path="/invite/:token" element={<InvitePage />} />
         {user && !needsConfirmation ? (
           <>
             <Route path="/habits" element={<HabitsPage />} />

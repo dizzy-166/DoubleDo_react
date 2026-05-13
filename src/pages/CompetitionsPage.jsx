@@ -23,6 +23,7 @@ function CompetitionsPage() {
   const [loadingRecommendations, setLoadingRecommendations] = useState(false);
   const [showRecommendations, setShowRecommendations] = useState(true);
   const [confirmDialog, setConfirmDialog] = useState(null);
+  const [showInviteLinkModal, setShowInviteLinkModal] = useState(false);
 
   // Загрузка пользователя
   useEffect(() => {
@@ -454,13 +455,25 @@ function CompetitionsPage() {
               <>
                 <div className="competitions-list-header">
                   <h2>Соревнования</h2>
-                  <button 
-                    className="add-competition-btn"
-                    onClick={() => setShowCreateForm(true)}
-                    disabled={loading}
-                  >
-                    {loading ? '...' : '+'}
-                  </button>
+                  <div className="competitions-header-actions">
+                    <button
+                      className="invite-link-btn"
+                      onClick={() => setShowInviteLinkModal(true)}
+                      title="Пригласить по ссылке"
+                    >
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+                        <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+                      </svg>
+                    </button>
+                    <button
+                      className="add-competition-btn"
+                      onClick={() => setShowCreateForm(true)}
+                      disabled={loading}
+                    >
+                      {loading ? '...' : '+'}
+                    </button>
+                  </div>
                 </div>
 
                 {competitions.length === 0 ? (
@@ -704,6 +717,12 @@ function CompetitionsPage() {
             )}
           </main>
         </>
+      )}
+
+      {showInviteLinkModal && (
+        <InviteLinkModal
+          setShowModal={setShowInviteLinkModal}
+        />
       )}
 
       {showCreateForm && (
@@ -1564,6 +1583,205 @@ function CreateCompetitionModal({ setShowCreateForm, friends, preSelectedFriend,
           >
             {creating ? 'Создание...' : step === 3 ? 'Создать соревнование' : 'Далее'}
           </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Модальное окно генерации ссылки-приглашения
+function InviteLinkModal({ setShowModal }) {
+  const [userHabits, setUserHabits] = useState([]);
+  const [loadingHabits, setLoadingHabits] = useState(false);
+  const [formData, setFormData] = useState({ habitId: '', habitTitle: '', duration: 30, stake: '' });
+  const [generating, setGenerating] = useState(false);
+  const [generatedLink, setGeneratedLink] = useState('');
+  const [copied, setCopied] = useState(false);
+
+  useEffect(() => {
+    const load = async () => {
+      setLoadingHabits(true);
+      try {
+        const { data, error } = await supabase.rpc('get_all_user_habits');
+        if (error) throw error;
+        const available = (data || []).filter(h => h.role === 'owner');
+        setUserHabits(available);
+        if (available.length > 0) {
+          setFormData(prev => ({
+            ...prev,
+            habitId: available[0].habit_id,
+            habitTitle: available[0].title || available[0].habit_title
+          }));
+        }
+      } catch {
+        setUserHabits([]);
+      } finally {
+        setLoadingHabits(false);
+      }
+    };
+    load();
+  }, []);
+
+  const handleGenerate = async () => {
+    if (!formData.habitId) { toast.error('Выберите привычку'); return; }
+    setGenerating(true);
+    try {
+      const params = {
+        p_habit_id: formData.habitId,
+        p_total_days: formData.duration
+      };
+      if (formData.stake) params.p_stake = formData.stake;
+
+      const { data, error } = await supabase.rpc('generate_competition_invite', params);
+      if (error) throw error;
+      if (data?.success) {
+        const link = `${window.location.origin}/invite/${data.token}`;
+        setGeneratedLink(link);
+      } else {
+        toast.error(data?.message || 'Не удалось создать ссылку');
+      }
+    } catch (err) {
+      toast.error(err.message || 'Ошибка при создании ссылки');
+    } finally {
+      setGenerating(false);
+    }
+  };
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(generatedLink).then(() => {
+      setCopied(true);
+      toast.success('Ссылка скопирована!');
+      setTimeout(() => setCopied(false), 2000);
+    });
+  };
+
+  return (
+    <div className="modal-overlay" onClick={() => setShowModal(false)}>
+      <div className="modal-content create-competition-modal" onClick={e => e.stopPropagation()}>
+        <div className="modal-header">
+          <h3>Пригласить по ссылке</h3>
+          <button className="modal-close" onClick={() => setShowModal(false)}>×</button>
+        </div>
+
+        <div className="modal-body">
+          {!generatedLink ? (
+            <div className="step-content">
+              <p className="invite-modal-desc">
+                Создайте ссылку-приглашение и отправьте её любому человеку. Ему не нужно быть вашим другом — достаточно зарегистрироваться и соревнование начнётся автоматически.
+              </p>
+
+              {loadingHabits ? (
+                <div className="loading-habits">
+                  <div className="loading-spinner-small" />
+                  <p>Загрузка привычек...</p>
+                </div>
+              ) : userHabits.length === 0 ? (
+                <div className="no-habits">
+                  <p><strong>Нет доступных привычек.</strong></p>
+                  <p className="hint">Сначала создайте привычку в разделе «Привычки».</p>
+                </div>
+              ) : (
+                <>
+                  <div className="form-group">
+                    <label className="form-label">Привычка *</label>
+                    <select
+                      className="form-select"
+                      value={formData.habitId}
+                      onChange={e => {
+                        const h = userHabits.find(h => h.habit_id === e.target.value);
+                        if (h) setFormData(prev => ({ ...prev, habitId: h.habit_id, habitTitle: h.title || h.habit_title }));
+                      }}
+                    >
+                      {userHabits.map(h => (
+                        <option key={h.habit_id} value={h.habit_id}>
+                          {h.title || h.habit_title}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="form-group">
+                    <label className="form-label">Длительность *</label>
+                    <div className="duration-options">
+                      {[{ days: 7, label: '1 неделя' }, { days: 14, label: '2 недели' }, { days: 21, label: '3 недели' }, { days: 30, label: '1 месяц' }].map(o => (
+                        <button
+                          key={o.days}
+                          type="button"
+                          className={`duration-option${formData.duration === o.days ? ' selected' : ''}`}
+                          onClick={() => setFormData(prev => ({ ...prev, duration: o.days }))}
+                        >
+                          {o.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="form-group">
+                    <label className="form-label">Ставка (опционально)</label>
+                    <input
+                      type="text"
+                      className="form-input"
+                      placeholder="например, 'угостить кофе'"
+                      value={formData.stake}
+                      onChange={e => setFormData(prev => ({ ...prev, stake: e.target.value }))}
+                    />
+                  </div>
+                </>
+              )}
+            </div>
+          ) : (
+            <div className="step-content">
+              <div className="invite-link-success">
+                <div className="invite-link-check">
+                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/>
+                  </svg>
+                </div>
+                <p className="invite-link-success-text">Ссылка создана! Действует 7 дней.</p>
+              </div>
+
+              <div className="invite-link-box">
+                <input
+                  type="text"
+                  className="invite-link-input"
+                  value={generatedLink}
+                  readOnly
+                  onClick={e => e.target.select()}
+                />
+                <button className="invite-link-copy-btn" onClick={handleCopy}>
+                  {copied ? (
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="m9 12 2 2 4-4"/><circle cx="12" cy="12" r="10"/>
+                    </svg>
+                  ) : (
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                    </svg>
+                  )}
+                </button>
+              </div>
+
+              <p className="invite-link-hint">
+                Отправьте эту ссылку другу. Он перейдёт по ней, зарегистрируется (или войдёт) — и соревнование начнётся автоматически.
+              </p>
+            </div>
+          )}
+        </div>
+
+        <div className="modal-actions">
+          <button className="btn-secondary" onClick={() => setShowModal(false)}>
+            {generatedLink ? 'Закрыть' : 'Отмена'}
+          </button>
+          {!generatedLink && (
+            <button
+              className="btn-primary"
+              onClick={handleGenerate}
+              disabled={generating || !formData.habitId || userHabits.length === 0}
+            >
+              {generating ? 'Создание...' : 'Создать ссылку'}
+            </button>
+          )}
         </div>
       </div>
     </div>

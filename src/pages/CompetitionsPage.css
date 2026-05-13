@@ -205,6 +205,106 @@
   gap: 12px;
 }
 
+.competitions-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.invite-link-btn {
+  background: rgba(102, 126, 234, 0.1);
+  color: #667eea;
+  border: none;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.15s;
+}
+
+.invite-link-btn:hover {
+  background: rgba(102, 126, 234, 0.2);
+  transform: scale(1.05);
+}
+
+/* Invite link modal body styles */
+.invite-modal-desc {
+  font-size: 14px;
+  color: #666;
+  line-height: 1.6;
+  margin: 0 0 20px;
+}
+
+.invite-link-success {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #ecfdf5;
+  border-radius: 12px;
+  padding: 14px 16px;
+  margin-bottom: 16px;
+}
+
+.invite-link-check {
+  flex-shrink: 0;
+}
+
+.invite-link-success-text {
+  font-size: 14px;
+  font-weight: 600;
+  color: #065f46;
+  margin: 0;
+}
+
+.invite-link-box {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.invite-link-input {
+  flex: 1;
+  padding: 12px 14px;
+  border: 2px solid #e5e7eb;
+  border-radius: 10px;
+  font-size: 13px;
+  color: #555;
+  outline: none;
+  background: #f9fafb;
+  cursor: text;
+  min-width: 0;
+  font-family: monospace;
+}
+
+.invite-link-copy-btn {
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: white;
+  border: none;
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: opacity 0.2s;
+}
+
+.invite-link-copy-btn:hover {
+  opacity: 0.88;
+}
+
+.invite-link-hint {
+  font-size: 13px;
+  color: #888;
+  line-height: 1.5;
+  margin: 0;
+}
+
 .competitions-list-header h2 {
   font-size: 22px;
   font-weight: 800;
