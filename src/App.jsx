@@ -6,6 +6,7 @@ import { Toaster } from 'react-hot-toast';
 import HabitsPage from './pages/HabitsPage.jsx';
 import CompetitionsPage from './pages/CompetitionsPage.jsx';
 import ProfilePage from './pages/ProfilePage.jsx';
+import Onboarding from './components/Onboarding.jsx';
 import './App.css';
 
 // Функция для извлечения username из email
@@ -150,6 +151,9 @@ const verifyOTPCode = async (email, token) => {
 
 function App() {
   const { user } = useAuth();
+  const [showOnboarding, setShowOnboarding] = useState(
+    user && !localStorage.getItem('onboarding_done')
+  );
   const [email, setEmail] = useState('');
   const [confirmationCode, setConfirmationCode] = useState('');
   const [isLogin, setIsLogin] = useState(true);
@@ -719,6 +723,7 @@ const handleSubmit = async (e) => {
   // Основной рендеринг
   return (
     <Router>
+      {showOnboarding && <Onboarding onDone={() => setShowOnboarding(false)} />}
       <Toaster
         position="top-center"
         toastOptions={{
