@@ -282,6 +282,17 @@
   box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
 }
 
+@keyframes completePop {
+  0%   { transform: scale(1); }
+  40%  { transform: scale(1.12); }
+  70%  { transform: scale(0.96); }
+  100% { transform: scale(1); }
+}
+
+.complete-animate {
+  animation: completePop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
 .complete-habit-btn-small.completed:hover {
   background: #45a049;
   box-shadow: 0 6px 20px rgba(76, 175, 80, 0.4);

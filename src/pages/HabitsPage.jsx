@@ -1183,6 +1183,7 @@ function HabitCard({
   const [isLoading, setIsLoading] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [justCompleted, setJustCompleted] = useState(false);
   const menuRef = useRef(null);
   const progress = progressData[habit.id] || [];
 
@@ -1237,10 +1238,14 @@ function HabitCard({
 
   const handleComplete = async () => {
     if (!isTodayActive) return;
-    
+
     setIsLoading(true);
     try {
       await toggleHabitCompletion(habit.id);
+      if (!isTodayCompleted) {
+        setJustCompleted(true);
+        setTimeout(() => setJustCompleted(false), 600);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -1392,8 +1397,8 @@ function HabitCard({
       </div>
 
       <div className="habit-card-footer">
-        <button 
-          className={getButtonClass()}
+        <button
+          className={`${getButtonClass()}${justCompleted ? ' complete-animate' : ''}`}
           onClick={handleComplete}
           disabled={isLoading || !isTodayActive}
           title={!isTodayActive ? `Привычка будет доступна с ${formatDisplayDate(habit.startDate)} (через ${daysUntilStart} ${getDaysWord(daysUntilStart)})` : ''}
