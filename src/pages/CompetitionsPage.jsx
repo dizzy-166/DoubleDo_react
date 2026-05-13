@@ -1,9 +1,11 @@
 // src/pages/CompetitionsPage.jsx
 import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '../services/supabase';
+import { useNavigate } from 'react-router-dom';
 import './CompetitionsPage.css';
 
 function CompetitionsPage() {
+  const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [competitions, setCompetitions] = useState([]);
@@ -690,7 +692,7 @@ function CompetitionsPage() {
 
         <button
           className="nav-item"
-          onClick={() => window.location.href = '/habits'}
+          onClick={() => navigate('/habits')}
         >
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <circle cx="12" cy="12" r="10"/>
@@ -701,7 +703,7 @@ function CompetitionsPage() {
 
         <button
           className="nav-item"
-          onClick={() => window.location.href = '/profile'}
+          onClick={() => navigate('/profile')}
         >
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <circle cx="12" cy="8" r="4"/>
