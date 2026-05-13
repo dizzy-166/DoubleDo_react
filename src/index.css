@@ -355,21 +355,42 @@ body {
 [data-theme="dark"] ::-webkit-scrollbar-thumb { background: #3a3a6a; }
 [data-theme="dark"] ::-webkit-scrollbar-thumb:hover { background: #667eea; }
 
-/* Competition card inner elements */
-[data-theme="dark"] .competition-calendars .calendar-day {
-  background: rgba(255, 255, 255, 0.05) !important;
+/* Calendar day cells — override white backgrounds */
+[data-theme="dark"] .calendar-day:not(.empty):not(.completed):not(.today) {
+  background: rgba(255, 255, 255, 0.06) !important;
   color: #b0b0d0 !important;
-  border-color: rgba(255, 255, 255, 0.06) !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
 }
-[data-theme="dark"] .competition-calendars .calendar-day.today {
+[data-theme="dark"] .calendar-day.empty {
+  background: rgba(255, 255, 255, 0.02) !important;
+  border-color: rgba(255, 255, 255, 0.04) !important;
+}
+[data-theme="dark"] .calendar-day.today {
+  border-color: #667eea !important;
+  background: rgba(102, 126, 234, 0.12) !important;
+}
+
+/* Small calendar in habit card */
+[data-theme="dark"] .calendar-day-small.future {
+  background: rgba(255, 255, 255, 0.06) !important;
+  color: #b0b0d0 !important;
+}
+[data-theme="dark"] .calendar-day-small.before-start {
+  background: rgba(255, 255, 255, 0.03) !important;
+  color: #444466 !important;
+}
+
+/* Add habit card */
+[data-theme="dark"] .add-habit-card {
+  background: rgba(255, 255, 255, 0.04) !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+[data-theme="dark"] .add-habit-card:hover {
+  background: rgba(102, 126, 234, 0.08) !important;
   border-color: #667eea !important;
 }
-[data-theme="dark"] .competition-calendars .calendar-day.completed {
-  background: rgba(16, 185, 129, 0.25) !important;
-}
-[data-theme="dark"] .competition-calendars .calendar-day.empty {
-  background: transparent !important;
-}
+[data-theme="dark"] .add-habit-card span,
+[data-theme="dark"] .add-habit-card p { color: #7777a0 !important; }
 
 /* Days remaining box */
 [data-theme="dark"] .days-remaining {
