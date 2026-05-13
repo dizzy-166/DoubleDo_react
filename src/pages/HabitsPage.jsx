@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '../services/supabase';
-import { useNavigate, useLocation } from 'react-router-dom'; 
+import { useNavigate, useLocation } from 'react-router-dom';
+import toast from 'react-hot-toast';
 import './HabitsPage.css';
 
 function HabitsPage() {
@@ -418,7 +419,7 @@ function HabitsPage() {
       setNewHabit({...newHabit, startDate: selectedDate});
       setShowDatePicker(false);
     } else {
-      alert('Нельзя выбрать прошедшую дату. Минимальная дата - сегодня.');
+      toast.error('Нельзя выбрать прошедшую дату');
     }
   };
 
@@ -432,7 +433,7 @@ function HabitsPage() {
       setEditForm({...editForm, startDate: selectedDate});
       setEditDatePicker(false);
     } else {
-      alert('Нельзя выбрать прошедшую дату. Минимальная дата - сегодня.');
+      toast.error('Нельзя выбрать прошедшую дату');
     }
   };
 
@@ -451,12 +452,12 @@ function HabitsPage() {
     e.preventDefault();
     
     if (!editForm.title.trim()) {
-      alert('Введите название привычки');
+      toast.error('Введите название привычки');
       return;
     }
 
     if (!editingHabit) {
-      alert('Привычка не выбрана для редактирования');
+      toast.error('Привычка не выбрана для редактирования');
       return;
     }
 
@@ -499,11 +500,11 @@ function HabitsPage() {
       setEditingHabit(null);
       setEditForm({ title: '', startDate: null });
       
-      alert('Привычка успешно обновлена!');
-      
+      toast.success('Привычка обновлена!');
+
     } catch (error) {
       console.error('🔥 ОШИБКА ОБНОВЛЕНИЯ ПРИВЫЧКИ:', error);
-      alert(`Ошибка: ${error.message}`);
+      toast.error(`Ошибка: ${error.message}`);
     } finally {
       setUpdatingHabit(false);
     }
@@ -599,12 +600,12 @@ function HabitsPage() {
     console.log('🎯 СОЗДАНИЕ ПРИВЫЧКИ');
     
     if (!newHabit.title.trim()) {
-      alert('Введите название привычки');
+      toast.error('Введите название привычки');
       return;
     }
 
     if (!user) {
-      alert('Пользователь не авторизован');
+      toast.error('Пользователь не авторизован');
       return;
     }
 
@@ -667,16 +668,16 @@ function HabitsPage() {
       await loadHabits();
       
       console.log('=== ПРИВЫЧКА УСПЕШНО СОЗДАНА ===');
-      
+
       // 4. Сброс формы
-      setNewHabit({ 
-        title: '', 
+      setNewHabit({
+        title: '',
         startDate: new Date()
       });
       setShowCreateForm(false);
       setShowDatePicker(false);
-      
-      alert('Привычка успешно создана!');
+
+      toast.success('Привычка создана!');
       
     } catch (error) {
       console.error('🔥 ОШИБКА СОЗДАНИЯ ПРИВЫЧКИ:', error);
@@ -709,7 +710,7 @@ function HabitsPage() {
         
       } catch (fallbackError) {
         console.error('Все методы не сработали:', fallbackError);
-        alert(`Ошибка: ${fallbackError.message}`);
+        toast.error(`Ошибка: ${fallbackError.message}`);
       }
     } finally {
       setCreatingHabit(false);
@@ -735,7 +736,7 @@ function HabitsPage() {
       const habitStartStr = habitStartUTC.toISOString().split('T')[0];
 
       if (todayStr < habitStartStr) {
-        alert(`Привычка "${habit.title}" будет доступна только с ${formatDisplayDate(habit.startDate)}`);
+        toast(`Привычка будет доступна с ${formatDisplayDate(habit.startDate)}`, { icon: '📅' });
         return;
       }
 
@@ -797,7 +798,7 @@ function HabitsPage() {
 
     } catch (error) {
       console.error('Ошибка отметки выполнения:', error);
-      alert(`Ошибка: ${error.message}`);
+      toast.error(`Ошибка: ${error.message}`);
     }
   };
 
@@ -816,7 +817,7 @@ function HabitsPage() {
       setHabits(habits.filter(habit => habit.id !== id));
     } catch (error) {
       console.error('Ошибка удаления привычки:', error);
-      alert(`Ошибка: ${error.message}`);
+      toast.error(`Ошибка: ${error.message}`);
     }
   };
 

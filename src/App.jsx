@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from './context/AuthContext.jsx';
 import { supabase } from './services/supabase';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { Toaster } from 'react-hot-toast';
 import HabitsPage from './pages/HabitsPage.jsx';
 import CompetitionsPage from './pages/CompetitionsPage.jsx';
 import ProfilePage from './pages/ProfilePage.jsx';
@@ -718,6 +719,13 @@ const handleSubmit = async (e) => {
   // Основной рендеринг
   return (
     <Router>
+      <Toaster
+        position="top-center"
+        toastOptions={{
+          duration: 3000,
+          style: { borderRadius: '12px', fontFamily: 'inherit', fontSize: '14px' }
+        }}
+      />
       <Routes>
         {user && !needsConfirmation ? (
           <>

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext.jsx';
 import { supabase } from '../services/supabase';
 import { useNavigate, useLocation } from 'react-router-dom';
+import toast from 'react-hot-toast';
 import './ProfilePage.css';
 
 function ProfilePage() {
@@ -67,14 +68,14 @@ function ProfilePage() {
       
       if (error) {
         console.error('Ошибка при выходе:', error);
-        alert('Не удалось выйти. Попробуйте снова.');
+        toast.error('Не удалось выйти. Попробуйте снова.');
       } else {
         console.log('Успешный выход');
         navigate('/login');
       }
     } catch (err) {
       console.error('Ошибка:', err);
-      alert('Произошла ошибка при выходе');
+      toast.error('Произошла ошибка при выходе');
     } finally {
       setLoading(false);
     }
@@ -175,7 +176,7 @@ function ProfilePage() {
       if (data && data.success) {
         setInitialUsername(trimmedUsername);
         setEditingUsername(false);
-        alert(data.message || 'Никнейм успешно обновлен!');
+        toast.success('Никнейм обновлён!');
       } else {
         setUsernameError(data?.message || 'Не удалось обновить никнейм');
       }
