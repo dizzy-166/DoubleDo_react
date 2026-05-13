@@ -1183,6 +1183,23 @@ function HabitCard({
   // Проверяем, выполнена ли привычка сегодня
   const isTodayCompleted = progress.find(p => p.completed_date === todayStr && p.is_completed);
 
+  // Считаем текущую серию выполнений (streak)
+  const streak = (() => {
+    let count = 0;
+    const check = new Date(todayUTC);
+    // Если сегодня не выполнена — начинаем с вчера
+    if (!isTodayCompleted) check.setUTCDate(check.getUTCDate() - 1);
+    while (true) {
+      const dateStr = check.toISOString().split('T')[0];
+      if (dateStr < habitStartStr) break;
+      const done = progress.find(p => p.completed_date === dateStr && p.is_completed);
+      if (!done) break;
+      count++;
+      check.setUTCDate(check.getUTCDate() - 1);
+    }
+    return count;
+  })();
+
   // Закрытие меню при клике снаружи
   useEffect(() => {
     function handleClickOutside(event) {
@@ -1361,8 +1378,13 @@ function HabitCard({
         </button>
         
         <div className="habit-actions">
-          {habit.source_type === 'competition' && (
+          {streak >= 2 && (
             <span className="streak-badge">
+              🔥 {streak} {streak === 1 ? 'день' : streak < 5 ? 'дня' : 'дней'}
+            </span>
+          )}
+          {habit.source_type === 'competition' && (
+            <span className="competition-score-badge">
               🏆 {habit.my_score || 0} : {habit.friend_score || 0}
             </span>
           )}

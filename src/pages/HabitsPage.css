@@ -269,15 +269,29 @@
 }
 
 .streak-badge {
-  background: #fff5f5;
-  color: #e53e3e;
-  padding: 6px 12px;
-  border-radius: 12px;
-  font-size: 14px;
-  font-weight: 500;
+  background: linear-gradient(135deg, #fff3e0, #ffe0cc);
+  color: #e65100;
+  padding: 5px 11px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 600;
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: 3px;
+  border: 1px solid rgba(230, 81, 0, 0.15);
+}
+
+.competition-score-badge {
+  background: linear-gradient(135deg, #f3f0ff, #ede9f7);
+  color: #667eea;
+  padding: 5px 11px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  border: 1px solid rgba(102, 126, 234, 0.15);
 }
 
 .delete-habit-btn {
