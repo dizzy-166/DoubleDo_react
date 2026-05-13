@@ -1087,7 +1087,16 @@ function HabitsPage() {
         </div>
 
         <div className="habits-grid">
-          {habits.map(habit => (
+          {[...habits].sort((a, b) => {
+            const aStart = new Date(a.startDate).toISOString().split('T')[0];
+            const bStart = new Date(b.startDate).toISOString().split('T')[0];
+            const aFuture = aStart > todayStr ? 1 : 0;
+            const bFuture = bStart > todayStr ? 1 : 0;
+            if (aFuture !== bFuture) return aFuture - bFuture;
+            const aDone = (progressData[a.id] || []).find(p => p.completed_date === todayStr && p.is_completed) ? 1 : 0;
+            const bDone = (progressData[b.id] || []).find(p => p.completed_date === todayStr && p.is_completed) ? 1 : 0;
+            return aDone - bDone;
+          }).map(habit => (
             <HabitCard
               key={habit.id}
               habit={habit}
