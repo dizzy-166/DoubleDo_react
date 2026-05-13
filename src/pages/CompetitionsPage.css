@@ -2160,6 +2160,17 @@
   transform: translateY(-3px);
 }
 
+.duration-option.infinite {
+  background: linear-gradient(135deg, rgba(255, 152, 0, 0.08), rgba(255, 87, 34, 0.1));
+  border-color: rgba(255, 152, 0, 0.3);
+  color: #e65100;
+}
+
+.duration-option.infinite.selected {
+  background: linear-gradient(135deg, #ff9800, #ff5722);
+  box-shadow: 0 8px 24px rgba(255, 152, 0, 0.35);
+}
+
 .selected-habit-info, .no-habits, .no-friends-warning {
   background: linear-gradient(135deg, rgba(102, 126, 234, 0.06), rgba(118, 75, 162, 0.1));
   padding: 16px;

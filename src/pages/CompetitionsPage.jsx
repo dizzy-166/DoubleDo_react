@@ -790,19 +790,18 @@ function CompetitionCard({ competition, user, onRefresh, onDelete }) {
   
   const dayNames = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
   
+  const isInfinite = competition.total_days === 9999;
+
   // Расчет дней, оставшихся до конца соревнования
   const calculateDaysRemaining = () => {
-    if (!competition.start_date) return 0;
-    
+    if (isInfinite || !competition.start_date) return null;
+
     const startDate = new Date(competition.start_date);
-    const totalDays = competition.total_days || 30;
     const endDate = new Date(startDate);
-    endDate.setDate(startDate.getDate() + totalDays);
-    
+    endDate.setDate(startDate.getDate() + (competition.total_days || 30));
+
     const now = new Date();
-    const remaining = Math.max(0, Math.ceil((endDate - now) / (1000 * 60 * 60 * 24)));
-    
-    return remaining;
+    return Math.max(0, Math.ceil((endDate - now) / (1000 * 60 * 60 * 24)));
   };
 
   // Функция для загрузки данных календаря
@@ -1003,8 +1002,8 @@ function CompetitionCard({ competition, user, onRefresh, onDelete }) {
 
         {!isCompleted && (
           <div className="days-remaining">
-            <div className="days-label">Дней</div>
-            <div className="days-value">{calculateDaysRemaining()}</div>
+            <div className="days-label">{isInfinite ? 'Режим' : 'Дней'}</div>
+            <div className="days-value">{isInfinite ? '∞' : calculateDaysRemaining()}</div>
           </div>
         )}
       </div>
@@ -1472,19 +1471,24 @@ function CreateCompetitionModal({ setShowCreateForm, friends, preSelectedFriend,
                     { days: 14, label: '2 недели' },
                     { days: 21, label: '3 недели' },
                     { days: 30, label: '1 месяц' },
-                    { days: 60, label: '2 месяца' }
+                    { days: 60, label: '2 месяца' },
+                    { days: 9999, label: '∞ Бесконечное' }
                   ].map(option => (
                     <button
                       key={option.days}
                       type="button"
-                      className={`duration-option ${formData.duration === option.days ? 'selected' : ''}`}
+                      className={`duration-option ${formData.duration === option.days ? 'selected' : ''}${option.days === 9999 ? ' infinite' : ''}`}
                       onClick={() => handleChange('duration', option.days)}
                     >
                       {option.label}
                     </button>
                   ))}
                 </div>
-                <p className="form-hint">Соревнование завершится, когда один из участников выполнит привычку заданное количество дней</p>
+                <p className="form-hint">
+                  {formData.duration === 9999
+                    ? 'Соревнование не имеет конечной даты — оно будет продолжаться до тех пор, пока его не удалят'
+                    : 'Соревнование завершится через указанное количество дней'}
+                </p>
               </div>
               
               <div className="form-group">
@@ -1531,7 +1535,9 @@ function CreateCompetitionModal({ setShowCreateForm, friends, preSelectedFriend,
                   </div>
                   <div className="summary-row">
                     <span className="summary-label">Длительность:</span>
-                    <span className="summary-value">{formData.duration} дней</span>
+                    <span className="summary-value">
+                      {formData.duration === 9999 ? '∞ Бесконечное' : `${formData.duration} дней`}
+                    </span>
                   </div>
                   <div className="summary-row">
                     <span className="summary-label">Дата начала:</span>
@@ -1552,7 +1558,7 @@ function CreateCompetitionModal({ setShowCreateForm, friends, preSelectedFriend,
                   <ul className="summary-list">
                     <li>Вы и ваш друг будете ежедневно отмечать выполнение привычки</li>
                     <li>Тот, кто выполнит привычку больше дней, побеждает</li>
-                    <li>Соревнование автоматически завершится через {formData.duration} дней</li>
+                    <li>{formData.duration === 9999 ? 'Соревнование бессрочное — без автоматического завершения' : `Соревнование автоматически завершится через ${formData.duration} дней`}</li>
                     <li>Вы можете видеть прогресс друг друга в реальном времени</li>
                     <li>Привычку нужно отмечать в разделе "Привычки"</li>
                   </ul>
@@ -1704,11 +1710,17 @@ function InviteLinkModal({ setShowModal }) {
                   <div className="form-group">
                     <label className="form-label">Длительность *</label>
                     <div className="duration-options">
-                      {[{ days: 7, label: '1 неделя' }, { days: 14, label: '2 недели' }, { days: 21, label: '3 недели' }, { days: 30, label: '1 месяц' }].map(o => (
+                      {[
+                        { days: 7, label: '1 неделя' },
+                        { days: 14, label: '2 недели' },
+                        { days: 21, label: '3 недели' },
+                        { days: 30, label: '1 месяц' },
+                        { days: 9999, label: '∞ Бесконечное' }
+                      ].map(o => (
                         <button
                           key={o.days}
                           type="button"
-                          className={`duration-option${formData.duration === o.days ? ' selected' : ''}`}
+                          className={`duration-option${formData.duration === o.days ? ' selected' : ''}${o.days === 9999 ? ' infinite' : ''}`}
                           onClick={() => setFormData(prev => ({ ...prev, duration: o.days }))}
                         >
                           {o.label}
