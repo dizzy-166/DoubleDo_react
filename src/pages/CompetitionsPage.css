@@ -189,6 +189,11 @@
   overflow: visible;
 }
 
+[data-theme="dark"] .competitions-main {
+  background: rgba(16, 16, 30, 0.98);
+  box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.4);
+}
+
 /* Заголовок соревнований */
 .competitions-list-header {
   display: flex;
@@ -3304,3 +3309,62 @@ button, .action-btn, .gradient-tab, .friends-tab, .nav-item {
     white-space: nowrap;
   }
 }
+
+/* ===== DARK THEME OVERRIDES ===== */
+
+[data-theme="dark"] .friends-header {
+  border-bottom-color: rgba(255, 255, 255, 0.07);
+}
+
+[data-theme="dark"] .friend-search-input {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.1);
+  color: #e8e8f8;
+}
+
+[data-theme="dark"] .friend-search-input::placeholder { color: #55557a; }
+
+[data-theme="dark"] .section-container {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.06);
+}
+
+[data-theme="dark"] .section-header h3 { color: #9090b8; }
+
+[data-theme="dark"] .friend-item,
+[data-theme="dark"] .friend-request-item {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.06);
+}
+
+[data-theme="dark"] .friend-item h4,
+[data-theme="dark"] .friend-request-info h4 { color: #e8e8f8; }
+
+[data-theme="dark"] .friend-status,
+[data-theme="dark"] .request-time { color: #7777a0; }
+
+[data-theme="dark"] .friend-avatar,
+[data-theme="dark"] .recommended-user-avatar {
+  background: rgba(102, 126, 234, 0.25);
+  color: #a0b4ff;
+}
+
+[data-theme="dark"] .recommended-user-item {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.06);
+}
+
+[data-theme="dark"] .recommended-user-name { color: #e8e8f8; }
+[data-theme="dark"] .recommendation-reason,
+[data-theme="dark"] .common-interests { color: #7777a0; }
+
+[data-theme="dark"] .search-results {
+  background: rgba(20, 20, 38, 0.95);
+  border-color: rgba(255, 255, 255, 0.06);
+  box-shadow: none;
+}
+
+[data-theme="dark"] .search-results h3 { color: #9090b8; }
+
+[data-theme="dark"] .competitions-list-header h2 { color: #e8e8f8; }
+[data-theme="dark"] .competitions-list-header { border-bottom-color: rgba(255, 255, 255, 0.07); }
