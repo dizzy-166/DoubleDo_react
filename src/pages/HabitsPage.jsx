@@ -32,6 +32,7 @@ function HabitsPage() {
   const [updatingHabit, setUpdatingHabit] = useState(false);
   const [pullRefreshing, setPullRefreshing] = useState(false);
   const [pullY, setPullY] = useState(0);
+  const [competitionScores, setCompetitionScores] = useState({});
   const pullStartY = useRef(null);
   const mainRef = useRef(null);
 
@@ -148,6 +149,7 @@ function HabitsPage() {
       if (habitsData && habitsData.length > 0) {
         console.log('📊 Загрузка прогресса для привычек');
         await loadAllProgress(habitsData);
+        await loadCompetitionScores();
       }
     } catch (error) {
       console.error('❌ Ошибка загрузки привычек:', error);
@@ -324,6 +326,24 @@ function HabitsPage() {
       setProgressData(progressCache);
     } catch (error) {
       console.error('❌ Ошибка загрузки прогресса:', error);
+    }
+  };
+
+  // Загрузка актуальных очков соревнований из get_user_competitions
+  const loadCompetitionScores = async () => {
+    try {
+      const { data, error } = await supabase.rpc('get_user_competitions');
+      if (error) return;
+      const map = {};
+      (data || []).forEach(c => {
+        map[c.competition_id] = {
+          my_score: c.my_score || 0,
+          friend_score: c.friend_score || 0
+        };
+      });
+      setCompetitionScores(map);
+    } catch {
+      // не критично, бейдж просто покажет 0:0
     }
   };
 
@@ -1114,6 +1134,7 @@ function HabitsPage() {
               getDayStatus={getDayStatus}
               getDaysWord={getDaysWord}
               onEditClick={handleEditClick}
+              competitionScores={competitionScores}
             />
           ))}
         </div>
@@ -1231,7 +1252,8 @@ function HabitCard({
   progressData,
   getDayStatus,
   getDaysWord,
-  onEditClick
+  onEditClick,
+  competitionScores
 }) {
   const [isLoading, setIsLoading] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
@@ -1465,9 +1487,11 @@ function HabitCard({
               🔥 {streak} {streak === 1 ? 'день' : streak < 5 ? 'дня' : 'дней'}
             </span>
           )}
-          {habit.source_type === 'competition' && (
+          {habit.source_type === 'competition' && habit.competition_id && (
             <span className="competition-score-badge">
-              🏆 {habit.my_score || 0} : {habit.friend_score || 0}
+              🏆 {(competitionScores[habit.competition_id]?.my_score ?? habit.my_score) || 0}
+              {' : '}
+              {(competitionScores[habit.competition_id]?.friend_score ?? habit.friend_score) || 0}
             </span>
           )}
         </div>
