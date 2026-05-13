@@ -1648,7 +1648,8 @@ function InviteLinkModal({ setShowModal }) {
   };
 
   const handleCopy = () => {
-    navigator.clipboard.writeText(generatedLink).then(() => {
+    const text = `Вас приглашают в соревнование по привычке «${formData.habitTitle}» на ${formData.duration} дней в приложении DoubleDo!\n\nПерейдите по ссылке, чтобы принять вызов:\n${generatedLink}`;
+    navigator.clipboard.writeText(text).then(() => {
       setCopied(true);
       toast.success('Ссылка скопирована!');
       setTimeout(() => setCopied(false), 2000);
