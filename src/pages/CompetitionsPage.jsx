@@ -368,6 +368,30 @@ function CompetitionsPage() {
     setShowCreateForm(true);
   };
 
+  const handleDeleteCompetition = (competitionId, habitTitle) => {
+    setConfirmDialog({
+      title: 'Удалить соревнование?',
+      text: `Соревнование по привычке «${habitTitle}» будет удалено безвозвратно.`,
+      onConfirm: async () => {
+        try {
+          const { data, error } = await supabase.rpc('delete_competition', {
+            p_competition_id: competitionId
+          });
+          if (error) throw error;
+          if (data?.success) {
+            toast.success('Соревнование удалено');
+            await loadCompetitions();
+          } else {
+            toast.error(data?.message || 'Не удалось удалить соревнование');
+          }
+        } catch (error) {
+          toast.error('Ошибка при удалении соревнования');
+        }
+        setConfirmDialog(null);
+      }
+    });
+  };
+
   return (
     <div className="competitions-page">
       {/* Диалог подтверждения */}
@@ -472,11 +496,12 @@ function CompetitionsPage() {
                 ) : (
                   <div className="competitions-list">
                     {competitions.map(competition => (
-                      <CompetitionCard 
-                        key={competition.competition_id} 
-                        competition={competition} 
+                      <CompetitionCard
+                        key={competition.competition_id}
+                        competition={competition}
                         user={user}
                         onRefresh={loadCompetitions}
+                        onDelete={() => handleDeleteCompetition(competition.competition_id, competition.habit_title)}
                       />
                     ))}
                   </div>
@@ -736,7 +761,7 @@ function CompetitionsPage() {
 }
 
 // Компонент карточки соревнования
-function CompetitionCard({ competition, user, onRefresh }) {
+function CompetitionCard({ competition, user, onRefresh, onDelete }) {
   const [calendarData, setCalendarData] = useState(null);
   const [loadingCalendar, setLoadingCalendar] = useState(false);
   const [lastUpdate, setLastUpdate] = useState(Date.now());
@@ -903,12 +928,20 @@ function CompetitionCard({ competition, user, onRefresh }) {
             Соревнование с <span className="friend-name">{competition.friend_username}</span>
           </div>
         </div>
-        {isPending && <span className="status-badge pending">Ожидание</span>}
-        {isCompleted && (
-          <span className={`status-badge ${iWon ? 'won' : friendWon ? 'lost' : 'draw'}`}>
-            {iWon ? '🥇 Победа!' : friendWon ? '🥈 Поражение' : '🤝 Ничья'}
-          </span>
-        )}
+        <div className="competition-title-badges">
+          {isPending && <span className="status-badge pending">Ожидание</span>}
+          {isCompleted && (
+            <span className={`status-badge ${iWon ? 'won' : friendWon ? 'lost' : 'draw'}`}>
+              {iWon ? '🥇 Победа!' : friendWon ? '🥈 Поражение' : '🤝 Ничья'}
+            </span>
+          )}
+          <button className="delete-competition-btn" title="Удалить соревнование" onClick={onDelete}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/>
+              <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+            </svg>
+          </button>
+        </div>
       </div>
 
       {/* Кнопки принятия/отклонения для приглашённого */}

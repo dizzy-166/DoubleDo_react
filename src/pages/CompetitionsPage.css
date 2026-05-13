@@ -463,6 +463,31 @@
 .status-badge.lost    { background: #fef2f2; color: #ef4444; }
 .status-badge.draw    { background: #f3f4f6; color: #6b7280; }
 
+.competition-title-badges {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.delete-competition-btn {
+  background: none;
+  border: none;
+  padding: 6px;
+  border-radius: 8px;
+  color: #ccc;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.15s, background 0.15s;
+}
+.delete-competition-btn:hover {
+  color: #ef4444;
+  background: #fef2f2;
+}
+
 /* Invite actions inside competition card */
 .invite-actions {
   background: linear-gradient(135deg, #f0f4ff, #f8f0ff);
