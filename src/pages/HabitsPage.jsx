@@ -1139,12 +1139,12 @@ function HabitsPage() {
 }
 
 // Компонент карточки привычки
-function HabitCard({ 
-  habit, 
-  user, 
-  today, 
-  currentDay, 
-  currentMonth, 
+function HabitCard({
+  habit,
+  user,
+  today,
+  currentDay,
+  currentMonth,
   currentYear,
   calendarWeeks,
   dayNames,
@@ -1158,6 +1158,7 @@ function HabitCard({
 }) {
   const [isLoading, setIsLoading] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const menuRef = useRef(null);
   const progress = progressData[habit.id] || [];
 
@@ -1210,10 +1211,13 @@ function HabitCard({
   };
 
   const handleDelete = () => {
-    if (confirm(`Удалить привычку "${habit.title}"?`)) {
-      deleteHabit(habit.id);
-    }
+    setShowDeleteConfirm(true);
     setShowMenu(false);
+  };
+
+  const confirmDelete = () => {
+    deleteHabit(habit.id);
+    setShowDeleteConfirm(false);
   };
 
   // Определяем текст для кнопки
@@ -1240,6 +1244,19 @@ function HabitCard({
   };
 
   return (
+    <>
+    {showDeleteConfirm && (
+      <div className="confirm-overlay" onClick={() => setShowDeleteConfirm(false)}>
+        <div className="confirm-dialog" onClick={e => e.stopPropagation()}>
+          <p className="confirm-title">Удалить привычку?</p>
+          <p className="confirm-text">«{habit.title}» и весь прогресс будут удалены навсегда.</p>
+          <div className="confirm-actions">
+            <button className="confirm-cancel" onClick={() => setShowDeleteConfirm(false)}>Отмена</button>
+            <button className="confirm-delete" onClick={confirmDelete}>Удалить</button>
+          </div>
+        </div>
+      </div>
+    )}
     <div className="habit-card">
       <div className="habit-card-header">
         <div className="habit-title-section">
@@ -1352,6 +1369,7 @@ function HabitCard({
         </div>
       </div>
     </div>
+    </>
   );
 }
 
