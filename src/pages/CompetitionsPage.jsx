@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '../services/supabase';
 import { useNavigate } from 'react-router-dom';
+import toast from 'react-hot-toast';
 import './CompetitionsPage.css';
 
 function CompetitionsPage() {
@@ -10,6 +11,7 @@ function CompetitionsPage() {
   const [loading, setLoading] = useState(true);
   const [competitions, setCompetitions] = useState([]);
   const [showCreateForm, setShowCreateForm] = useState(false);
+  const [preSelectedFriend, setPreSelectedFriend] = useState('');
   const [activeTab, setActiveTab] = useState('competitions');
   const [friends, setFriends] = useState([]);
   const [friendRequests, setFriendRequests] = useState([]);
@@ -19,7 +21,8 @@ function CompetitionsPage() {
   const [searching, setSearching] = useState(false);
   const [recommendedUsers, setRecommendedUsers] = useState([]);
   const [loadingRecommendations, setLoadingRecommendations] = useState(false);
-  const [showRecommendations, setShowRecommendations] = useState(true); // Управление видимостью рекомендаций
+  const [showRecommendations, setShowRecommendations] = useState(true);
+  const [confirmDialog, setConfirmDialog] = useState(null);
 
   // Загрузка пользователя
   useEffect(() => {
@@ -226,16 +229,15 @@ function CompetitionsPage() {
       if (error) throw error;
       
       if (data.success) {
-        alert('Запрос в друзья отправлен!');
-        // Обновляем списки
+        toast.success('Запрос в друзья отправлен!');
         await loadFriendsAndRequests();
         await loadRecommendedUsers();
       } else {
-        alert(`Ошибка: ${data.message}`);
+        toast.error(data.message || 'Ошибка при отправке запроса');
       }
     } catch (error) {
       console.error('Error sending friend request:', error);
-      alert('Ошибка при отправке запроса');
+      toast.error('Ошибка при отправке запроса');
     }
   };
 
@@ -250,83 +252,74 @@ function CompetitionsPage() {
       if (error) throw error;
       
       if (data.success) {
-        alert('Запрос в друзья принят!');
-        // Обновляем списки
+        toast.success('Запрос в друзья принят!');
         await loadFriendsAndRequests();
         await loadRecommendedUsers();
       }
     } catch (error) {
       console.error('Error accepting friend request:', error);
-      alert('Ошибка при принятии запроса');
+      toast.error('Ошибка при принятии запроса');
     }
   };
 
-  // Функция отклонения запроса в друзья
   const handleDeclineFriendRequest = async (friendshipId) => {
     try {
       const { data, error } = await supabase.rpc('respond_to_friend_request', {
         friendship_id: friendshipId,
         response_action: 'decline'
       });
-      
       if (error) throw error;
-      
       if (data.success) {
-        alert('Запрос в друзья отклонен');
-        // Обновляем список запросов
+        toast('Запрос отклонён', { icon: '✕' });
         await loadFriendsAndRequests();
         await loadRecommendedUsers();
       }
     } catch (error) {
       console.error('Error declining friend request:', error);
-      alert('Ошибка при отклонении запроса');
+      toast.error('Ошибка при отклонении запроса');
     }
   };
 
-  // Функция отмены отправленного запроса
-  const handleCancelSentRequest = async (friendshipId) => {
-    if (!confirm('Вы уверены, что хотите отменить запрос в друзья?')) return;
-    
-    try {
-      const { data, error } = await supabase.rpc('cancel_friend_request', {
-        friendship_id: friendshipId
-      });
-      
-      if (error) throw error;
-      
-      if (data.success) {
-        alert('Запрос отменен');
-        // Обновляем списки
-        await loadFriendsAndRequests();
-        await loadRecommendedUsers();
+  const handleCancelSentRequest = (friendshipId) => {
+    setConfirmDialog({
+      title: 'Отменить запрос?',
+      text: 'Запрос в друзья будет отозван.',
+      onConfirm: async () => {
+        try {
+          const { data, error } = await supabase.rpc('cancel_friend_request', { friendship_id: friendshipId });
+          if (error) throw error;
+          if (data.success) {
+            toast('Запрос отменён', { icon: '✕' });
+            await loadFriendsAndRequests();
+            await loadRecommendedUsers();
+          }
+        } catch (error) {
+          toast.error('Ошибка при отмене запроса');
+        }
+        setConfirmDialog(null);
       }
-    } catch (error) {
-      console.error('Error canceling friend request:', error);
-      alert('Ошибка при отмене запроса');
-    }
+    });
   };
 
-  // Функция удаления друга
-  const handleRemoveFriend = async (friendshipId) => {
-    if (!confirm('Вы уверены, что хотите удалить этого друга?')) return;
-    
-    try {
-      const { data, error } = await supabase.rpc('remove_friend', {
-        friendship_id: friendshipId
-      });
-      
-      if (error) throw error;
-      
-      if (data.success) {
-        alert('Друг удален');
-        // Обновляем список друзей
-        await loadFriendsAndRequests();
-        await loadRecommendedUsers();
+  const handleRemoveFriend = (friendshipId, username) => {
+    setConfirmDialog({
+      title: 'Удалить из друзей?',
+      text: `${username} будет удалён из вашего списка друзей.`,
+      onConfirm: async () => {
+        try {
+          const { data, error } = await supabase.rpc('remove_friend', { friendship_id: friendshipId });
+          if (error) throw error;
+          if (data.success) {
+            toast.success('Друг удалён');
+            await loadFriendsAndRequests();
+            await loadRecommendedUsers();
+          }
+        } catch (error) {
+          toast.error('Ошибка при удалении друга');
+        }
+        setConfirmDialog(null);
       }
-    } catch (error) {
-      console.error('Error removing friend:', error);
-      alert('Ошибка при удалении друга');
-    }
+    });
   };
 
   // Общее количество запросов для бейджа
@@ -338,82 +331,92 @@ function CompetitionsPage() {
     ...sentFriendRequests.map(req => ({ ...req, type: 'outgoing' }))
   ];
 
-  // Если загрузка
   if (loading) {
     return (
       <div className="competitions-page">
         <header className="competitions-header">
           <div className="header-content">
             <h1>DoubleDo</h1>
-            <div className="user-avatar">
-              <span>👤</span>
+            <div className="user-avatar" onClick={() => navigate('/profile')}>
+              <span>{user?.email?.charAt(0).toUpperCase() || 'U'}</span>
             </div>
           </div>
         </header>
-        
         <div className="empty-competitions-container">
-          <div className="loading-spinner"></div>
+          <div className="loading-spinner" />
           <p>Загрузка...</p>
         </div>
       </div>
     );
   }
 
-  // Если пользователь не авторизован
   if (!user) {
     return (
       <div className="competitions-page">
         <header className="competitions-header">
-          <div className="header-content">
-            <h1>DoubleDo</h1>
-            <div className="user-avatar">
-              <span>👤</span>
-            </div>
-          </div>
+          <div className="header-content"><h1>DoubleDo</h1></div>
         </header>
-        
         <div className="empty-competitions-container">
           <h2>Пожалуйста, войдите в систему</h2>
-          <p>Для доступа к соревнованиям необходимо авторизоваться</p>
         </div>
       </div>
     );
   }
 
   const handleCreateCompetitionWithFriend = (friendUsername) => {
+    setPreSelectedFriend(friendUsername);
     setShowCreateForm(true);
-    // Можно предзаполнить поле друга в форме
   };
 
   return (
     <div className="competitions-page">
+      {/* Диалог подтверждения */}
+      {confirmDialog && (
+        <div className="confirm-overlay" onClick={() => setConfirmDialog(null)}>
+          <div className="confirm-dialog" onClick={e => e.stopPropagation()}>
+            <p className="confirm-title">{confirmDialog.title}</p>
+            <p className="confirm-text">{confirmDialog.text}</p>
+            <div className="confirm-actions">
+              <button className="confirm-cancel" onClick={() => setConfirmDialog(null)}>Отмена</button>
+              <button className="confirm-delete" onClick={confirmDialog.onConfirm}>Подтвердить</button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <header className="competitions-header">
         <div className="header-content">
           <h1>DoubleDo</h1>
-          <div className="user-avatar">
-            <span>{user?.email?.charAt(0).toUpperCase() || '👤'}</span>
+          <div className="user-avatar" onClick={() => navigate('/profile')}>
+            <span>{user?.email?.charAt(0).toUpperCase() || 'U'}</span>
           </div>
         </div>
       </header>
 
-      {/* Скрываем вкладки при открытой форме создания соревнования */}
       {!showCreateForm && (
         <>
-          {/* Вкладки */}
           <div className="tabs-on-gradient">
             <div className="gradient-tabs">
-              <button 
+              <button
                 className={`gradient-tab ${activeTab === 'competitions' ? 'active' : ''}`}
                 onClick={() => setActiveTab('competitions')}
               >
-                <span className="tab-icon">🏆</span>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/>
+                  <path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/>
+                  <path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/>
+                  <path d="M18 2H6v7a6 6 0 0 0 12 0V2z"/>
+                </svg>
                 <span className="tab-text">Соревнования</span>
               </button>
-              <button 
+              <button
                 className={`gradient-tab ${activeTab === 'friends' ? 'active' : ''}`}
                 onClick={() => setActiveTab('friends')}
               >
-                <span className="tab-icon">👥</span>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="9" cy="7" r="4"/><path d="M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/>
+                  <path d="M16 3.13a4 4 0 0 1 0 7.75"/><path d="M21 21v-2a4 4 0 0 0-3-3.87"/>
+                </svg>
                 <span className="tab-text">Друзья</span>
                 {totalRequestsCount > 0 && (
                   <span className="tab-badge">{totalRequestsCount}</span>
@@ -594,7 +597,7 @@ function CompetitionsPage() {
                         key={friend.friendship_id} 
                         friend={friend} 
                         onCreateCompetition={() => handleCreateCompetitionWithFriend(friend.username)}
-                        onRemoveFriend={() => handleRemoveFriend(friend.friendship_id)}
+                        onRemoveFriend={() => handleRemoveFriend(friend.friendship_id, friend.username)}
                       />
                     ))}
                     
@@ -680,10 +683,12 @@ function CompetitionsPage() {
 
       {showCreateForm && (
         <CreateCompetitionModal
-          setShowCreateForm={setShowCreateForm}
+          setShowCreateForm={(v) => { setShowCreateForm(v); if (!v) setPreSelectedFriend(''); }}
           friends={friends}
+          preSelectedFriend={preSelectedFriend}
           onCompetitionCreated={() => {
             loadCompetitions();
+            setPreSelectedFriend('');
           }}
         />
       )}
@@ -737,6 +742,7 @@ function CompetitionCard({ competition, user, onRefresh }) {
   const [lastUpdate, setLastUpdate] = useState(Date.now());
   const [myCompletedDays, setMyCompletedDays] = useState([]);
   const [friendCompletedDays, setFriendCompletedDays] = useState([]);
+  const [respondingToInvite, setRespondingToInvite] = useState(false);
   
   const dayNames = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
   
@@ -853,46 +859,102 @@ function CompetitionCard({ competition, user, onRefresh }) {
     weeks.push(week);
   }
 
-  // Функция для принудительного обновления
   const handleRefreshCalendar = () => {
     setLastUpdate(Date.now());
     loadCalendarData();
     if (onRefresh) onRefresh();
   };
 
+  const handleRespondToInvite = async (action) => {
+    setRespondingToInvite(true);
+    try {
+      const { data, error } = await supabase.rpc('respond_to_competition_invite', {
+        p_competition_id: competition.competition_id,
+        p_action: action
+      });
+      if (error) throw error;
+      if (data?.success) {
+        toast.success(action === 'accept' ? 'Соревнование принято! 🏆' : 'Соревнование отклонено');
+        if (onRefresh) onRefresh();
+      } else {
+        toast.error(data?.message || 'Ошибка');
+      }
+    } catch (error) {
+      toast.error('Ошибка при ответе на приглашение');
+    } finally {
+      setRespondingToInvite(false);
+    }
+  };
+
+  const myScore = competition.my_score || 0;
+  const friendScore = competition.friend_score || 0;
+  const isCompleted = competition.status === 'completed';
+  const isPending = competition.status === 'pending';
+  const iWon = isCompleted && myScore > friendScore;
+  const friendWon = isCompleted && friendScore > myScore;
+  const isDraw = isCompleted && myScore === friendScore;
+
   return (
-    <div className="competition-card">
+    <div className={`competition-card${isCompleted ? ' completed-card' : ''}`}>
       <div className="competition-header">
         <div className="competition-title-section">
           <h3 className="competition-title">{competition.habit_title}</h3>
           <div className="competition-subtitle">
-            Соревнуетесь с <span className="friend-name">{competition.friend_username}</span>
-            {competition.status === 'pending' && (
-              <span className="invite-status-pending"> (Ожидание подтверждения)</span>
-            )}
+            Соревнование с <span className="friend-name">{competition.friend_username}</span>
           </div>
         </div>
+        {isPending && <span className="status-badge pending">Ожидание</span>}
+        {isCompleted && (
+          <span className={`status-badge ${iWon ? 'won' : friendWon ? 'lost' : 'draw'}`}>
+            {iWon ? '🥇 Победа!' : friendWon ? '🥈 Поражение' : '🤝 Ничья'}
+          </span>
+        )}
       </div>
 
-      <div className="competition-score">
-        <div className="score-section you-section">
-          <div className="score-label">Вы</div>
-          <div className="score-value">{competition.my_score || 0}</div>
+      {/* Кнопки принятия/отклонения для приглашённого */}
+      {isPending && (
+        <div className="invite-actions">
+          <p className="invite-text">Вас пригласили в соревнование по привычке «{competition.habit_title}»</p>
+          <div className="invite-buttons">
+            <button
+              className="invite-accept-btn"
+              onClick={() => handleRespondToInvite('accept')}
+              disabled={respondingToInvite}
+            >
+              {respondingToInvite ? '...' : 'Принять'}
+            </button>
+            <button
+              className="invite-decline-btn"
+              onClick={() => handleRespondToInvite('decline')}
+              disabled={respondingToInvite}
+            >
+              Отклонить
+            </button>
+          </div>
         </div>
-        
+      )}
+
+      <div className="competition-score">
+        <div className={`score-section you-section${iWon ? ' winner' : ''}`}>
+          <div className="score-label">Вы</div>
+          <div className="score-value">{myScore}</div>
+        </div>
+
         <div className="vs-section">
           <div className="vs-text">VS</div>
         </div>
-        
-        <div className="score-section friend-section">
+
+        <div className={`score-section friend-section${friendWon ? ' winner' : ''}`}>
           <div className="score-label">{competition.friend_username}</div>
-          <div className="score-value">{competition.friend_score || 0}</div>
+          <div className="score-value">{friendScore}</div>
         </div>
-        
-        <div className="days-remaining">
-          <div className="days-label">Дней</div>
-          <div className="days-value">{calculateDaysRemaining()}</div>
-        </div>
+
+        {!isCompleted && (
+          <div className="days-remaining">
+            <div className="days-label">Дней</div>
+            <div className="days-value">{calculateDaysRemaining()}</div>
+          </div>
+        )}
       </div>
 
       <div className="competition-calendars">
@@ -985,30 +1047,31 @@ function FriendItem({ friend, onCreateCompetition, onRemoveFriend }) {
   return (
     <div className="friend-item">
       <div className="friend-avatar">
-        <span>{friend.username?.charAt(0).toUpperCase() || '👤'}</span>
+        <span>{friend.username?.charAt(0).toUpperCase() || 'U'}</span>
       </div>
-      
+
       <div className="friend-info">
         <h4 className="friend-name">{friend.username}</h4>
         <p className="friend-status">
           Друг с {new Date(friend.friendship_created_at).toLocaleDateString('ru-RU')}
         </p>
       </div>
-      
+
       <div className="friend-actions">
-        <button 
-          className="friend-action-btn" 
-          title="Создать соревнование"
-          onClick={onCreateCompetition}
-        >
-          🏆
+        <button className="friend-action-btn" title="Создать соревнование" onClick={onCreateCompetition}>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/>
+            <path d="M4 22h16"/>
+            <path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/>
+            <path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/>
+            <path d="M18 2H6v7a6 6 0 0 0 12 0V2z"/>
+          </svg>
         </button>
-        <button 
-          className="friend-action-btn danger" 
-          title="Удалить из друзей"
-          onClick={onRemoveFriend}
-        >
-          🗑️
+        <button className="friend-action-btn danger" title="Удалить из друзей" onClick={onRemoveFriend}>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/>
+            <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+          </svg>
         </button>
       </div>
     </div>
@@ -1026,11 +1089,9 @@ function FriendRequestItem({ request, type = "incoming", onAccept, onDecline, on
       <div className="friend-request-info">
         <div className="request-header">
           <h4 className="friend-name">{request.username}</h4>
-          {type === 'incoming' ? (
-            <span className="request-type-icon" title="Входящий запрос">⬇️</span>
-          ) : (
-            <span className="request-type-icon" title="Исходящий запрос">⬆️</span>
-          )}
+          <span className={`request-type-badge ${type}`}>
+            {type === 'incoming' ? 'Входящий' : 'Исходящий'}
+          </span>
         </div>
         <p className="request-time">
           {type === 'incoming' ? 'Получен' : 'Отправлен'} {new Date(request.created_at).toLocaleDateString('ru-RU')}
@@ -1116,12 +1177,12 @@ function RecommendedUserItem({ user, onSendRequest }) {
 }
 
 // Модальное окно создания соревнования
-function CreateCompetitionModal({ setShowCreateForm, friends, onCompetitionCreated }) {
+function CreateCompetitionModal({ setShowCreateForm, friends, preSelectedFriend, onCompetitionCreated }) {
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState({
     habitId: '',
     habitTitle: '',
-    friendUsername: '',
+    friendUsername: preSelectedFriend || '',
     duration: 30,
     startDate: new Date().toISOString().split('T')[0],
     stake: ''
@@ -1208,44 +1269,35 @@ function CreateCompetitionModal({ setShowCreateForm, friends, onCompetitionCreat
 
   // Функция создания соревнования
   const handleCreateCompetition = async () => {
-    console.log('Создание соревнования с данными:', formData);
-    
     if (!formData.habitId || !formData.friendUsername) {
-      alert('Пожалуйста, заполните все обязательные поля');
+      toast.error('Заполните все обязательные поля');
       return;
     }
 
     setCreating(true);
     try {
-      const { data, error } = await supabase.rpc('create_competition', {
+      const rpcParams = {
         p_habit_id: formData.habitId,
         p_friend_username: formData.friendUsername,
         p_total_days: formData.duration
-      });
+      };
+      if (formData.stake) rpcParams.p_stake = formData.stake;
 
-      console.log('Результат создания соревнования:', { data, error });
+      const { data, error } = await supabase.rpc('create_competition', rpcParams);
 
-      if (error) {
-        console.error('Ошибка RPC:', error);
-        throw error;
-      }
+      if (error) throw error;
 
       if (data && data.success) {
-        alert('✅ Соревнование создано успешно!');
+        toast.success('Соревнование создано! Ожидайте подтверждения от друга.');
         setShowCreateForm(false);
-        if (onCompetitionCreated) {
-          onCompetitionCreated();
-        }
-        
+        if (onCompetitionCreated) onCompetitionCreated();
         window.dispatchEvent(new CustomEvent('competition-created'));
       } else {
-        const errorMessage = data?.message || 'Неизвестная ошибка';
-        console.error('Ошибка создания:', errorMessage);
-        alert(`Ошибка: ${errorMessage}`);
+        toast.error(data?.message || 'Неизвестная ошибка');
       }
     } catch (error) {
       console.error('Ошибка при создании соревнования:', error);
-      alert(`Ошибка: ${error.message || 'Неизвестная ошибка'}`);
+      toast.error(error.message || 'Ошибка при создании соревнования');
     } finally {
       setCreating(false);
     }
