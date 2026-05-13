@@ -922,6 +922,29 @@ function HabitsPage() {
           </div>
         </div>
 
+        <nav className="bottom-nav">
+          <button
+            className={`nav-item ${getActiveTab() === 'competitions' ? 'active' : ''}`}
+            onClick={() => navigate('/competitions')}
+          >
+            <span className="nav-icon">🏆</span>
+          </button>
+
+          <button
+            className={`nav-item ${getActiveTab() === 'habits' ? 'active' : ''}`}
+            onClick={() => navigate('/habits')}
+          >
+            <span className="nav-icon">✅</span>
+          </button>
+
+          <button
+            className={`nav-item ${getActiveTab() === 'profile' ? 'active' : ''}`}
+            onClick={() => navigate('/profile')}
+          >
+            <span className="nav-icon">👤</span>
+          </button>
+        </nav>
+
         {showCreateForm && (
           <CreateHabitModal
             newHabit={newHabit}
