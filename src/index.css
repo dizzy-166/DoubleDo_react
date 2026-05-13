@@ -355,6 +355,12 @@ body {
 [data-theme="dark"] ::-webkit-scrollbar-thumb { background: #3a3a6a; }
 [data-theme="dark"] ::-webkit-scrollbar-thumb:hover { background: #667eea; }
 
+/* Calendar grid containers */
+[data-theme="dark"] .calendar-grid {
+  background: rgba(255, 255, 255, 0.03) !important;
+  box-shadow: none !important;
+}
+
 /* Calendar day cells — override white backgrounds */
 [data-theme="dark"] .calendar-day:not(.empty):not(.completed):not(.today) {
   background: rgba(255, 255, 255, 0.06) !important;
@@ -368,16 +374,22 @@ body {
 [data-theme="dark"] .calendar-day.today {
   border-color: #667eea !important;
   background: rgba(102, 126, 234, 0.12) !important;
+  color: #a0b4ff !important;
 }
 
 /* Small calendar in habit card */
 [data-theme="dark"] .calendar-day-small.future {
-  background: rgba(255, 255, 255, 0.06) !important;
-  color: #b0b0d0 !important;
+  background: rgba(255, 255, 255, 0.05) !important;
+  color: #8888aa !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
 }
 [data-theme="dark"] .calendar-day-small.before-start {
   background: rgba(255, 255, 255, 0.03) !important;
   color: #444466 !important;
+  border-color: rgba(255, 255, 255, 0.05) !important;
+}
+[data-theme="dark"] .calendar-day-small.missed {
+  background: rgba(244, 67, 54, 0.7) !important;
 }
 
 /* Add habit card */
@@ -467,3 +479,97 @@ body {
   border-color: rgba(102, 126, 234, 0.15);
 }
 [data-theme="dark"] .invite-text { color: #b0b0d0; }
+
+/* Search results, loading states, misc white containers */
+[data-theme="dark"] .search-results {
+  background: rgba(20, 20, 38, 0.98) !important;
+  border-color: rgba(255, 255, 255, 0.06) !important;
+  box-shadow: none !important;
+}
+[data-theme="dark"] .search-results h3 { color: #9090b8; }
+
+[data-theme="dark"] .calendar-loading {
+  background: rgba(255, 255, 255, 0.04) !important;
+  border-color: rgba(102, 126, 234, 0.2) !important;
+}
+
+[data-theme="dark"] .invite-decline-btn {
+  background: rgba(255, 255, 255, 0.06) !important;
+  border-color: rgba(255, 255, 255, 0.12) !important;
+  color: #9090b8 !important;
+}
+
+[data-theme="dark"] .no-recommendations {
+  background: rgba(255, 255, 255, 0.03) !important;
+  border-color: rgba(102, 126, 234, 0.15) !important;
+}
+[data-theme="dark"] .no-recommendations p { color: #7777a0; }
+
+/* Habit card small calendar wrapper */
+[data-theme="dark"] .weekday-cell-small { color: #55557a; }
+
+/* Status badges in dark mode */
+[data-theme="dark"] .status-badge.pending {
+  background: rgba(245, 158, 11, 0.15) !important;
+  color: #fbbf24 !important;
+}
+[data-theme="dark"] .status-badge.lost {
+  background: rgba(239, 68, 68, 0.15) !important;
+  color: #f87171 !important;
+}
+[data-theme="dark"] .status-badge.draw {
+  background: rgba(107, 114, 128, 0.2) !important;
+  color: #9ca3af !important;
+}
+
+/* Habits empty state */
+[data-theme="dark"] .empty-habits-content {
+  background: rgba(20, 20, 38, 0.98) !important;
+  box-shadow: none !important;
+}
+
+/* Confirm cancel button (white background) */
+[data-theme="dark"] .confirm-cancel {
+  background: rgba(255, 255, 255, 0.07) !important;
+  border-color: rgba(255, 255, 255, 0.12) !important;
+  color: #9090b8 !important;
+}
+
+/* Date picker input trigger */
+[data-theme="dark"] .date-picker-input {
+  background: rgba(255, 255, 255, 0.06) !important;
+  border-color: rgba(255, 255, 255, 0.12) !important;
+  color: #e8e8f8 !important;
+}
+[data-theme="dark"] .date-value { color: #e8e8f8; }
+[data-theme="dark"] .date-icon { color: #9090b8; }
+
+/* Date note warning */
+[data-theme="dark"] .date-note {
+  background: rgba(245, 158, 11, 0.1) !important;
+  border-color: rgba(245, 158, 11, 0.25) !important;
+}
+[data-theme="dark"] .date-note p { color: #c4a55a !important; }
+
+/* Streak badge */
+[data-theme="dark"] .streak-badge {
+  background: rgba(230, 81, 0, 0.15) !important;
+  color: #ffa040 !important;
+  border-color: rgba(230, 81, 0, 0.2) !important;
+}
+
+/* Competition score badge on habit card */
+[data-theme="dark"] .competition-score-badge {
+  background: rgba(102, 126, 234, 0.15) !important;
+  color: #7b9ef0 !important;
+  border-color: rgba(102, 126, 234, 0.2) !important;
+}
+
+/* Delete habit button */
+[data-theme="dark"] .delete-habit-btn {
+  background: rgba(220, 38, 38, 0.12) !important;
+  color: #f87171 !important;
+}
+[data-theme="dark"] .delete-habit-btn:hover {
+  background: rgba(220, 38, 38, 0.2) !important;
+}
