@@ -27,6 +27,31 @@
   font-weight: 700;
 }
 
+/* Pull-to-refresh */
+.pull-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  transition: height 0.2s;
+}
+
+.pull-spinner {
+  width: 24px;
+  height: 24px;
+  border: 2.5px solid #e0e0e0;
+  border-top-color: #667eea;
+  border-radius: 50%;
+}
+
+.pull-spinner.spinning {
+  animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
 .daily-progress {
   margin-top: 12px;
 }

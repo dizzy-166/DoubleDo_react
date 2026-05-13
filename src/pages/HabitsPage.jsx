@@ -30,7 +30,11 @@ function HabitsPage() {
   const [isInitialized, setIsInitialized] = useState(false);
   const [creatingHabit, setCreatingHabit] = useState(false);
   const [updatingHabit, setUpdatingHabit] = useState(false);
-  
+  const [pullRefreshing, setPullRefreshing] = useState(false);
+  const [pullY, setPullY] = useState(0);
+  const pullStartY = useRef(null);
+  const mainRef = useRef(null);
+
   const datePickerRef = useRef(null);
   const editDatePickerRef = useRef(null);
 
@@ -84,6 +88,41 @@ function HabitsPage() {
       loadHabits();
     }
   }, [user, isInitialized]);
+
+  // Pull-to-refresh
+  useEffect(() => {
+    const el = mainRef.current;
+    if (!el) return;
+
+    const onTouchStart = (e) => {
+      if (el.scrollTop === 0) pullStartY.current = e.touches[0].clientY;
+    };
+    const onTouchMove = (e) => {
+      if (pullStartY.current === null) return;
+      const delta = e.touches[0].clientY - pullStartY.current;
+      if (delta > 0 && el.scrollTop === 0) {
+        setPullY(Math.min(delta * 0.4, 70));
+      }
+    };
+    const onTouchEnd = async () => {
+      if (pullY >= 60 && !pullRefreshing) {
+        setPullRefreshing(true);
+        await loadHabits();
+        setPullRefreshing(false);
+      }
+      setPullY(0);
+      pullStartY.current = null;
+    };
+
+    el.addEventListener('touchstart', onTouchStart, { passive: true });
+    el.addEventListener('touchmove', onTouchMove, { passive: true });
+    el.addEventListener('touchend', onTouchEnd);
+    return () => {
+      el.removeEventListener('touchstart', onTouchStart);
+      el.removeEventListener('touchmove', onTouchMove);
+      el.removeEventListener('touchend', onTouchEnd);
+    };
+  }, [pullY, pullRefreshing]);
 
   // Загрузка привычек пользователя
   const loadHabits = async () => {
@@ -1030,7 +1069,12 @@ function HabitsPage() {
         )}
       </header>
 
-      <main className="habits-main">
+      <main className="habits-main" ref={mainRef}>
+        {(pullY > 0 || pullRefreshing) && (
+          <div className="pull-indicator" style={{ height: pullRefreshing ? 48 : pullY }}>
+            <div className={`pull-spinner${pullRefreshing ? ' spinning' : ''}`} />
+          </div>
+        )}
         <div className="habits-list-header">
           <h2>Мои привычки</h2>
           <button 
