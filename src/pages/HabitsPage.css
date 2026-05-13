@@ -764,7 +764,7 @@
   position: absolute;
   top: 100%;
   left: 0;
-  right: 0;
+  width: 280px;
   background: white;
   border-radius: 12px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
@@ -789,7 +789,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 16px;
+  padding: 10px 12px;
   background: #667eea;
   color: white;
 }
@@ -799,7 +799,7 @@
 }
 
 .current-month {
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 600;
 }
 
@@ -807,14 +807,14 @@
   background: rgba(255, 255, 255, 0.2);
   border: none;
   color: white;
-  width: 32px;
-  height: 32px;
+  width: 28px;
+  height: 28px;
   border-radius: 50%;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 18px;
+  font-size: 16px;
   transition: background 0.2s;
 }
 
@@ -828,21 +828,21 @@
 }
 
 .datepicker-calendar {
-  padding: 0 16px 16px;
+  padding: 0 8px 8px;
 }
 
 .datepicker-weekdays {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-  margin: 16px 0 8px;
+  margin: 8px 0 4px;
 }
 
 .weekday-name {
   text-align: center;
   color: #666;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 500;
-  padding: 8px 0;
+  padding: 4px 0;
 }
 
 .datepicker-days {
@@ -858,7 +858,8 @@
 }
 
 .datepicker-day {
-  aspect-ratio: 1;
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -948,14 +949,7 @@
   }
   
   .custom-date-picker {
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 90%;
-    max-width: 320px;
-    max-height: 80vh;
-    overflow-y: auto;
+    width: 260px;
   }
   
   .habits-header h1 {
