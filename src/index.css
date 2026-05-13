@@ -354,3 +354,95 @@ body {
 [data-theme="dark"] ::-webkit-scrollbar-track { background: #1a1a2e; }
 [data-theme="dark"] ::-webkit-scrollbar-thumb { background: #3a3a6a; }
 [data-theme="dark"] ::-webkit-scrollbar-thumb:hover { background: #667eea; }
+
+/* Competition card inner elements */
+[data-theme="dark"] .competition-calendars .calendar-day {
+  background: rgba(255, 255, 255, 0.05) !important;
+  color: #b0b0d0 !important;
+  border-color: rgba(255, 255, 255, 0.06) !important;
+}
+[data-theme="dark"] .competition-calendars .calendar-day.today {
+  border-color: #667eea !important;
+}
+[data-theme="dark"] .competition-calendars .calendar-day.completed {
+  background: rgba(16, 185, 129, 0.25) !important;
+}
+[data-theme="dark"] .competition-calendars .calendar-day.empty {
+  background: transparent !important;
+}
+
+/* Days remaining box */
+[data-theme="dark"] .days-remaining {
+  background: rgba(255, 255, 255, 0.05) !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+}
+[data-theme="dark"] .days-label { color: #7777a0 !important; }
+[data-theme="dark"] .days-value { color: #e8e8f8 !important; }
+
+/* Modal action buttons */
+[data-theme="dark"] .modal-actions {
+  border-top-color: rgba(255, 255, 255, 0.08);
+  background: #1e1e32;
+}
+[data-theme="dark"] .btn-secondary {
+  background: rgba(255, 255, 255, 0.07);
+  border-color: rgba(255, 255, 255, 0.12);
+  color: #b0b0d0;
+}
+[data-theme="dark"] .btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+/* Competition score sections */
+[data-theme="dark"] .you-section,
+[data-theme="dark"] .friend-section {
+  background: rgba(255, 255, 255, 0.05) !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+}
+[data-theme="dark"] .competition-score {
+  background: rgba(255, 255, 255, 0.03);
+  border-color: rgba(255, 255, 255, 0.06);
+}
+
+/* Step indicators in modal */
+[data-theme="dark"] .step-indicator .step-number {
+  background: rgba(255, 255, 255, 0.08);
+  color: #b0b0d0;
+}
+[data-theme="dark"] .step-indicator.active .step-number {
+  background: #667eea;
+  color: white;
+}
+[data-theme="dark"] .step-label { color: #7777a0; }
+[data-theme="dark"] .step-indicator.active .step-label { color: #667eea; }
+
+/* Duration options */
+[data-theme="dark"] .duration-option {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.12);
+  color: #b0b0d0;
+}
+[data-theme="dark"] .duration-option:hover {
+  background: rgba(102, 126, 234, 0.15);
+  border-color: #667eea;
+}
+[data-theme="dark"] .duration-option.selected {
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  border-color: transparent;
+  color: white;
+}
+
+/* No habits warning inside modal */
+[data-theme="dark"] .no-habits p,
+[data-theme="dark"] .no-habits-reasons li,
+[data-theme="dark"] .no-friends-warning p { color: #8888aa; }
+
+/* Competitions list header */
+[data-theme="dark"] .competitions-list-header h2 { color: #e8e8f8; }
+
+/* Invite actions inside card */
+[data-theme="dark"] .invite-actions {
+  background: rgba(102, 126, 234, 0.08);
+  border-color: rgba(102, 126, 234, 0.15);
+}
+[data-theme="dark"] .invite-text { color: #b0b0d0; }
