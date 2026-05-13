@@ -809,11 +809,19 @@ function HabitsPage() {
 
       if (existingProgress?.is_completed) {
         // Отменяем выполнение
-        const { error } = await supabase
-          .from('habit_progress')
-          .update({ is_completed: false })
-          .eq('id', existingProgress.id);
-        if (error) throw error;
+        if (habit.source_type === 'competition' && habit.competition_id) {
+          // Для соревновательных привычек нужно и декрементировать счёт
+          const { error } = await supabase.rpc('unmark_competition_habit_complete', {
+            p_habit_id: habitId
+          });
+          if (error) throw error;
+        } else {
+          const { error } = await supabase
+            .from('habit_progress')
+            .update({ is_completed: false })
+            .eq('id', existingProgress.id);
+          if (error) throw error;
+        }
       } else {
         // Отмечаем выполнение
         if (habit.source_type === 'competition' && habit.competition_id) {
