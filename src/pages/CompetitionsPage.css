@@ -987,6 +987,55 @@
   box-sizing: border-box;
 }
 
+[data-theme="dark"] .calendar-grid {
+  background: rgba(255, 255, 255, 0.04);
+  box-shadow: none;
+  border-color: rgba(255, 255, 255, 0.07);
+}
+
+[data-theme="dark"] .calendar-day:not(.empty):not(.completed):not(.today) {
+  background: rgba(255, 255, 255, 0.06);
+  color: #b0b0d0;
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+[data-theme="dark"] .calendar-day.empty {
+  background: rgba(255, 255, 255, 0.02);
+  border-color: rgba(255, 255, 255, 0.04);
+}
+
+[data-theme="dark"] .calendar-day.today {
+  border-color: #667eea;
+  background: rgba(102, 126, 234, 0.15);
+  color: #a0b4ff;
+}
+
+[data-theme="dark"] .weekday-cell {
+  color: #55557a;
+}
+
+[data-theme="dark"] .calendar-title {
+  color: #9090b8;
+}
+
+[data-theme="dark"] .calendar-stats {
+  color: #7777a0;
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.06);
+}
+
+[data-theme="dark"] .calendar-section:first-child .calendar-stats {
+  color: #5ccc60;
+  background: rgba(76, 175, 80, 0.08);
+  border-color: rgba(76, 175, 80, 0.15);
+}
+
+[data-theme="dark"] .calendar-section:last-child .calendar-stats {
+  color: #c060e0;
+  background: rgba(156, 39, 176, 0.08);
+  border-color: rgba(156, 39, 176, 0.15);
+}
+
 .weekdays-row {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
