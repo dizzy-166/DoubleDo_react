@@ -16,6 +16,8 @@ function ProfilePage() {
   const [usernameLoading, setUsernameLoading] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState('');
   const [usernameError, setUsernameError] = useState('');
+  const [notificationsEnabled, setNotificationsEnabled] = useState(true);
+  const [notifLoading, setNotifLoading] = useState(false);
 
   // Определение активной вкладки
   const getActiveTab = () => {
@@ -34,7 +36,7 @@ function ProfilePage() {
         // Загружаем данные из таблицы users (с username)
         const { data, error } = await supabase
           .from('users')
-          .select('username, avatar_url')
+          .select('username, avatar_url, notifications_enabled')
           .eq('id', user.id)
           .single();
 
@@ -46,6 +48,7 @@ function ProfilePage() {
           setUsername(data.username || '');
           setInitialUsername(data.username || '');
           setAvatarUrl(data.avatar_url || '');
+          setNotificationsEnabled(data.notifications_enabled !== false);
         } else {
           // Если записи нет (маловероятно), создаем временный username
           const tempUsername = `user_${user.id.substring(0, 8)}`;
@@ -188,6 +191,26 @@ function ProfilePage() {
     }
   };
 
+  // Переключение уведомлений
+  const handleToggleNotifications = async () => {
+    const newValue = !notificationsEnabled;
+    setNotificationsEnabled(newValue);
+    setNotifLoading(true);
+    try {
+      const { error } = await supabase
+        .from('users')
+        .update({ notifications_enabled: newValue })
+        .eq('id', user.id);
+      if (error) throw error;
+      toast.success(newValue ? 'Уведомления включены' : 'Уведомления отключены');
+    } catch (err) {
+      setNotificationsEnabled(!newValue);
+      toast.error('Не удалось сохранить настройку');
+    } finally {
+      setNotifLoading(false);
+    }
+  };
+
   // Отмена редактирования
   const handleCancelEdit = () => {
     setUsername(initialUsername);
@@ -308,6 +331,22 @@ function ProfilePage() {
                 {username || 'Не установлен'}
               </span>
             </div> */}
+          </div>
+
+          <div className="settings-section">
+            <h3 className="settings-title">Уведомления</h3>
+            <div className="setting-row">
+              <div className="setting-info">
+                <span className="setting-label">Email-уведомления</span>
+                <span className="setting-desc">Получать письмо, когда соперник выполнил привычку</span>
+              </div>
+              <button
+                className={`toggle-switch ${notificationsEnabled ? 'on' : ''}`}
+                onClick={handleToggleNotifications}
+                disabled={notifLoading}
+                aria-label="Переключить уведомления"
+              />
+            </div>
           </div>
 
           <div className="logout-section">
