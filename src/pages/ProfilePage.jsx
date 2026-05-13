@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext.jsx';
+import { useTheme } from '../context/ThemeContext.jsx';
 import { supabase } from '../services/supabase';
 import { useNavigate, useLocation } from 'react-router-dom';
 import toast from 'react-hot-toast';
@@ -7,6 +8,7 @@ import './ProfilePage.css';
 
 function ProfilePage() {
   const { user } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
   const [loading, setLoading] = useState(false);
@@ -334,8 +336,20 @@ function ProfilePage() {
           </div>
 
           <div className="settings-section">
-            <h3 className="settings-title">Уведомления</h3>
+            <h3 className="settings-title">Настройки</h3>
             <div className="setting-row">
+              <div className="setting-info">
+                <span className="setting-label">Тёмная тема</span>
+                <span className="setting-desc">Переключить между светлой и тёмной темой</span>
+              </div>
+              <button
+                className={`toggle-switch ${theme === 'dark' ? 'on' : ''}`}
+                onClick={toggleTheme}
+                aria-label="Переключить тему"
+              />
+            </div>
+
+            <div className="setting-row" style={{ marginTop: '12px' }}>
               <div className="setting-info">
                 <span className="setting-label">Email-уведомления</span>
                 <span className="setting-desc">Получать письмо, когда соперник выполнил привычку</span>
