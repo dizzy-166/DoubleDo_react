@@ -2918,18 +2918,31 @@
   }
   
   .gradient-tab {
-    padding: 14px 8px;
-    font-size: 14px;
-    gap: 8px;
+    padding: 12px 8px;
+    font-size: 13px;
+    gap: 6px;
   }
-  
+
+  .gradient-tab .tab-text {
+    display: none;
+  }
+
   .gradient-tab .tab-icon {
     font-size: 16px;
   }
-  
+
   .tab-badge {
     font-size: 10px;
-    padding: 2px 6px;
+    padding: 2px 5px;
+    min-width: 16px;
+    margin-left: 0;
+    position: absolute;
+    top: 6px;
+    right: 6px;
+  }
+
+  .gradient-tab {
+    position: relative;
   }
   
   .competitions-main {
