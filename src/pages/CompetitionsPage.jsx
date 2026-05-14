@@ -1009,28 +1009,6 @@ function CompetitionCard({ competition, user, onRefresh, onDelete }) {
         )}
       </div>
 
-      {!isPending && (
-        <div className="competition-stats">
-          <div className="competition-stat">
-            <div className="comp-stat-label">Всего дней</div>
-            <div className="comp-stat-values">
-              <span className="comp-stat-you">{stats.totalMyDays}</span>
-              <span className="comp-stat-divider">:</span>
-              <span className="comp-stat-friend">{stats.totalFriendDays}</span>
-            </div>
-          </div>
-          <div className="competition-stat-sep"></div>
-          <div className="competition-stat">
-            <div className="comp-stat-label">Серия 🔥</div>
-            <div className="comp-stat-values">
-              <span className="comp-stat-you">{stats.myStreak}</span>
-              <span className="comp-stat-divider">:</span>
-              <span className="comp-stat-friend">{stats.friendStreak}</span>
-            </div>
-          </div>
-        </div>
-      )}
-
       <div className="competition-calendars">
         <div className="calendar-month-nav">
           <button className="cal-nav-btn" onClick={goToPrevMonth} disabled={!canGoPrev} title="Предыдущий месяц">
