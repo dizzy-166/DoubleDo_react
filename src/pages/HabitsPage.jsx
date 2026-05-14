@@ -132,10 +132,13 @@ function HabitsPage() {
       console.error('❌ Пользователь не определен');
       return;
     }
-    
+
     setLoading(true);
-    
+
     try {
+      // Сбрасываем стрики для пропущенных дней перед загрузкой
+      supabase.rpc('reset_missed_streaks').catch(() => {});
+
       console.log('📥 Вызов loadHabitsSafe');
       const habitsData = await loadHabitsSafe();
       console.log('✅ Данные привычек получены:', {
