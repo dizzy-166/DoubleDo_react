@@ -3618,8 +3618,6 @@ button, .action-btn, .gradient-tab, .friends-tab, .nav-item {
 
 .heatmap-month-row {
   position: relative;
-  height: 16px;
-  margin-bottom: 2px;
   min-width: fit-content;
 }
 
@@ -3643,11 +3641,10 @@ button, .action-btn, .gradient-tab, .friends-tab, .nav-item {
 }
 
 .heatmap-cell {
-  width: 12px;
-  height: 12px;
-  border-radius: 2px;
-  background: #eee;
+  border-radius: 3px;
+  background: #e0e0ee;
   transition: background 0.15s;
+  flex-shrink: 0;
 }
 
 .heatmap-cell.filled {
@@ -3666,17 +3663,13 @@ button, .action-btn, .gradient-tab, .friends-tab, .nav-item {
 }
 
 .heatmap-legend-empty {
-  width: 12px;
-  height: 12px;
-  border-radius: 2px;
-  background: #eee;
+  border-radius: 3px;
+  background: #e0e0ee;
   flex-shrink: 0;
 }
 
 .heatmap-legend-filled {
-  width: 12px;
-  height: 12px;
-  border-radius: 2px;
+  border-radius: 3px;
   background: #667eea;
   flex-shrink: 0;
 }
@@ -3708,7 +3701,7 @@ button, .action-btn, .gradient-tab, .friends-tab, .nav-item {
 }
 
 [data-theme="dark"] .heatmap-cell {
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.1);
 }
 
 [data-theme="dark"] .heatmap-cell.filled {
@@ -3716,7 +3709,7 @@ button, .action-btn, .gradient-tab, .friends-tab, .nav-item {
 }
 
 [data-theme="dark"] .heatmap-legend-empty {
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.1);
 }
 
 [data-theme="dark"] .heatmap-legend-filled {

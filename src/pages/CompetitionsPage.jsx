@@ -1148,6 +1148,7 @@ function CompetitionCard({ competition, user, onRefresh, onDelete }) {
             heatmapData={heatmapData}
             loading={loadingHeatmap}
             friendUsername={competition.friend_username}
+            competition={competition}
           />
         ) : (<>
 
@@ -1243,7 +1244,7 @@ function CompetitionCard({ competition, user, onRefresh, onDelete }) {
 }
 
 // Компонент тепловой карты
-function HeatmapView({ heatmapData, loading, friendUsername }) {
+function HeatmapView({ heatmapData, loading, friendUsername, competition }) {
   if (loading) {
     return (
       <div className="heatmap-loading">
@@ -1260,64 +1261,77 @@ function HeatmapView({ heatmapData, loading, friendUsername }) {
   const myDates = new Set(heatmapData.my_completed_dates || []);
   const friendDates = new Set(heatmapData.friend_completed_dates || []);
 
-  // Build last 26 weeks (182 days) grid
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  const startDate = new Date(today);
-  startDate.setDate(today.getDate() - 181);
-  // Align to Monday
-  const dayOfWeek = startDate.getDay();
-  const offset = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
-  startDate.setDate(startDate.getDate() - offset);
+
+  // Range: competition start → today (capped at end date)
+  let rangeStart = competition?.start_date ? new Date(competition.start_date) : new Date(today);
+  rangeStart.setHours(0, 0, 0, 0);
+
+  let rangeEnd = new Date(today);
+  if (competition?.total_days && competition.total_days !== 9999 && competition?.start_date) {
+    const endDate = new Date(rangeStart);
+    endDate.setDate(rangeStart.getDate() + competition.total_days - 1);
+    if (endDate < today) rangeEnd = endDate;
+  }
+
+  // Align grid start to Monday
+  const gridStart = new Date(rangeStart);
+  const dow = gridStart.getDay();
+  gridStart.setDate(gridStart.getDate() - (dow === 0 ? 6 : dow - 1));
 
   const weeks = [];
-  let current = new Date(startDate);
-  while (current <= today) {
+  let current = new Date(gridStart);
+  while (current <= rangeEnd) {
     const week = [];
     for (let d = 0; d < 7; d++) {
       const dateStr = current.toISOString().split('T')[0];
-      const isInRange = current >= new Date(today.getTime() - 181 * 86400000) && current <= today;
-      week.push({ date: dateStr, inRange: isInRange });
+      const inRange = current >= rangeStart && current <= rangeEnd;
+      week.push({ date: dateStr, inRange });
       current.setDate(current.getDate() + 1);
     }
     weeks.push(week);
   }
 
+  const CELL = 16; // px
+  const GAP = 3;   // px
+  const COL_STEP = CELL + GAP;
+
   const monthNames = ['Янв', 'Фев', 'Мар', 'Апр', 'Май', 'Июн',
                       'Июл', 'Авг', 'Сен', 'Окт', 'Ноя', 'Дек'];
 
-  const getMonthLabels = () => {
-    const labels = [];
-    let lastMonth = -1;
-    weeks.forEach((week, wi) => {
-      const m = new Date(week[0].date).getMonth();
-      if (m !== lastMonth) {
-        labels.push({ wi, label: monthNames[m] });
-        lastMonth = m;
-      }
-    });
-    return labels;
-  };
+  const monthLabels = [];
+  let lastMonth = -1;
+  weeks.forEach((week, wi) => {
+    const m = new Date(week[0].date).getMonth();
+    if (m !== lastMonth) {
+      monthLabels.push({ wi, label: monthNames[m] });
+      lastMonth = m;
+    }
+  });
+
+  const gridWidth = weeks.length * COL_STEP - GAP;
 
   const renderGrid = (dates, label) => (
     <div className="heatmap-section">
       <div className="heatmap-label">{label}</div>
       <div className="heatmap-scroll">
-        <div className="heatmap-month-row">
-          {getMonthLabels().map(({ wi, label: ml }) => (
-            <div key={wi} className="heatmap-month-label" style={{ left: `${wi * 14}px` }}>{ml}</div>
+        <div className="heatmap-month-row" style={{ width: gridWidth, position: 'relative', height: 16, marginBottom: 4 }}>
+          {monthLabels.map(({ wi, label: ml }) => (
+            <span key={wi} className="heatmap-month-label" style={{ left: wi * COL_STEP }}>{ml}</span>
           ))}
         </div>
-        <div className="heatmap-grid">
+        <div className="heatmap-grid" style={{ gap: GAP }}>
           {weeks.map((week, wi) => (
-            <div key={wi} className="heatmap-col">
+            <div key={wi} className="heatmap-col" style={{ gap: GAP }}>
               {week.map(({ date, inRange }) => {
                 const filled = inRange && dates.has(date);
                 return (
                   <div
                     key={date}
                     className={`heatmap-cell${filled ? ' filled' : ''}${inRange ? '' : ' out-of-range'}`}
-                    title={date}
+                    style={{ width: CELL, height: CELL }}
+                    title={inRange ? date : ''}
                   />
                 );
               })}
@@ -1326,8 +1340,8 @@ function HeatmapView({ heatmapData, loading, friendUsername }) {
         </div>
       </div>
       <div className="heatmap-legend">
-        <span className="heatmap-legend-empty" />
-        <span className="heatmap-legend-filled" />
+        <span className="heatmap-legend-empty" style={{ width: CELL, height: CELL }} />
+        <span className="heatmap-legend-filled" style={{ width: CELL, height: CELL }} />
         <span className="heatmap-legend-text">Выполнено</span>
       </div>
     </div>
