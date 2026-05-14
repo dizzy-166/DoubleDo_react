@@ -137,7 +137,7 @@ function HabitsPage() {
 
     try {
       // Сбрасываем стрики для пропущенных дней перед загрузкой
-      supabase.rpc('reset_missed_streaks').catch(() => {});
+      supabase.rpc('reset_missed_streaks').then(null, () => {});
 
       console.log('📥 Вызов loadHabitsSafe');
       const habitsData = await loadHabitsSafe();
