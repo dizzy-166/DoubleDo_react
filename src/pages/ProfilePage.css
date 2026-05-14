@@ -327,6 +327,72 @@
   cursor: not-allowed;
 }
 
+/* Reminder time picker */
+.reminder-row {
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.reminder-time-picker {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.reminder-time-input {
+  padding: 5px 8px;
+  border: 1.5px solid rgba(0, 0, 0, 0.12);
+  border-radius: 8px;
+  font-size: 13px;
+  background: white;
+  color: #1a1a2e;
+  outline: none;
+  width: 90px;
+}
+
+.reminder-time-input:focus {
+  border-color: #667eea;
+}
+
+.reminder-save-btn {
+  padding: 5px 10px;
+  border: none;
+  border-radius: 8px;
+  background: #667eea;
+  color: white;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.reminder-save-btn:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.reminder-clear-btn {
+  padding: 5px 8px;
+  border: 1.5px solid rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  background: transparent;
+  color: #aaa;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+[data-theme="dark"] .reminder-time-input {
+  background: rgba(255, 255, 255, 0.07);
+  border-color: rgba(255, 255, 255, 0.12);
+  color: #e8e8f8;
+}
+
+[data-theme="dark"] .reminder-clear-btn {
+  border-color: rgba(255, 255, 255, 0.1);
+  color: #6666a0;
+}
+
 /* Секция выхода */
 .logout-section {
   text-align: center;

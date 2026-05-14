@@ -20,6 +20,8 @@ function ProfilePage() {
   const [usernameError, setUsernameError] = useState('');
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [notifLoading, setNotifLoading] = useState(false);
+  const [reminderTime, setReminderTime] = useState('');
+  const [reminderLoading, setReminderLoading] = useState(false);
 
   // Определение активной вкладки
   const getActiveTab = () => {
@@ -39,7 +41,7 @@ function ProfilePage() {
         // Загружаем данные из таблицы users (с username)
         const { data, error } = await supabase
           .from('users')
-          .select('username, avatar_url, notifications_enabled')
+          .select('username, avatar_url, notifications_enabled, reminder_time')
           .eq('id', user.id)
           .single();
 
@@ -52,6 +54,7 @@ function ProfilePage() {
           setInitialUsername(data.username || '');
           setAvatarUrl(data.avatar_url || '');
           setNotificationsEnabled(data.notifications_enabled !== false);
+          setReminderTime(data.reminder_time ? data.reminder_time.substring(0, 5) : '');
         } else {
           // Если записи нет (маловероятно), создаем временный username
           const tempUsername = `user_${user.id.substring(0, 8)}`;
@@ -214,6 +217,23 @@ function ProfilePage() {
     }
   };
 
+  // Сохранение времени напоминания
+  const handleSaveReminderTime = async (timeValue) => {
+    setReminderLoading(true);
+    try {
+      const { data, error } = await supabase.rpc('set_reminder_time', {
+        p_time: timeValue || null
+      });
+      if (error) throw error;
+      setReminderTime(timeValue);
+      toast.success(timeValue ? `Напоминание установлено на ${timeValue}` : 'Напоминание отключено');
+    } catch (err) {
+      toast.error('Не удалось сохранить время напоминания');
+    } finally {
+      setReminderLoading(false);
+    }
+  };
+
   // Отмена редактирования
   const handleCancelEdit = () => {
     setUsername(initialUsername);
@@ -361,6 +381,39 @@ function ProfilePage() {
                 disabled={notifLoading}
                 aria-label="Переключить уведомления"
               />
+            </div>
+
+            <div className="setting-row reminder-row" style={{ marginTop: '12px' }}>
+              <div className="setting-info">
+                <span className="setting-label">Ежедневное напоминание</span>
+                <span className="setting-desc">Email-напоминание отметить привычку в указанное время</span>
+              </div>
+              <div className="reminder-time-picker">
+                <input
+                  type="time"
+                  className="reminder-time-input"
+                  value={reminderTime}
+                  onChange={(e) => setReminderTime(e.target.value)}
+                  disabled={reminderLoading}
+                />
+                <button
+                  className="reminder-save-btn"
+                  onClick={() => handleSaveReminderTime(reminderTime)}
+                  disabled={reminderLoading}
+                >
+                  {reminderLoading ? '...' : 'OK'}
+                </button>
+                {reminderTime && (
+                  <button
+                    className="reminder-clear-btn"
+                    onClick={() => handleSaveReminderTime('')}
+                    disabled={reminderLoading}
+                    title="Отключить напоминание"
+                  >
+                    ✕
+                  </button>
+                )}
+              </div>
             </div>
           </div>
 
