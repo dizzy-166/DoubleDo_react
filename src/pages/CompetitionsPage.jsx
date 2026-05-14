@@ -1264,7 +1264,7 @@ function HeatmapView({ heatmapData, loading, friendUsername, competition }) {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  // Range: competition start → today (capped at end date)
+  // Range: competition start → competition end date (show full period)
   let rangeStart = competition?.start_date ? new Date(competition.start_date) : new Date(today);
   rangeStart.setHours(0, 0, 0, 0);
 
@@ -1272,7 +1272,7 @@ function HeatmapView({ heatmapData, loading, friendUsername, competition }) {
   if (competition?.total_days && competition.total_days !== 9999 && competition?.start_date) {
     const endDate = new Date(rangeStart);
     endDate.setDate(rangeStart.getDate() + competition.total_days - 1);
-    if (endDate < today) rangeEnd = endDate;
+    rangeEnd = endDate; // show full period even if end is in future
   }
 
   // Align grid start to Monday
@@ -1287,7 +1287,8 @@ function HeatmapView({ heatmapData, loading, friendUsername, competition }) {
     for (let d = 0; d < 7; d++) {
       const dateStr = current.toISOString().split('T')[0];
       const inRange = current >= rangeStart && current <= rangeEnd;
-      week.push({ date: dateStr, inRange });
+      const isFuture = current > today;
+      week.push({ date: dateStr, inRange, isFuture });
       current.setDate(current.getDate() + 1);
     }
     weeks.push(week);
@@ -1324,14 +1325,18 @@ function HeatmapView({ heatmapData, loading, friendUsername, competition }) {
         <div className="heatmap-grid" style={{ gap: GAP }}>
           {weeks.map((week, wi) => (
             <div key={wi} className="heatmap-col" style={{ gap: GAP }}>
-              {week.map(({ date, inRange }) => {
-                const filled = inRange && dates.has(date);
+              {week.map(({ date, inRange, isFuture }) => {
+                const filled = inRange && !isFuture && dates.has(date);
+                let cls = 'heatmap-cell';
+                if (!inRange) cls += ' out-of-range';
+                else if (isFuture) cls += ' future';
+                else if (filled) cls += ' filled';
                 return (
                   <div
                     key={date}
-                    className={`heatmap-cell${filled ? ' filled' : ''}${inRange ? '' : ' out-of-range'}`}
+                    className={cls}
                     style={{ width: CELL, height: CELL }}
-                    title={inRange ? date : ''}
+                    title={inRange && !isFuture ? date : ''}
                   />
                 );
               })}

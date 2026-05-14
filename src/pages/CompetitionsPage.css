@@ -3651,8 +3651,19 @@ button, .action-btn, .gradient-tab, .friends-tab, .nav-item {
   background: #667eea;
 }
 
+.heatmap-cell.future {
+  background: rgba(102, 126, 234, 0.12);
+  border: 1px dashed rgba(102, 126, 234, 0.25);
+  box-sizing: border-box;
+}
+
 .heatmap-cell.out-of-range {
   background: transparent;
+}
+
+[data-theme="dark"] .heatmap-cell.future {
+  background: rgba(160, 180, 255, 0.08);
+  border-color: rgba(160, 180, 255, 0.15);
 }
 
 .heatmap-legend {
