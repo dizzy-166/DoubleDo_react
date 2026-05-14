@@ -8,6 +8,7 @@ import HabitsPage from './pages/HabitsPage.jsx';
 import CompetitionsPage from './pages/CompetitionsPage.jsx';
 import ProfilePage from './pages/ProfilePage.jsx';
 import InvitePage from './pages/InvitePage.jsx';
+import StatsPage from './pages/StatsPage.jsx';
 import Onboarding from './components/Onboarding.jsx';
 import './App.css';
 
@@ -742,6 +743,7 @@ const handleSubmit = async (e) => {
             <Route path="/habits" element={<HabitsPage />} />
             <Route path="/competitions" element={<CompetitionsPage />} />
             <Route path="/profile" element={<ProfilePage />} />
+            <Route path="/stats" element={<StatsPage />} />
             <Route path="/" element={<Navigate to="/competitions" replace />} />
             <Route path="*" element={<Navigate to="/competitions" replace />} />
           </>

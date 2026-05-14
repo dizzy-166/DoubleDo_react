@@ -43,6 +43,7 @@ function HabitsPage() {
     const path = location.pathname;
     if (path.includes('/competitions')) return 'competitions';
     if (path.includes('/profile')) return 'profile';
+    if (path.includes('/stats')) return 'stats';
     return 'habits';
   };
 
@@ -1027,6 +1028,18 @@ function HabitsPage() {
           </button>
 
           <button
+            className={`nav-item ${getActiveTab() === 'stats' ? 'active' : ''}`}
+            onClick={() => navigate('/stats')}
+          >
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="18" y1="20" x2="18" y2="10"/>
+              <line x1="12" y1="20" x2="12" y2="4"/>
+              <line x1="6" y1="20" x2="6" y2="14"/>
+            </svg>
+            <span className="nav-label">Статистика</span>
+          </button>
+
+          <button
             className={`nav-item ${getActiveTab() === 'profile' ? 'active' : ''}`}
             onClick={() => navigate('/profile')}
           >
@@ -1184,6 +1197,18 @@ function HabitsPage() {
             <path d="m9 12 2 2 4-4"/>
           </svg>
           <span className="nav-label">Привычки</span>
+        </button>
+
+        <button
+          className={`nav-item ${getActiveTab() === 'stats' ? 'active' : ''}`}
+          onClick={() => navigate('/stats')}
+        >
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="18" y1="20" x2="18" y2="10"/>
+            <line x1="12" y1="20" x2="12" y2="4"/>
+            <line x1="6" y1="20" x2="6" y2="14"/>
+          </svg>
+          <span className="nav-label">Статистика</span>
         </button>
 
         <button
