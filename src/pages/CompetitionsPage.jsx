@@ -447,6 +447,19 @@ function CompetitionsPage() {
                   <span className="tab-badge">{totalRequestsCount}</span>
                 )}
               </button>
+              <button
+                className={`gradient-tab ${activeTab === 'archive' ? 'active' : ''}`}
+                onClick={() => setActiveTab('archive')}
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/>
+                  <line x1="10" y1="12" x2="14" y2="12"/>
+                </svg>
+                <span className="tab-text">Архив</span>
+                {competitions.filter(c => c.status === 'completed').length > 0 && (
+                  <span className="tab-badge">{competitions.filter(c => c.status === 'completed').length}</span>
+                )}
+              </button>
             </div>
           </div>
 
@@ -476,7 +489,7 @@ function CompetitionsPage() {
                   </div>
                 </div>
 
-                {competitions.length === 0 ? (
+                {competitions.filter(c => c.status !== 'completed').length === 0 ? (
                   <div className="empty-competitions-container">
                     <div className="empty-competitions-content">
                       <div className="empty-competitions-icon">
@@ -508,7 +521,7 @@ function CompetitionsPage() {
                   </div>
                 ) : (
                   <div className="competitions-list">
-                    {competitions.map(competition => (
+                    {competitions.filter(c => c.status !== 'completed').map(competition => (
                       <CompetitionCard
                         key={competition.competition_id}
                         competition={competition}
@@ -520,6 +533,31 @@ function CompetitionsPage() {
                   </div>
                 )}
               </>
+            ) : activeTab === 'archive' ? (
+              <div className="archive-container">
+                {competitions.filter(c => c.status === 'completed').length === 0 ? (
+                  <div className="empty-archive">
+                    <div className="empty-archive-icon">
+                      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#aaa" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                        <polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/>
+                        <line x1="10" y1="12" x2="14" y2="12"/>
+                      </svg>
+                    </div>
+                    <p className="empty-archive-text">Завершённых соревнований пока нет</p>
+                    <p className="empty-archive-hint">Здесь будут появляться соревнования после их завершения</p>
+                  </div>
+                ) : (
+                  <div className="archive-list">
+                    {competitions.filter(c => c.status === 'completed').map(competition => (
+                      <ArchiveCard
+                        key={competition.competition_id}
+                        competition={competition}
+                        onDelete={() => handleDeleteCompetition(competition.competition_id, competition.habit_title)}
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
             ) : (
               <div className="friends-container">
                 <div className="friends-header">
@@ -1075,6 +1113,66 @@ function CompetitionCard({ competition, user, onRefresh, onDelete }) {
             {monthNames[viewMonth]}: {friendCompletedDays.length} дн.
           </div>
         </div>
+      </div>
+    </div>
+  );
+}
+
+// Компонент карточки архива
+function ArchiveCard({ competition, onDelete }) {
+  const myScore = competition.my_score || 0;
+  const friendScore = competition.friend_score || 0;
+  const iWon = myScore > friendScore;
+  const friendWon = friendScore > myScore;
+  const isInfinite = competition.total_days === 9999;
+
+  const startDate = competition.start_date
+    ? new Date(competition.start_date).toLocaleDateString('ru-RU')
+    : '';
+  const endDate = competition.start_date && !isInfinite
+    ? new Date(new Date(competition.start_date).getTime() + competition.total_days * 86400000).toLocaleDateString('ru-RU')
+    : '';
+
+  return (
+    <div className="archive-card">
+      <div className="archive-card-header">
+        <div className="archive-card-title-section">
+          <h3 className="archive-habit-title">{competition.habit_title}</h3>
+          <p className="archive-vs">vs. {competition.friend_username}</p>
+        </div>
+        <div className="archive-card-badges">
+          <span className={`status-badge ${iWon ? 'won' : friendWon ? 'lost' : 'draw'}`}>
+            {iWon ? '🥇 Победа' : friendWon ? '🥈 Поражение' : '🤝 Ничья'}
+          </span>
+          <button className="delete-competition-btn" title="Удалить из архива" onClick={onDelete}>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/>
+              <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <div className="archive-card-score">
+        <span className={`archive-score-you${iWon ? ' winner' : ''}`}>{myScore}</span>
+        <span className="archive-score-sep">:</span>
+        <span className={`archive-score-friend${friendWon ? ' winner' : ''}`}>{friendScore}</span>
+      </div>
+
+      <div className="archive-card-meta">
+        {startDate && (
+          <span className="archive-meta-item">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+              <line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/>
+              <line x1="3" y1="10" x2="21" y2="10"/>
+            </svg>
+            {startDate}{endDate ? ` — ${endDate}` : ''}
+          </span>
+        )}
+        <span className="archive-meta-item">
+          {isInfinite ? '∞ Бесконечное' : `${competition.total_days} дн.`}
+        </span>
       </div>
     </div>
   );

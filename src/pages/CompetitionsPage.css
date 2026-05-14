@@ -3481,5 +3481,153 @@ button, .action-btn, .gradient-tab, .friends-tab, .nav-item {
 
 [data-theme="dark"] .search-results h3 { color: #9090b8; }
 
+/* ── Archive tab ─────────────────────────────────────────────── */
+.archive-container {
+  padding: 4px 0;
+}
+
+.empty-archive {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 24px;
+  text-align: center;
+  gap: 8px;
+}
+
+.empty-archive-icon {
+  margin-bottom: 8px;
+  opacity: 0.5;
+}
+
+.empty-archive-text {
+  font-size: 16px;
+  font-weight: 600;
+  color: #555;
+  margin: 0;
+}
+
+.empty-archive-hint {
+  font-size: 13px;
+  color: #888;
+  margin: 0;
+}
+
+.archive-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.archive-card {
+  background: white;
+  border-radius: 16px;
+  padding: 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.archive-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 12px;
+  gap: 8px;
+}
+
+.archive-card-title-section {
+  flex: 1;
+  min-width: 0;
+}
+
+.archive-habit-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: #1a1a2e;
+  margin: 0 0 2px 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.archive-vs {
+  font-size: 12px;
+  color: #888;
+  margin: 0;
+}
+
+.archive-card-badges {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.archive-card-score {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.archive-score-you,
+.archive-score-friend {
+  font-size: 28px;
+  font-weight: 800;
+  color: #999;
+  line-height: 1;
+}
+
+.archive-score-you.winner,
+.archive-score-friend.winner {
+  color: #667eea;
+}
+
+.archive-score-sep {
+  font-size: 20px;
+  font-weight: 700;
+  color: #ccc;
+}
+
+.archive-card-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.archive-meta-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: #888;
+}
+
+.archive-meta-item svg {
+  flex-shrink: 0;
+  opacity: 0.7;
+}
+
+/* Dark mode — archive */
+[data-theme="dark"] .empty-archive-text { color: #9090b8; }
+[data-theme="dark"] .empty-archive-hint { color: #6666a0; }
+
+[data-theme="dark"] .archive-card {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.07);
+}
+
+[data-theme="dark"] .archive-habit-title { color: #e8e8f8; }
+[data-theme="dark"] .archive-vs { color: #7777a0; }
+[data-theme="dark"] .archive-score-you,
+[data-theme="dark"] .archive-score-friend { color: #6666a0; }
+[data-theme="dark"] .archive-score-you.winner,
+[data-theme="dark"] .archive-score-friend.winner { color: #a0b4ff; }
+[data-theme="dark"] .archive-score-sep { color: #3a3a5c; }
+[data-theme="dark"] .archive-meta-item { color: #7777a0; }
+
 [data-theme="dark"] .competitions-list-header h2 { color: #e8e8f8; }
 [data-theme="dark"] .competitions-list-header { border-bottom-color: rgba(255, 255, 255, 0.07); }
