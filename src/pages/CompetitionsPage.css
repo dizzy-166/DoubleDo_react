@@ -3481,6 +3481,76 @@ button, .action-btn, .gradient-tab, .friends-tab, .nav-item {
 
 [data-theme="dark"] .search-results h3 { color: #9090b8; }
 
+/* ── Reactions ───────────────────────────────────────────────── */
+.reactions-section {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.reactions-buttons {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.reaction-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 10px;
+  border: 1.5px solid rgba(0, 0, 0, 0.08);
+  border-radius: 20px;
+  background: #f7f7fc;
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.18s;
+  line-height: 1;
+}
+
+.reaction-btn:hover:not(:disabled) {
+  background: #ececff;
+  border-color: #a0b4ff;
+  transform: scale(1.08);
+}
+
+.reaction-btn:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.reaction-btn.has-reactions {
+  background: #ececff;
+  border-color: #c0ccff;
+}
+
+.reaction-count {
+  font-size: 11px;
+  font-weight: 600;
+  color: #667eea;
+}
+
+[data-theme="dark"] .reactions-section {
+  border-top-color: rgba(255, 255, 255, 0.07);
+}
+
+[data-theme="dark"] .reaction-btn {
+  background: rgba(255, 255, 255, 0.07);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .reaction-btn:hover:not(:disabled) {
+  background: rgba(102, 126, 234, 0.2);
+  border-color: #7b8fff;
+}
+
+[data-theme="dark"] .reaction-btn.has-reactions {
+  background: rgba(102, 126, 234, 0.15);
+  border-color: rgba(160, 180, 255, 0.3);
+}
+
+[data-theme="dark"] .reaction-count { color: #a0b4ff; }
+
 /* ── Calendar / Heatmap toggle ──────────────────────────────── */
 .calendar-view-toggle {
   display: flex;

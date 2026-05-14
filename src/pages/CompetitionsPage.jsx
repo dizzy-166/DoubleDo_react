@@ -831,6 +831,8 @@ function CompetitionCard({ competition, user, onRefresh, onDelete }) {
   const [viewMode, setViewMode] = useState('calendar'); // 'calendar' | 'heatmap'
   const [heatmapData, setHeatmapData] = useState(null);
   const [loadingHeatmap, setLoadingHeatmap] = useState(false);
+  const [reactions, setReactions] = useState([]);
+  const [sendingReaction, setSendingReaction] = useState(null);
   const viewMonthRef = useRef(new Date().getMonth());
   const viewYearRef = useRef(new Date().getFullYear());
 
@@ -901,6 +903,36 @@ function CompetitionCard({ competition, user, onRefresh, onDelete }) {
     loadCalendarData();
   }, [viewMonth, viewYear]);
 
+  const loadReactions = async () => {
+    if (!competition.competition_id) return;
+    try {
+      const { data, error } = await supabase.rpc('get_competition_reactions', {
+        p_competition_id: competition.competition_id
+      });
+      if (!error) setReactions(data || []);
+    } catch {}
+  };
+
+  const handleSendReaction = async (emoji) => {
+    setSendingReaction(emoji);
+    try {
+      const { data, error } = await supabase.rpc('send_competition_reaction', {
+        p_competition_id: competition.competition_id,
+        p_emoji: emoji
+      });
+      if (!error && data?.success) {
+        await loadReactions();
+        toast.success(`Реакция ${emoji} отправлена!`);
+      } else {
+        toast.error(data?.message || 'Не удалось отправить реакцию');
+      }
+    } catch {
+      toast.error('Ошибка при отправке реакции');
+    } finally {
+      setSendingReaction(null);
+    }
+  };
+
   // Загружаем тепловую карту при переключении на неё
   useEffect(() => {
     if (viewMode === 'heatmap' && !heatmapData) {
@@ -911,6 +943,7 @@ function CompetitionCard({ competition, user, onRefresh, onDelete }) {
   // Реалтайм-подписка
   useEffect(() => {
     loadCalendarData();
+    loadReactions();
 
     const channel = supabase
       .channel(`competition-${competition.competition_id}-progress`)
@@ -1169,6 +1202,26 @@ function CompetitionCard({ competition, user, onRefresh, onDelete }) {
           </div>
           <div className="calendar-stats">
             {monthNames[viewMonth]}: {friendCompletedDays.length} дн.
+          </div>
+
+          <div className="reactions-section">
+            <div className="reactions-buttons">
+              {['🔥', '👏', '💪', '😎'].map(emoji => {
+                const count = reactions.filter(r => r.emoji === emoji).length;
+                return (
+                  <button
+                    key={emoji}
+                    className={`reaction-btn${count > 0 ? ' has-reactions' : ''}`}
+                    onClick={() => handleSendReaction(emoji)}
+                    disabled={sendingReaction !== null}
+                    title={`Отправить ${emoji}`}
+                  >
+                    {emoji}
+                    {count > 0 && <span className="reaction-count">{count}</span>}
+                  </button>
+                );
+              })}
+            </div>
           </div>
         </div>
         </>)}
