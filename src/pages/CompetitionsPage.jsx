@@ -828,6 +828,9 @@ function CompetitionCard({ competition, user, onRefresh, onDelete }) {
   const [viewMonth, setViewMonth] = useState(new Date().getMonth());
   const [viewYear, setViewYear] = useState(new Date().getFullYear());
   const [stats, setStats] = useState({ totalMyDays: 0, totalFriendDays: 0, myStreak: 0, friendStreak: 0 });
+  const [viewMode, setViewMode] = useState('calendar'); // 'calendar' | 'heatmap'
+  const [heatmapData, setHeatmapData] = useState(null);
+  const [loadingHeatmap, setLoadingHeatmap] = useState(false);
   const viewMonthRef = useRef(new Date().getMonth());
   const viewYearRef = useRef(new Date().getFullYear());
 
@@ -875,12 +878,35 @@ function CompetitionCard({ competition, user, onRefresh, onDelete }) {
     }
   };
 
+  const loadHeatmapData = async () => {
+    if (!competition.competition_id) return;
+    setLoadingHeatmap(true);
+    try {
+      const { data, error } = await supabase.rpc('get_competition_heatmap', {
+        p_competition_id: competition.competition_id
+      });
+      if (error) throw error;
+      setHeatmapData(data?.[0] || null);
+    } catch (error) {
+      console.error('Error loading heatmap data:', error);
+    } finally {
+      setLoadingHeatmap(false);
+    }
+  };
+
   // Перезагружаем при смене месяца/года
   useEffect(() => {
     viewMonthRef.current = viewMonth;
     viewYearRef.current = viewYear;
     loadCalendarData();
   }, [viewMonth, viewYear]);
+
+  // Загружаем тепловую карту при переключении на неё
+  useEffect(() => {
+    if (viewMode === 'heatmap' && !heatmapData) {
+      loadHeatmapData();
+    }
+  }, [viewMode]);
 
   // Реалтайм-подписка
   useEffect(() => {
@@ -1048,6 +1074,38 @@ function CompetitionCard({ competition, user, onRefresh, onDelete }) {
       </div>
 
       <div className="competition-calendars">
+        <div className="calendar-view-toggle">
+          <button
+            className={`view-toggle-btn${viewMode === 'calendar' ? ' active' : ''}`}
+            onClick={() => setViewMode('calendar')}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+              <line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/>
+              <line x1="3" y1="10" x2="21" y2="10"/>
+            </svg>
+            Календарь
+          </button>
+          <button
+            className={`view-toggle-btn${viewMode === 'heatmap' ? ' active' : ''}`}
+            onClick={() => setViewMode('heatmap')}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
+              <rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
+            </svg>
+            Тепловая карта
+          </button>
+        </div>
+
+        {viewMode === 'heatmap' ? (
+          <HeatmapView
+            heatmapData={heatmapData}
+            loading={loadingHeatmap}
+            friendUsername={competition.friend_username}
+          />
+        ) : (<>
+
         <div className="calendar-month-nav">
           <button className="cal-nav-btn" onClick={goToPrevMonth} disabled={!canGoPrev} title="Предыдущий месяц">
             ‹
@@ -1113,7 +1171,107 @@ function CompetitionCard({ competition, user, onRefresh, onDelete }) {
             {monthNames[viewMonth]}: {friendCompletedDays.length} дн.
           </div>
         </div>
+        </>)}
       </div>
+    </div>
+  );
+}
+
+// Компонент тепловой карты
+function HeatmapView({ heatmapData, loading, friendUsername }) {
+  if (loading) {
+    return (
+      <div className="heatmap-loading">
+        <div className="loading-spinner-small" />
+        <p>Загрузка...</p>
+      </div>
+    );
+  }
+
+  if (!heatmapData) {
+    return <div className="heatmap-empty">Нет данных для отображения</div>;
+  }
+
+  const myDates = new Set(heatmapData.my_completed_dates || []);
+  const friendDates = new Set(heatmapData.friend_completed_dates || []);
+
+  // Build last 26 weeks (182 days) grid
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const startDate = new Date(today);
+  startDate.setDate(today.getDate() - 181);
+  // Align to Monday
+  const dayOfWeek = startDate.getDay();
+  const offset = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+  startDate.setDate(startDate.getDate() - offset);
+
+  const weeks = [];
+  let current = new Date(startDate);
+  while (current <= today) {
+    const week = [];
+    for (let d = 0; d < 7; d++) {
+      const dateStr = current.toISOString().split('T')[0];
+      const isInRange = current >= new Date(today.getTime() - 181 * 86400000) && current <= today;
+      week.push({ date: dateStr, inRange: isInRange });
+      current.setDate(current.getDate() + 1);
+    }
+    weeks.push(week);
+  }
+
+  const monthNames = ['Янв', 'Фев', 'Мар', 'Апр', 'Май', 'Июн',
+                      'Июл', 'Авг', 'Сен', 'Окт', 'Ноя', 'Дек'];
+
+  const getMonthLabels = () => {
+    const labels = [];
+    let lastMonth = -1;
+    weeks.forEach((week, wi) => {
+      const m = new Date(week[0].date).getMonth();
+      if (m !== lastMonth) {
+        labels.push({ wi, label: monthNames[m] });
+        lastMonth = m;
+      }
+    });
+    return labels;
+  };
+
+  const renderGrid = (dates, label) => (
+    <div className="heatmap-section">
+      <div className="heatmap-label">{label}</div>
+      <div className="heatmap-scroll">
+        <div className="heatmap-month-row">
+          {getMonthLabels().map(({ wi, label: ml }) => (
+            <div key={wi} className="heatmap-month-label" style={{ left: `${wi * 14}px` }}>{ml}</div>
+          ))}
+        </div>
+        <div className="heatmap-grid">
+          {weeks.map((week, wi) => (
+            <div key={wi} className="heatmap-col">
+              {week.map(({ date, inRange }) => {
+                const filled = inRange && dates.has(date);
+                return (
+                  <div
+                    key={date}
+                    className={`heatmap-cell${filled ? ' filled' : ''}${inRange ? '' : ' out-of-range'}`}
+                    title={date}
+                  />
+                );
+              })}
+            </div>
+          ))}
+        </div>
+      </div>
+      <div className="heatmap-legend">
+        <span className="heatmap-legend-empty" />
+        <span className="heatmap-legend-filled" />
+        <span className="heatmap-legend-text">Выполнено</span>
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="heatmap-container">
+      {renderGrid(myDates, 'Вы')}
+      {renderGrid(friendDates, friendUsername)}
     </div>
   );
 }
