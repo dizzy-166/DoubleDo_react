@@ -833,7 +833,7 @@ function CompetitionCard({ competition, user, onRefresh, onDelete }) {
   useEffect(() => {
     loadCalendarData();
     
-    // Подписка на изменения привычек для этого соревнования
+    // Подписка на изменения — слушаем обоих участников соревнования
     const channel = supabase
       .channel(`competition-${competition.competition_id}-progress`)
       .on(
@@ -842,14 +842,19 @@ function CompetitionCard({ competition, user, onRefresh, onDelete }) {
           event: '*',
           schema: 'public',
           table: 'habit_progress',
-          filter: `habit_id=eq.${competition.habit_id}`
+          filter: `user_id=eq.${competition.user1_id}`
         },
-        (payload) => {
-          console.log('Habit progress updated:', payload);
-          setTimeout(() => {
-            loadCalendarData();
-          }, 500);
-        }
+        () => { setTimeout(loadCalendarData, 500); }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'habit_progress',
+          filter: `user_id=eq.${competition.user2_id}`
+        },
+        () => { setTimeout(loadCalendarData, 500); }
       )
       .subscribe();
     
