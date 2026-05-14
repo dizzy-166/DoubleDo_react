@@ -787,40 +787,48 @@ function CompetitionCard({ competition, user, onRefresh, onDelete }) {
   const [myCompletedDays, setMyCompletedDays] = useState([]);
   const [friendCompletedDays, setFriendCompletedDays] = useState([]);
   const [respondingToInvite, setRespondingToInvite] = useState(false);
-  
+  const [viewMonth, setViewMonth] = useState(new Date().getMonth());
+  const [viewYear, setViewYear] = useState(new Date().getFullYear());
+  const [stats, setStats] = useState({ totalMyDays: 0, totalFriendDays: 0, myStreak: 0, friendStreak: 0 });
+  const viewMonthRef = useRef(new Date().getMonth());
+  const viewYearRef = useRef(new Date().getFullYear());
+
+  const monthNames = ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь',
+                      'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'];
   const dayNames = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
-  
+
   const isInfinite = competition.total_days === 9999;
 
-  // Расчет дней, оставшихся до конца соревнования
   const calculateDaysRemaining = () => {
     if (isInfinite || !competition.start_date) return null;
-
     const startDate = new Date(competition.start_date);
     const endDate = new Date(startDate);
     endDate.setDate(startDate.getDate() + (competition.total_days || 30));
-
     const now = new Date();
     return Math.max(0, Math.ceil((endDate - now) / (1000 * 60 * 60 * 24)));
   };
 
-  // Функция для загрузки данных календаря
   const loadCalendarData = async () => {
     if (!competition.competition_id) return;
-    
     setLoadingCalendar(true);
     try {
       const { data, error } = await supabase.rpc('get_competition_calendar_data_fixed', {
-        p_competition_id: competition.competition_id
+        p_competition_id: competition.competition_id,
+        p_year: viewYearRef.current,
+        p_month: viewMonthRef.current + 1
       });
-      
       if (error) throw error;
-      
-      const calendarData = data?.[0];
-      if (calendarData) {
-        setCalendarData(calendarData);
-        setMyCompletedDays(calendarData.my_completed_days || []);
-        setFriendCompletedDays(calendarData.friend_completed_days || []);
+      const cd = data?.[0];
+      if (cd) {
+        setCalendarData(cd);
+        setMyCompletedDays(cd.my_completed_days || []);
+        setFriendCompletedDays(cd.friend_completed_days || []);
+        setStats({
+          totalMyDays: Number(cd.total_my_days) || 0,
+          totalFriendDays: Number(cd.total_friend_days) || 0,
+          myStreak: cd.my_streak || 0,
+          friendStreak: cd.friend_streak || 0
+        });
       }
     } catch (error) {
       console.error('Error loading calendar data:', error);
@@ -829,47 +837,36 @@ function CompetitionCard({ competition, user, onRefresh, onDelete }) {
     }
   };
 
-  // Загрузка данных календаря
+  // Перезагружаем при смене месяца/года
+  useEffect(() => {
+    viewMonthRef.current = viewMonth;
+    viewYearRef.current = viewYear;
+    loadCalendarData();
+  }, [viewMonth, viewYear]);
+
+  // Реалтайм-подписка
   useEffect(() => {
     loadCalendarData();
-    
-    // Подписка на изменения — слушаем обоих участников соревнования
+
     const channel = supabase
       .channel(`competition-${competition.competition_id}-progress`)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'habit_progress',
-          filter: `user_id=eq.${competition.user1_id}`
-        },
-        () => { setTimeout(loadCalendarData, 500); }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'habit_progress',
-          filter: `user_id=eq.${competition.user2_id}`
-        },
-        () => { setTimeout(loadCalendarData, 500); }
-      )
+      .on('postgres_changes', {
+        event: '*', schema: 'public', table: 'habit_progress',
+        filter: `user_id=eq.${competition.user1_id}`
+      }, () => { setTimeout(loadCalendarData, 500); })
+      .on('postgres_changes', {
+        event: '*', schema: 'public', table: 'habit_progress',
+        filter: `user_id=eq.${competition.user2_id}`
+      }, () => { setTimeout(loadCalendarData, 500); })
       .subscribe();
-    
+
     const interval = setInterval(() => {
-      if (competition.status === 'active') {
-        loadCalendarData();
-      }
+      if (competition.status === 'active') loadCalendarData();
     }, 30000);
-    
-    const handleHabitCompleted = () => {
-      loadCalendarData();
-    };
-    
+
+    const handleHabitCompleted = () => loadCalendarData();
     window.addEventListener('habit-completed', handleHabitCompleted);
-    
+
     return () => {
       supabase.removeChannel(channel);
       clearInterval(interval);
@@ -877,41 +874,52 @@ function CompetitionCard({ competition, user, onRefresh, onDelete }) {
     };
   }, [competition.competition_id, competition.habit_id, competition.status, lastUpdate]);
 
-  // Генерация календаря для текущего месяца
-  const currentMonth = new Date().getMonth();
-  const currentYear = new Date().getFullYear();
-  const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
-  const today = new Date().getDate();
-  
-  // Создаем сетку дней (1-31)
-  const days = Array.from({ length: daysInMonth }, (_, i) => i + 1);
-  
-  // Находим первый день месяца для правильного смещения
-  const firstDayOfMonth = new Date(currentYear, currentMonth, 1).getDay();
+  // Навигация по месяцам
+  const now = new Date();
+  const isCurrentMonth = viewMonth === now.getMonth() && viewYear === now.getFullYear();
+  const competitionStart = competition.start_date ? new Date(competition.start_date) : null;
+  const canGoPrev = !competitionStart ||
+    viewYear > competitionStart.getFullYear() ||
+    (viewYear === competitionStart.getFullYear() && viewMonth > competitionStart.getMonth());
+  const canGoNext = !isCurrentMonth;
+
+  const goToPrevMonth = () => {
+    if (!canGoPrev) return;
+    const m = viewMonth === 0 ? 11 : viewMonth - 1;
+    const y = viewMonth === 0 ? viewYear - 1 : viewYear;
+    viewMonthRef.current = m;
+    viewYearRef.current = y;
+    setViewMonth(m);
+    setViewYear(y);
+  };
+
+  const goToNextMonth = () => {
+    if (!canGoNext) return;
+    const m = viewMonth === 11 ? 0 : viewMonth + 1;
+    const y = viewMonth === 11 ? viewYear + 1 : viewYear;
+    viewMonthRef.current = m;
+    viewYearRef.current = y;
+    setViewMonth(m);
+    setViewYear(y);
+  };
+
+  // Генерация сетки календаря
+  const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
+  const todayDay = isCurrentMonth ? now.getDate() : -1;
+  const firstDayOfMonth = new Date(viewYear, viewMonth, 1).getDay();
   const startOffset = firstDayOfMonth === 0 ? 6 : firstDayOfMonth - 1;
-  
-  // Разбиваем на недели
+
+  const days = Array.from({ length: daysInMonth }, (_, i) => i + 1);
   const weeks = [];
   let week = Array(startOffset).fill(null);
-  
   days.forEach(day => {
     week.push(day);
-    if (week.length === 7) {
-      weeks.push(week);
-      week = [];
-    }
+    if (week.length === 7) { weeks.push(week); week = []; }
   });
-  
   if (week.length > 0) {
     while (week.length < 7) week.push(null);
     weeks.push(week);
   }
-
-  const handleRefreshCalendar = () => {
-    setLastUpdate(Date.now());
-    loadCalendarData();
-    if (onRefresh) onRefresh();
-  };
 
   const handleRespondToInvite = async (action) => {
     setRespondingToInvite(true);
@@ -967,23 +975,14 @@ function CompetitionCard({ competition, user, onRefresh, onDelete }) {
         </div>
       </div>
 
-      {/* Кнопки принятия/отклонения для приглашённого */}
       {isPending && (
         <div className="invite-actions">
           <p className="invite-text">Вас пригласили в соревнование по привычке «{competition.habit_title}»</p>
           <div className="invite-buttons">
-            <button
-              className="invite-accept-btn"
-              onClick={() => handleRespondToInvite('accept')}
-              disabled={respondingToInvite}
-            >
+            <button className="invite-accept-btn" onClick={() => handleRespondToInvite('accept')} disabled={respondingToInvite}>
               {respondingToInvite ? '...' : 'Принять'}
             </button>
-            <button
-              className="invite-decline-btn"
-              onClick={() => handleRespondToInvite('decline')}
-              disabled={respondingToInvite}
-            >
+            <button className="invite-decline-btn" onClick={() => handleRespondToInvite('decline')} disabled={respondingToInvite}>
               Отклонить
             </button>
           </div>
@@ -995,16 +994,13 @@ function CompetitionCard({ competition, user, onRefresh, onDelete }) {
           <div className="score-label">Вы</div>
           <div className="score-value">{myScore}</div>
         </div>
-
         <div className="vs-section">
           <div className="vs-text">VS</div>
         </div>
-
         <div className={`score-section friend-section${friendWon ? ' winner' : ''}`}>
           <div className="score-label">{competition.friend_username}</div>
           <div className="score-value">{friendScore}</div>
         </div>
-
         {!isCompleted && (
           <div className="days-remaining">
             <div className="days-label">{isInfinite ? 'Режим' : 'Дней'}</div>
@@ -1013,34 +1009,54 @@ function CompetitionCard({ competition, user, onRefresh, onDelete }) {
         )}
       </div>
 
+      {!isPending && (
+        <div className="competition-stats">
+          <div className="competition-stat">
+            <div className="comp-stat-label">Всего дней</div>
+            <div className="comp-stat-values">
+              <span className="comp-stat-you">{stats.totalMyDays}</span>
+              <span className="comp-stat-divider">:</span>
+              <span className="comp-stat-friend">{stats.totalFriendDays}</span>
+            </div>
+          </div>
+          <div className="competition-stat-sep"></div>
+          <div className="competition-stat">
+            <div className="comp-stat-label">Серия 🔥</div>
+            <div className="comp-stat-values">
+              <span className="comp-stat-you">{stats.myStreak}</span>
+              <span className="comp-stat-divider">:</span>
+              <span className="comp-stat-friend">{stats.friendStreak}</span>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="competition-calendars">
+        <div className="calendar-month-nav">
+          <button className="cal-nav-btn" onClick={goToPrevMonth} disabled={!canGoPrev} title="Предыдущий месяц">
+            ‹
+          </button>
+          <span className="cal-month-label">{monthNames[viewMonth]} {viewYear}</span>
+          <button className="cal-nav-btn" onClick={goToNextMonth} disabled={!canGoNext} title="Следующий месяц">
+            ›
+          </button>
+        </div>
+
         <div className="calendar-section">
           <div className="calendar-title">● Ваш календарь</div>
           <div className="calendar-grid">
             <div className="weekdays-row">
-              {dayNames.map((dayName, index) => (
-                <div key={index} className="weekday-cell">
-                  {dayName}
-                </div>
-              ))}
+              {dayNames.map((d, i) => <div key={i} className="weekday-cell">{d}</div>)}
             </div>
-            
-            {weeks.map((week, weekIndex) => (
-              <div key={weekIndex} className="calendar-week">
-                {week.map((day, dayIndex) => {
-                  if (day === null) {
-                    return <div key={dayIndex} className="calendar-day empty"></div>;
-                  }
-                  
+            {weeks.map((week, wi) => (
+              <div key={wi} className="calendar-week">
+                {week.map((day, di) => {
+                  if (day === null) return <div key={di} className="calendar-day empty"></div>;
                   const completed = myCompletedDays.includes(day);
-                  const isToday = day === today;
-                  
+                  const isToday = day === todayDay;
                   return (
-                    <div 
-                      key={dayIndex} 
-                      className={`calendar-day ${completed ? 'completed' : ''} ${isToday ? 'today' : ''}`}
-                      title={`${day} ${currentMonth + 1}.${currentYear} - ${completed ? 'Выполнено' : 'Не выполнено'}`}
-                    >
+                    <div key={di} className={`calendar-day${completed ? ' completed' : ''}${isToday ? ' today' : ''}`}
+                      title={`${day} ${viewMonth + 1}.${viewYear} — ${completed ? 'Выполнено' : 'Не выполнено'}`}>
                       <span className="day-number">{day}</span>
                       {completed && <div className="completion-check"></div>}
                     </div>
@@ -1050,7 +1066,7 @@ function CompetitionCard({ competition, user, onRefresh, onDelete }) {
             ))}
           </div>
           <div className="calendar-stats">
-            Выполнено дней в этом месяце: {myCompletedDays.length}
+            {monthNames[viewMonth]}: {myCompletedDays.length} дн.
           </div>
         </div>
 
@@ -1058,29 +1074,17 @@ function CompetitionCard({ competition, user, onRefresh, onDelete }) {
           <div className="calendar-title">● Календарь {competition.friend_username}</div>
           <div className="calendar-grid">
             <div className="weekdays-row">
-              {dayNames.map((dayName, index) => (
-                <div key={index} className="weekday-cell">
-                  {dayName}
-                </div>
-              ))}
+              {dayNames.map((d, i) => <div key={i} className="weekday-cell">{d}</div>)}
             </div>
-            
-            {weeks.map((week, weekIndex) => (
-              <div key={weekIndex} className="calendar-week">
-                {week.map((day, dayIndex) => {
-                  if (day === null) {
-                    return <div key={dayIndex} className="calendar-day empty"></div>;
-                  }
-                  
+            {weeks.map((week, wi) => (
+              <div key={wi} className="calendar-week">
+                {week.map((day, di) => {
+                  if (day === null) return <div key={di} className="calendar-day empty"></div>;
                   const completed = friendCompletedDays.includes(day);
-                  const isToday = day === today;
-                  
+                  const isToday = day === todayDay;
                   return (
-                    <div 
-                      key={dayIndex} 
-                      className={`calendar-day ${completed ? 'completed' : ''} ${isToday ? 'today' : ''}`}
-                      title={`${day} ${currentMonth + 1}.${currentYear} - ${completed ? 'Выполнено' : 'Не выполнено'}`}
-                    >
+                    <div key={di} className={`calendar-day${completed ? ' completed' : ''}${isToday ? ' today' : ''}`}
+                      title={`${day} ${viewMonth + 1}.${viewYear} — ${completed ? 'Выполнено' : 'Не выполнено'}`}>
                       <span className="day-number">{day}</span>
                       {completed && <div className="completion-check"></div>}
                     </div>
@@ -1090,7 +1094,7 @@ function CompetitionCard({ competition, user, onRefresh, onDelete }) {
             ))}
           </div>
           <div className="calendar-stats">
-            Выполнено дней в этом месяце: {friendCompletedDays.length}
+            {monthNames[viewMonth]}: {friendCompletedDays.length} дн.
           </div>
         </div>
       </div>
