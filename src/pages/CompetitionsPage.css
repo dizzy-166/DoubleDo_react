@@ -2988,15 +2988,130 @@
   .header-content h1 {
     font-size: 20px;
   }
-  
+
   .competitions-list-header h2 {
     font-size: 20px;
   }
-  
+
   .friends-header h2 {
     font-size: 20px;
   }
-  
+}
+
+/* ── Навигация по месяцам ── */
+.calendar-month-nav {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.cal-nav-btn {
+  background: rgba(102, 126, 234, 0.15);
+  border: 1px solid rgba(102, 126, 234, 0.35);
+  color: #667eea;
+  border-radius: 8px;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 20px;
+  line-height: 1;
+  transition: background 0.2s, opacity 0.2s;
+  flex-shrink: 0;
+  padding: 0;
+}
+
+.cal-nav-btn:hover:not(:disabled) {
+  background: rgba(102, 126, 234, 0.3);
+}
+
+.cal-nav-btn:disabled {
+  opacity: 0.25;
+  cursor: default;
+}
+
+.cal-month-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #c8c8f0;
+  min-width: 130px;
+  text-align: center;
+  letter-spacing: 0.01em;
+}
+
+/* ── Статистика соревнования ── */
+.competition-stats {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  margin: 6px 0 2px;
+  padding: 10px 14px;
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.competition-stat {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+}
+
+.competition-stat-sep {
+  width: 1px;
+  height: 32px;
+  background: rgba(255, 255, 255, 0.1);
+  margin: 0 8px;
+  flex-shrink: 0;
+}
+
+.comp-stat-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #7070a0;
+  font-weight: 600;
+}
+
+.comp-stat-values {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.comp-stat-you {
+  font-size: 17px;
+  font-weight: 700;
+  color: #a0b4ff;
+}
+
+.comp-stat-friend {
+  font-size: 17px;
+  font-weight: 700;
+  color: #c084fc;
+}
+
+.comp-stat-divider {
+  font-size: 13px;
+  color: #505070;
+  font-weight: 600;
+}
+
+[data-theme="dark"] .cal-month-label {
+  color: #b0b0d8;
+}
+
+[data-theme="dark"] .competition-stats {
+  background: rgba(255, 255, 255, 0.03);
+  border-color: rgba(255, 255, 255, 0.06);
+}
+
   .friends-tab {
     padding: 10px 16px;
     font-size: 13px;
