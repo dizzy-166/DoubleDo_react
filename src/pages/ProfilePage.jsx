@@ -22,6 +22,7 @@ function ProfilePage() {
   const [notifLoading, setNotifLoading] = useState(false);
   const [reminderTime, setReminderTime] = useState('');
   const [reminderLoading, setReminderLoading] = useState(false);
+  const [reminderUpdatedAt, setReminderUpdatedAt] = useState(null);
 
   // Определение активной вкладки
   const getActiveTab = () => {
@@ -41,7 +42,7 @@ function ProfilePage() {
         // Загружаем данные из таблицы users (с username)
         const { data, error } = await supabase
           .from('users')
-          .select('username, avatar_url, notifications_enabled, reminder_time')
+          .select('username, avatar_url, notifications_enabled, reminder_time, reminder_time_updated_at')
           .eq('id', user.id)
           .single();
 
@@ -55,6 +56,7 @@ function ProfilePage() {
           setAvatarUrl(data.avatar_url || '');
           setNotificationsEnabled(data.notifications_enabled !== false);
           setReminderTime(data.reminder_time ? data.reminder_time.substring(0, 5) : '');
+          setReminderUpdatedAt(data.reminder_time_updated_at || null);
         } else {
           // Если записи нет (маловероятно), создаем временный username
           const tempUsername = `user_${user.id.substring(0, 8)}`;
@@ -225,7 +227,12 @@ function ProfilePage() {
         p_time: timeValue || null
       });
       if (error) throw error;
+      if (data?.error === 'ALREADY_UPDATED_TODAY') {
+        toast.error('Время напоминания можно изменить только раз в сутки');
+        return;
+      }
       setReminderTime(timeValue);
+      setReminderUpdatedAt(new Date().toISOString());
       toast.success(timeValue ? `Напоминание установлено на ${timeValue}` : 'Напоминание отключено');
     } catch (err) {
       toast.error('Не удалось сохранить время напоминания');
@@ -233,6 +240,13 @@ function ProfilePage() {
       setReminderLoading(false);
     }
   };
+
+  const canChangeReminder = !reminderUpdatedAt || (() => {
+    const offset = 3 * 60 * 60 * 1000;
+    const nowDate = new Date(Date.now() + offset).toISOString().split('T')[0];
+    const updatedDate = new Date(new Date(reminderUpdatedAt).getTime() + offset).toISOString().split('T')[0];
+    return nowDate !== updatedDate;
+  })();
 
   // Отмена редактирования
   const handleCancelEdit = () => {
@@ -383,37 +397,49 @@ function ProfilePage() {
               />
             </div>
 
-            <div className="setting-row reminder-row" style={{ marginTop: '12px' }}>
-              <div className="setting-info">
-                <span className="setting-label">Ежедневное напоминание</span>
-                <span className="setting-desc">Email-напоминание отметить привычку в указанное время</span>
+            <div className="reminder-block">
+              <div className="reminder-block-header">
+                <span className="reminder-bell">🔔</span>
+                <div className="reminder-block-info">
+                  <span className="reminder-block-title">Ежедневное напоминание</span>
+                  <span className="reminder-block-desc">Письмо придёт если есть невыполненные привычки</span>
+                </div>
               </div>
-              <div className="reminder-time-picker">
+              <div className="reminder-block-body">
                 <input
                   type="time"
                   className="reminder-time-input"
                   value={reminderTime}
                   onChange={(e) => setReminderTime(e.target.value)}
-                  disabled={reminderLoading}
+                  disabled={reminderLoading || !canChangeReminder}
                 />
-                <button
-                  className="reminder-save-btn"
-                  onClick={() => handleSaveReminderTime(reminderTime)}
-                  disabled={reminderLoading}
-                >
-                  {reminderLoading ? '...' : 'OK'}
-                </button>
-                {reminderTime && (
-                  <button
-                    className="reminder-clear-btn"
-                    onClick={() => handleSaveReminderTime('')}
-                    disabled={reminderLoading}
-                    title="Отключить напоминание"
-                  >
-                    ✕
-                  </button>
+                {canChangeReminder ? (
+                  <>
+                    <button
+                      className="reminder-save-btn"
+                      onClick={() => handleSaveReminderTime(reminderTime)}
+                      disabled={reminderLoading || !reminderTime}
+                    >
+                      {reminderLoading ? '...' : 'Сохранить'}
+                    </button>
+                    {reminderTime && (
+                      <button
+                        className="reminder-clear-btn"
+                        onClick={() => handleSaveReminderTime('')}
+                        disabled={reminderLoading}
+                        title="Отключить напоминание"
+                      >
+                        ✕
+                      </button>
+                    )}
+                  </>
+                ) : (
+                  <span className="reminder-locked">🔒 До завтра</span>
                 )}
               </div>
+              {!canChangeReminder && (
+                <p className="reminder-limit-note">Можно изменить раз в сутки</p>
+              )}
             </div>
           </div>
 
