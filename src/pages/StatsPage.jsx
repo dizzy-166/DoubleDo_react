@@ -48,15 +48,15 @@ function StatsPage() {
 
     return (
       <div className="stats-chart-section">
-        <h3 className="stats-section-title">Активность за последние месяцы</h3>
+        <h3 className="stats-section-title">Активность за 6 месяцев</h3>
         <div className="bar-chart">
           {data.map((d, i) => {
-            const height = Math.round((d.count / maxVal) * 100);
+            const pct = Math.max(Math.round((d.count / maxVal) * 100), 4);
             return (
               <div key={i} className="bar-col">
                 <div className="bar-value">{d.count}</div>
-                <div className="bar-wrap">
-                  <div className="bar-fill" style={{ height: `${Math.max(height, 4)}%` }} />
+                <div className="bar-track">
+                  <div className="bar-fill" style={{ height: `${pct}%` }} />
                 </div>
                 <div className="bar-label">{monthNames[d.month - 1]}</div>
               </div>
@@ -96,12 +96,12 @@ function StatsPage() {
               <div className="stat-card accent">
                 <div className="stat-card-icon">🔥</div>
                 <div className="stat-card-value">{stats.best_streak ?? 0}</div>
-                <div className="stat-card-label">Лучший стрик</div>
+                <div className="stat-card-label">Стрик</div>
               </div>
               <div className="stat-card">
                 <div className="stat-card-icon">✅</div>
                 <div className="stat-card-value">{stats.total_tracked ?? 0}</div>
-                <div className="stat-card-label">Дней выполнено</div>
+                <div className="stat-card-label">Выполнено дней</div>
               </div>
               <div className="stat-card">
                 <div className="stat-card-icon">📋</div>
@@ -116,17 +116,17 @@ function StatsPage() {
               <div className="stat-card">
                 <div className="stat-card-icon">⚔️</div>
                 <div className="stat-card-value">{stats.competitions_played ?? 0}</div>
-                <div className="stat-card-label">Соревнований</div>
+                <div className="stat-card-label">Турниров</div>
               </div>
-              {(stats.competitions_played ?? 0) > 0 && (
-                <div className="stat-card">
-                  <div className="stat-card-icon">📊</div>
-                  <div className="stat-card-value">
-                    {Math.round(((stats.competitions_won ?? 0) / stats.competitions_played) * 100)}%
-                  </div>
-                  <div className="stat-card-label">Побед %</div>
+              <div className="stat-card">
+                <div className="stat-card-icon">📊</div>
+                <div className="stat-card-value">
+                  {(stats.competitions_played ?? 0) > 0
+                    ? `${Math.round(((stats.competitions_won ?? 0) / stats.competitions_played) * 100)}%`
+                    : '—'}
                 </div>
-              )}
+                <div className="stat-card-label">Побед %</div>
+              </div>
             </div>
 
             {renderMonthlyChart()}
