@@ -3593,13 +3593,13 @@ button, .action-btn, .gradient-tab, .friends-tab, .nav-item {
 .heatmap-container {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 14px;
 }
 
 .heatmap-section {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 6px;
 }
 
 .heatmap-label {
@@ -3608,42 +3608,22 @@ button, .action-btn, .gradient-tab, .friends-tab, .nav-item {
   color: #888;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  margin-bottom: 2px;
 }
 
-.heatmap-scroll {
-  overflow-x: auto;
-  padding-bottom: 4px;
-}
-
-.heatmap-month-row {
-  position: relative;
-  min-width: fit-content;
-}
-
-.heatmap-month-label {
-  position: absolute;
-  font-size: 10px;
-  color: #aaa;
-  top: 0;
-  white-space: nowrap;
-}
-
-.heatmap-grid {
-  display: flex;
-  gap: 2px;
-}
-
-.heatmap-col {
+.heatmap-rows {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 3px;
+}
+
+.heatmap-row {
+  display: flex;
+  gap: 3px;
 }
 
 .heatmap-cell {
   border-radius: 3px;
   background: #e0e0ee;
-  transition: background 0.15s;
   flex-shrink: 0;
 }
 
@@ -3652,25 +3632,16 @@ button, .action-btn, .gradient-tab, .friends-tab, .nav-item {
 }
 
 .heatmap-cell.future {
-  background: rgba(102, 126, 234, 0.12);
-  border: 1px dashed rgba(102, 126, 234, 0.25);
+  background: rgba(102, 126, 234, 0.15);
+  border: 1px dashed rgba(102, 126, 234, 0.3);
   box-sizing: border-box;
-}
-
-.heatmap-cell.out-of-range {
-  background: transparent;
-}
-
-[data-theme="dark"] .heatmap-cell.future {
-  background: rgba(160, 180, 255, 0.08);
-  border-color: rgba(160, 180, 255, 0.15);
 }
 
 .heatmap-legend {
   display: flex;
   align-items: center;
-  gap: 4px;
-  margin-top: 4px;
+  gap: 5px;
+  margin-top: 2px;
 }
 
 .heatmap-legend-empty {
@@ -3717,6 +3688,11 @@ button, .action-btn, .gradient-tab, .friends-tab, .nav-item {
 
 [data-theme="dark"] .heatmap-cell.filled {
   background: #7b8fff;
+}
+
+[data-theme="dark"] .heatmap-cell.future {
+  background: rgba(160, 180, 255, 0.08);
+  border-color: rgba(160, 180, 255, 0.2);
 }
 
 [data-theme="dark"] .heatmap-legend-empty {

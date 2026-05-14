@@ -1264,85 +1264,55 @@ function HeatmapView({ heatmapData, loading, friendUsername, competition }) {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  // Range: competition start → competition end date (show full period)
-  let rangeStart = competition?.start_date ? new Date(competition.start_date) : new Date(today);
-  rangeStart.setHours(0, 0, 0, 0);
+  const startDate = competition?.start_date ? new Date(competition.start_date) : new Date(today);
+  startDate.setHours(0, 0, 0, 0);
 
-  let rangeEnd = new Date(today);
-  if (competition?.total_days && competition.total_days !== 9999 && competition?.start_date) {
-    const endDate = new Date(rangeStart);
-    endDate.setDate(rangeStart.getDate() + competition.total_days - 1);
-    rangeEnd = endDate; // show full period even if end is in future
-  }
+  const isInfinite = !competition?.total_days || competition.total_days === 9999;
+  const totalDays = isInfinite
+    ? Math.ceil((today - startDate) / 86400000) + 1
+    : competition.total_days;
 
-  // Align grid start to Monday
-  const gridStart = new Date(rangeStart);
-  const dow = gridStart.getDay();
-  gridStart.setDate(gridStart.getDate() - (dow === 0 ? 6 : dow - 1));
-
-  const weeks = [];
-  let current = new Date(gridStart);
-  while (current <= rangeEnd) {
-    const week = [];
-    for (let d = 0; d < 7; d++) {
-      const dateStr = current.toISOString().split('T')[0];
-      const inRange = current >= rangeStart && current <= rangeEnd;
-      const isFuture = current > today;
-      week.push({ date: dateStr, inRange, isFuture });
-      current.setDate(current.getDate() + 1);
-    }
-    weeks.push(week);
-  }
-
-  const CELL = 16; // px
-  const GAP = 3;   // px
-  const COL_STEP = CELL + GAP;
-
-  const monthNames = ['Янв', 'Фев', 'Мар', 'Апр', 'Май', 'Июн',
-                      'Июл', 'Авг', 'Сен', 'Окт', 'Ноя', 'Дек'];
-
-  const monthLabels = [];
-  let lastMonth = -1;
-  weeks.forEach((week, wi) => {
-    const m = new Date(week[0].date).getMonth();
-    if (m !== lastMonth) {
-      monthLabels.push({ wi, label: monthNames[m] });
-      lastMonth = m;
-    }
+  // Build flat array of competition days
+  const days = Array.from({ length: totalDays }, (_, i) => {
+    const d = new Date(startDate.getTime() + i * 86400000);
+    return {
+      date: d.toISOString().split('T')[0],
+      isPast: d <= today,
+      label: d.getDate()
+    };
   });
 
-  const gridWidth = weeks.length * COL_STEP - GAP;
+  // Group into rows of 7
+  const rows = [];
+  for (let i = 0; i < days.length; i += 7) {
+    rows.push(days.slice(i, i + 7));
+  }
+
+  const CELL = 15;
+  const GAP = 3;
 
   const renderGrid = (dates, label) => (
     <div className="heatmap-section">
       <div className="heatmap-label">{label}</div>
-      <div className="heatmap-scroll">
-        <div className="heatmap-month-row" style={{ width: gridWidth, position: 'relative', height: 16, marginBottom: 4 }}>
-          {monthLabels.map(({ wi, label: ml }) => (
-            <span key={wi} className="heatmap-month-label" style={{ left: wi * COL_STEP }}>{ml}</span>
-          ))}
-        </div>
-        <div className="heatmap-grid" style={{ gap: GAP }}>
-          {weeks.map((week, wi) => (
-            <div key={wi} className="heatmap-col" style={{ gap: GAP }}>
-              {week.map(({ date, inRange, isFuture }) => {
-                const filled = inRange && !isFuture && dates.has(date);
-                let cls = 'heatmap-cell';
-                if (!inRange) cls += ' out-of-range';
-                else if (isFuture) cls += ' future';
-                else if (filled) cls += ' filled';
-                return (
-                  <div
-                    key={date}
-                    className={cls}
-                    style={{ width: CELL, height: CELL }}
-                    title={inRange && !isFuture ? date : ''}
-                  />
-                );
-              })}
-            </div>
-          ))}
-        </div>
+      <div className="heatmap-rows">
+        {rows.map((row, ri) => (
+          <div key={ri} className="heatmap-row">
+            {row.map(({ date, isPast }) => {
+              const filled = isPast && dates.has(date);
+              let cls = 'heatmap-cell';
+              if (filled) cls += ' filled';
+              else if (!isPast) cls += ' future';
+              return (
+                <div
+                  key={date}
+                  className={cls}
+                  style={{ width: CELL, height: CELL }}
+                  title={isPast ? date : ''}
+                />
+              );
+            })}
+          </div>
+        ))}
       </div>
       <div className="heatmap-legend">
         <span className="heatmap-legend-empty" style={{ width: CELL, height: CELL }} />
