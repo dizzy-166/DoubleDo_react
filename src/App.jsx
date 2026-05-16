@@ -278,7 +278,24 @@ function App() {
         const { data: comps, error } = await supabase.rpc('get_user_competitions');
         if (error || !comps) return;
 
+        // Загружаем уже просмотренные ключи из БД (синхронизируется между устройствами)
+        const { data: seenRows } = await supabase
+          .from('notification_seen')
+          .select('key')
+          .eq('user_id', user.id);
+        const seen = new Set((seenRows || []).map(r => r.key));
+
+        const isSeen = (key) => seen.has(key);
+        const markSeen = async (keys) => {
+          await supabase.from('notification_seen').upsert(
+            keys.map(key => ({ user_id: user.id, key })),
+            { onConflict: 'user_id,key' }
+          );
+          keys.forEach(k => seen.add(k));
+        };
+
         const queue = [];
+        const newKeys = [];
 
         for (const comp of comps.filter(c => c.status === 'active')) {
           const compStartStr = comp.start_date?.split('T')[0];
@@ -286,7 +303,7 @@ function App() {
 
           // Уведомление отправителя: соперник пропустил вчера
           const sKey = `ddo_s_${comp.competition_id}_${today}`;
-          if (!localStorage.getItem(sKey)) {
+          if (!isSeen(sKey)) {
             try {
               const { data: cal } = await supabase.rpc('get_competition_calendar_data_fixed', {
                 p_competition_id: comp.competition_id,
@@ -296,13 +313,14 @@ function App() {
               const done = cal?.[0]?.friend_completed_days?.includes(yesterdayDay);
               if (!done) {
                 queue.push({ type: 'sender', competition: comp, key: sKey });
+                newKeys.push(sKey);
               }
             } catch {}
           }
 
           // Уведомление получателя: соперник отправил мне реакцию сегодня
           const rKey = `ddo_r_${comp.competition_id}_${today}`;
-          if (!localStorage.getItem(rKey)) {
+          if (!isSeen(rKey)) {
             try {
               const { data: rxns } = await supabase
                 .from('competition_reactions')
@@ -322,23 +340,22 @@ function App() {
                   emoji: incoming[0].emoji,
                   key: rKey,
                 });
+                newKeys.push(rKey);
               }
             } catch {}
           }
         }
 
-        if (queue.length > 0) {
-          // Mark all as seen immediately so a page refresh won't re-show them
-          queue.forEach(n => localStorage.setItem(n.key, '1'));
-          setNotifQueue(queue);
-        }
+        if (newKeys.length > 0) await markSeen(newKeys);
+        if (queue.length > 0) setNotifQueue(queue);
 
         // Если я сам пропустил вчера — оповещаем соперника пушем
+        const pushNewKeys = [];
         for (const comp of comps.filter(c => c.status === 'active')) {
           const compStartStr = comp.start_date?.split('T')[0];
           if (!compStartStr || yesterdayStr < compStartStr) continue;
           const pushKey = `ddo_push_${comp.competition_id}_${yesterdayStr}`;
-          if (localStorage.getItem(pushKey)) continue;
+          if (isSeen(pushKey)) continue;
           try {
             const { data: cal } = await supabase.rpc('get_competition_calendar_data_fixed', {
               p_competition_id: comp.competition_id,
@@ -347,13 +364,14 @@ function App() {
             });
             const iMissed = !cal?.[0]?.my_completed_days?.includes(yesterdayDay);
             if (iMissed) {
-              localStorage.setItem(pushKey, '1');
+              pushNewKeys.push(pushKey);
               await supabase.rpc('notify_missed_day_push', {
                 p_competition_id: comp.competition_id,
               });
             }
           } catch {}
         }
+        if (pushNewKeys.length > 0) await markSeen(pushNewKeys);
       } catch {}
     }, 1500);
 
