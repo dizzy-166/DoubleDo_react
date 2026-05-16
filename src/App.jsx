@@ -176,21 +176,26 @@ function App() {
     otpRefs.current = otpRefs.current.slice(0, 6);
   }, []);
 
-  // OneSignal: инициализация один раз
-  useEffect(() => {
-    OneSignal.init({
-      appId: '1d084c89-fe5e-43e2-9a91-fee2f37ed467',
-      allowLocalhostAsSecureOrigin: true,
-      notifyButton: { enable: false },
-    }).catch(() => {});
-  }, []);
-
-  // OneSignal: привязываем пользователя и запрашиваем разрешение
+  // OneSignal: инициализация + запрос разрешения + привязка пользователя
   useEffect(() => {
     if (!user?.id) return;
-    OneSignal.login(user.id)
-      .then(() => OneSignal.Notifications.requestPermission())
-      .catch(() => {});
+    const setup = async () => {
+      try {
+        await OneSignal.init({
+          appId: '1d084c89-fe5e-43e2-9a91-fee2f37ed467',
+          allowLocalhostAsSecureOrigin: true,
+          notifyButton: { enable: false },
+        });
+        // Сначала разрешение — потом логин
+        const granted = await OneSignal.Notifications.requestPermission();
+        if (granted) {
+          await OneSignal.login(user.id);
+        }
+      } catch {
+        // push не поддерживается или уже инициализирован — игнорируем
+      }
+    };
+    setup();
   }, [user?.id]);
 
   // Проверяем, что пользователь имеет username
