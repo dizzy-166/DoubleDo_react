@@ -4,6 +4,7 @@ import { ThemeProvider } from './context/ThemeContext.jsx';
 import { supabase } from './services/supabase';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
+import OneSignal from 'react-onesignal';
 import HabitsPage from './pages/HabitsPage.jsx';
 import CompetitionsPage from './pages/CompetitionsPage.jsx';
 import ProfilePage from './pages/ProfilePage.jsx';
@@ -175,6 +176,23 @@ function App() {
     otpRefs.current = otpRefs.current.slice(0, 6);
   }, []);
 
+  // OneSignal: инициализация один раз
+  useEffect(() => {
+    OneSignal.init({
+      appId: '1d084c89-fe5e-43e2-9a91-fee2f37ed467',
+      allowLocalhostAsSecureOrigin: true,
+      notifyButton: { enable: false },
+    }).catch(() => {});
+  }, []);
+
+  // OneSignal: привязываем пользователя и запрашиваем разрешение
+  useEffect(() => {
+    if (!user?.id) return;
+    OneSignal.login(user.id)
+      .then(() => OneSignal.Notifications.requestPermission())
+      .catch(() => {});
+  }, [user?.id]);
+
   // Проверяем, что пользователь имеет username
   useEffect(() => {
     const checkUserProfile = async () => {
@@ -272,6 +290,28 @@ function App() {
           // Mark all as seen immediately so a page refresh won't re-show them
           queue.forEach(n => localStorage.setItem(n.key, '1'));
           setNotifQueue(queue);
+        }
+
+        // Если я сам пропустил вчера — оповещаем соперника пушем
+        for (const comp of comps.filter(c => c.status === 'active')) {
+          const compStartStr = comp.start_date?.split('T')[0];
+          if (!compStartStr || yesterdayStr < compStartStr) continue;
+          const pushKey = `ddo_push_${comp.competition_id}_${yesterdayStr}`;
+          if (localStorage.getItem(pushKey)) continue;
+          try {
+            const { data: cal } = await supabase.rpc('get_competition_calendar_data_fixed', {
+              p_competition_id: comp.competition_id,
+              p_year: yesterdayYear,
+              p_month: yesterdayMonth,
+            });
+            const iMissed = !cal?.[0]?.my_completed_days?.includes(yesterdayDay);
+            if (iMissed) {
+              localStorage.setItem(pushKey, '1');
+              await supabase.rpc('notify_missed_day_push', {
+                p_competition_id: comp.competition_id,
+              });
+            }
+          } catch {}
         }
       } catch {}
     }, 1500);

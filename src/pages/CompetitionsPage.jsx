@@ -916,6 +916,10 @@ function CompetitionCard({ competition, user, onRefresh, onDelete }) {
       if (!error && data?.success) {
         await loadReactions();
         toast.success(`Реакция ${emoji} отправлена!`);
+        supabase.rpc('notify_reaction_push', {
+          p_competition_id: competition.competition_id,
+          p_emoji: emoji,
+        }).catch(() => {});
       } else {
         toast.error(data?.message || 'Не удалось отправить реакцию');
       }
