@@ -842,6 +842,10 @@ function HabitsPage() {
         }
       }
 
+      if (habit.source_type === 'competition') {
+        window.dispatchEvent(new Event('habit-completed'));
+      }
+
       // Обновляем локально
       setProgressData(prev => {
         const habitProgress = prev[habitId] ? [...prev[habitId]] : [];

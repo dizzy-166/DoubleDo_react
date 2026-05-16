@@ -839,7 +839,7 @@ function CompetitionCard({ competition, user, onRefresh, onDelete }) {
   const [respondingToInvite, setRespondingToInvite] = useState(false);
   const [viewMonth, setViewMonth] = useState(new Date().getMonth());
   const [viewYear, setViewYear] = useState(new Date().getFullYear());
-  const [stats, setStats] = useState({ totalMyDays: 0, totalFriendDays: 0, myStreak: 0, friendStreak: 0 });
+  const [stats, setStats] = useState({ totalMyDays: competition.my_score || 0, totalFriendDays: competition.friend_score || 0, myStreak: 0, friendStreak: 0 });
   const [viewMode, setViewMode] = useState('calendar'); // 'calendar' | 'heatmap'
   const [heatmapData, setHeatmapData] = useState(null);
   const [loadingHeatmap, setLoadingHeatmap] = useState(false);
@@ -1051,8 +1051,8 @@ function CompetitionCard({ competition, user, onRefresh, onDelete }) {
     }
   };
 
-  const myScore = competition.my_score || 0;
-  const friendScore = competition.friend_score || 0;
+  const myScore = stats.totalMyDays;
+  const friendScore = stats.totalFriendDays;
   const isCompleted = competition.status === 'completed';
   const isPending = competition.status === 'pending';
   const iWon = isCompleted && myScore > friendScore;
