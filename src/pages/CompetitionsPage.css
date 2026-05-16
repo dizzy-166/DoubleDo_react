@@ -3846,17 +3846,25 @@ button, .action-btn, .gradient-tab, .friends-tab, .nav-item {
 
 /* Pull-to-refresh */
 .pull-indicator {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 9999;
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   justify-content: center;
+  padding-bottom: 8px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   overflow: hidden;
-  transition: height 0.2s;
+  transition: height 0.15s;
+  box-shadow: 0 2px 8px rgba(102,126,234,0.3);
 }
 .pull-spinner {
-  width: 24px;
-  height: 24px;
-  border: 2.5px solid #e0e0e0;
-  border-top-color: #667eea;
+  width: 22px;
+  height: 22px;
+  border: 2.5px solid rgba(255,255,255,0.4);
+  border-top-color: #fff;
   border-radius: 50%;
 }
 .pull-spinner.spinning {

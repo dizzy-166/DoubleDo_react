@@ -101,36 +101,32 @@ function HabitsPage() {
 
   // Pull-to-refresh
   useEffect(() => {
-    const el = mainRef.current;
-    if (!el) return;
-
     const onTouchStart = (e) => {
-      if (el.scrollTop === 0) pullStartY.current = e.touches[0].clientY;
+      if (window.scrollY === 0) pullStartY.current = e.touches[0].clientY;
     };
     const onTouchMove = (e) => {
       if (pullStartY.current === null) return;
       const delta = e.touches[0].clientY - pullStartY.current;
-      if (delta > 0 && el.scrollTop === 0) {
-        setPullY(Math.min(delta * 0.4, 70));
-      }
+      if (delta > 0) setPullY(Math.min(delta * 0.4, 70));
+      else { pullStartY.current = null; setPullY(0); }
     };
     const onTouchEnd = async () => {
+      if (pullStartY.current === null) return;
+      pullStartY.current = null;
       if (pullY >= 60 && !pullRefreshing) {
         setPullRefreshing(true);
         await loadHabits();
         setPullRefreshing(false);
       }
       setPullY(0);
-      pullStartY.current = null;
     };
-
-    el.addEventListener('touchstart', onTouchStart, { passive: true });
-    el.addEventListener('touchmove', onTouchMove, { passive: true });
-    el.addEventListener('touchend', onTouchEnd);
+    document.addEventListener('touchstart', onTouchStart, { passive: true });
+    document.addEventListener('touchmove', onTouchMove, { passive: true });
+    document.addEventListener('touchend', onTouchEnd);
     return () => {
-      el.removeEventListener('touchstart', onTouchStart);
-      el.removeEventListener('touchmove', onTouchMove);
-      el.removeEventListener('touchend', onTouchEnd);
+      document.removeEventListener('touchstart', onTouchStart);
+      document.removeEventListener('touchmove', onTouchMove);
+      document.removeEventListener('touchend', onTouchEnd);
     };
   }, [pullY, pullRefreshing]);
 
@@ -1108,6 +1104,11 @@ function HabitsPage() {
 
   return (
     <div className="habits-page">
+      {(pullY > 0 || pullRefreshing) && (
+        <div className="pull-indicator" style={{ height: pullRefreshing ? 48 : pullY }}>
+          <div className={`pull-spinner${pullRefreshing ? ' spinning' : ''}`} />
+        </div>
+      )}
       <header className="habits-header">
         <div className="header-content">
           <h1>DoubleDo</h1>
@@ -1131,11 +1132,6 @@ function HabitsPage() {
       </header>
 
       <main className="habits-main" ref={mainRef}>
-        {(pullY > 0 || pullRefreshing) && (
-          <div className="pull-indicator" style={{ height: pullRefreshing ? 48 : pullY }}>
-            <div className={`pull-spinner${pullRefreshing ? ' spinning' : ''}`} />
-          </div>
-        )}
         <div className="habits-list-header">
           <h2>Мои привычки</h2>
           <button 
