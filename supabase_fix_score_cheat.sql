@@ -16,7 +16,8 @@ ALTER TABLE habit_progress
 -- mark_competition_habit_complete
 -- Инкрементирует счёт ТОЛЬКО если привычка не была отмечена сегодня
 -- ============================================================
-CREATE OR REPLACE FUNCTION mark_competition_habit_complete(p_habit_id uuid)
+DROP FUNCTION IF EXISTS mark_competition_habit_complete(uuid);
+CREATE FUNCTION mark_competition_habit_complete(p_habit_id uuid)
 RETURNS void
 LANGUAGE plpgsql
 SECURITY DEFINER
@@ -74,7 +75,8 @@ GRANT EXECUTE ON FUNCTION mark_competition_habit_complete(uuid) TO authenticated
 -- unmark_competition_habit_complete
 -- Декрементирует счёт ТОЛЬКО если привычка реально была отмечена сегодня
 -- ============================================================
-CREATE OR REPLACE FUNCTION unmark_competition_habit_complete(p_habit_id uuid)
+DROP FUNCTION IF EXISTS unmark_competition_habit_complete(uuid);
+CREATE FUNCTION unmark_competition_habit_complete(p_habit_id uuid)
 RETURNS void
 LANGUAGE plpgsql
 SECURITY DEFINER
