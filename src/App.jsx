@@ -6,7 +6,8 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { Toaster } from 'react-hot-toast';
 import OneSignal from 'react-onesignal';
 
-let oneSignalReady = false; // гарантируем однократный init на всё время жизни страницы
+let oneSignalAttempted = false; // попытка init — только одна за жизнь страницы
+let oneSignalReady = false;    // true если init прошёл успешно
 import HabitsPage from './pages/HabitsPage.jsx';
 import CompetitionsPage from './pages/CompetitionsPage.jsx';
 import ProfilePage from './pages/ProfilePage.jsx';
@@ -181,18 +182,20 @@ function App() {
   // OneSignal: инициализация + запрос разрешения + привязка пользователя
   useEffect(() => {
     if (!user?.id) return;
+
+    // Если init уже прошёл успешно — только логиним
     if (oneSignalReady) {
-      // Уже инициализирован — просто логиним пользователя
       OneSignal.login(user.id).catch(() => {});
       return;
     }
+
+    // Если уже пытались (даже неудачно) — не повторяем
+    if (oneSignalAttempted) return;
+    oneSignalAttempted = true; // фиксируем ДО async, чтобы второй вызов не прошёл
+
     const setup = async () => {
       try {
-        // Проверяем поддержку push в браузере до инициализации
         if (!('PushManager' in window) || !('serviceWorker' in navigator)) return;
-
-        // Ждём регистрации service worker
-        await navigator.serviceWorker.ready;
 
         await OneSignal.init({
           appId: '1d084c89-fe5e-43e2-9a91-fee2f37ed467',
@@ -203,7 +206,6 @@ function App() {
 
         oneSignalReady = true;
 
-        // Сначала разрешение — потом логин
         const granted = await OneSignal.Notifications.requestPermission();
         if (granted) {
           await OneSignal.login(user.id);
