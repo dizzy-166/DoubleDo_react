@@ -19,6 +19,9 @@ function ProfilePage() {
   const [avatarUrl, setAvatarUrl] = useState('');
   const [usernameError, setUsernameError] = useState('');
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
+  const [reactionsEnabled, setReactionsEnabled] = useState(
+    () => localStorage.getItem('ddo_reactions_disabled') !== '1'
+  );
   const [notifLoading, setNotifLoading] = useState(false);
   const [reminderTime, setReminderTime] = useState('');
   const [reminderLoading, setReminderLoading] = useState(false);
@@ -394,6 +397,26 @@ function ProfilePage() {
                 onClick={handleToggleNotifications}
                 disabled={notifLoading}
                 aria-label="Переключить уведомления"
+              />
+            </div>
+
+            <div className="setting-row" style={{ marginTop: '12px' }}>
+              <div className="setting-info">
+                <span className="setting-label">Реакции на пропуски</span>
+                <span className="setting-desc">Показывать уведомление, если соперник пропустил вчера</span>
+              </div>
+              <button
+                className={`toggle-switch ${reactionsEnabled ? 'on' : ''}`}
+                onClick={() => {
+                  const next = !reactionsEnabled;
+                  setReactionsEnabled(next);
+                  if (next) {
+                    localStorage.removeItem('ddo_reactions_disabled');
+                  } else {
+                    localStorage.setItem('ddo_reactions_disabled', '1');
+                  }
+                }}
+                aria-label="Переключить реакции на пропуски"
               />
             </div>
 

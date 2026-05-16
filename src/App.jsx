@@ -206,6 +206,7 @@ function App() {
   useEffect(() => {
     if (!user) return;
     const timer = setTimeout(async () => {
+      if (localStorage.getItem('ddo_reactions_disabled') === '1') return;
       try {
         const today = new Date().toISOString().split('T')[0];
         const yesterday = new Date();
