@@ -24,9 +24,40 @@ function StatsPage() {
       setUser(user);
 
       try {
-        const { data, error } = await supabase.rpc('get_user_stats');
+        const [{ data, error }, { data: progress }] = await Promise.all([
+          supabase.rpc('get_user_stats'),
+          supabase
+            .from('habit_progress')
+            .select('habit_id, completed_date')
+            .eq('user_id', user.id)
+            .eq('is_completed', true)
+            .order('completed_date', { ascending: true }),
+        ]);
         if (error) throw error;
-        setStats(data);
+
+        // Compute best streak per-habit and take the max.
+        // The backend value can be wrong when habits have gaps.
+        const byHabit = {};
+        (progress || []).forEach(p => {
+          (byHabit[p.habit_id] = byHabit[p.habit_id] || []).push(p.completed_date);
+        });
+        let bestStreak = 0;
+        Object.values(byHabit).forEach(dates => {
+          let cur = 1, max = 1;
+          for (let i = 1; i < dates.length; i++) {
+            const prev = new Date(dates[i - 1]);
+            prev.setUTCDate(prev.getUTCDate() + 1);
+            if (prev.toISOString().split('T')[0] === dates[i]) {
+              cur++;
+              if (cur > max) max = cur;
+            } else {
+              cur = 1;
+            }
+          }
+          if (dates.length > 0 && max > bestStreak) bestStreak = max;
+        });
+
+        setStats({ ...data, best_streak: bestStreak });
       } catch (err) {
         console.error('Error loading stats:', err);
         setStats(null);
