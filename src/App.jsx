@@ -3,7 +3,7 @@ import { useAuth } from './context/AuthContext.jsx';
 import { ThemeProvider } from './context/ThemeContext.jsx';
 import { supabase } from './services/supabase';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { Toaster } from 'react-hot-toast';
+import { Toaster, toast } from 'react-hot-toast';
 import OneSignal from 'react-onesignal';
 
 let oneSignalAttempted = false;
@@ -182,14 +182,25 @@ function App() {
   const [pendingEmail, setPendingEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [formErrors, setFormErrors] = useState({});
-  const [canResend, setCanResend] = useState(true);
+  const [resendCountdown, setResendCountdown] = useState(0);
   const [transitioning, setTransitioning] = useState(false);
   const otpRefs = useRef([]);
 
-  // Инициализируем рефы для OTP полей
   useEffect(() => {
     otpRefs.current = otpRefs.current.slice(0, 6);
   }, []);
+
+  useEffect(() => {
+    if (resendCountdown <= 0) return;
+    const t = setTimeout(() => setResendCountdown(c => c - 1), 1000);
+    return () => clearTimeout(t);
+  }, [resendCountdown]);
+
+  useEffect(() => {
+    if (confirmationCode.length === 6 && !loading && needsConfirmation) {
+      doVerifyOTP();
+    }
+  }, [confirmationCode]);
 
   // OneSignal: инициализация + запрос разрешения + привязка пользователя
   useEffect(() => {
@@ -459,9 +470,7 @@ const handleSubmit = async (e) => {
     if (result.success) {
       setNeedsConfirmation(true);
       setPendingEmail(email);
-      setCanResend(false);
-      
-      setTimeout(() => setCanResend(true), 60000);
+      setResendCountdown(60);
     } else {
       setFormErrors({ general: result.message });
     }
@@ -473,49 +482,23 @@ const handleSubmit = async (e) => {
   }
 };
 
-  // Обработчик подтверждения OTP
-  const handleVerifyOTP = async (e) => {
-    e.preventDefault();
-    
-    if (!confirmationCode.trim()) {
-      setFormErrors({ confirmation: 'Введите код подтверждения' });
-      return;
-    }
-
-    if (confirmationCode.length !== 6) {
-      setFormErrors({ confirmation: 'Код должен содержать 6 цифр' });
-      return;
-    }
-
+  const doVerifyOTP = async () => {
+    if (loading) return;
     setLoading(true);
     setFormErrors({});
-
-     try {
-    const result = await verifyOTPCode(pendingEmail, confirmationCode);
-    
-    if (result.success) {
-      console.log('OTP verified successfully');
-      setNeedsConfirmation(false);
-      setConfirmationCode('');
-      
-      // ✅ ДОБАВИТЬ: Устанавливаем username из email
-      if (!isLogin) {
-        const generatedUsername = extractUsernameFromEmail(pendingEmail);
-        
-        // Вызываем функцию для установки username в БД
-        const { data, error } = await supabase.rpc('set_username_atomic', {
-          new_username: generatedUsername
-        });
-        
-        if (error) {
-          console.error('Error setting username:', error);
-          // Можно показать сообщение, но не блокировать вход
+    try {
+      const result = await verifyOTPCode(pendingEmail, confirmationCode);
+      if (result.success) {
+        setNeedsConfirmation(false);
+        setConfirmationCode('');
+        if (!isLogin) {
+          const generatedUsername = extractUsernameFromEmail(pendingEmail);
+          const { error } = await supabase.rpc('set_username_atomic', { new_username: generatedUsername });
+          if (error) console.error('Error setting username:', error);
+          toast.success(`Добро пожаловать! Никнейм: ${generatedUsername}`);
         }
-        
-        alert(`Регистрация успешна! Ваш никнейм: ${generatedUsername}`);
-      }
-    } else {
-      setFormErrors({ confirmation: result.message });
+      } else {
+        setFormErrors({ confirmation: result.message });
       }
     } catch (err) {
       setFormErrors({ confirmation: 'Неверный код или произошла ошибка' });
@@ -523,6 +506,15 @@ const handleSubmit = async (e) => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleVerifyOTP = async (e) => {
+    e.preventDefault();
+    if (confirmationCode.length !== 6) {
+      setFormErrors({ confirmation: 'Введите 6-значный код' });
+      return;
+    }
+    await doVerifyOTP();
   };
 
   // Функция для обработки ввода OTP
@@ -640,25 +632,18 @@ const handleSubmit = async (e) => {
   };
 
   const handleResendCode = async () => {
-    if (!canResend) {
-      setFormErrors({ general: 'Подождите 60 секунд перед повторной отправкой' });
-      return;
-    }
-    
+    if (resendCountdown > 0 || loading) return;
     setLoading(true);
     setFormErrors({});
-
     try {
-      const result = await sendOTPCode(pendingEmail, !isLogin);
-      
+      const result = await sendOTPCode(pendingEmail, !isLogin, isLogin);
       if (result.success) {
-        setCanResend(false);
-        setTimeout(() => setCanResend(true), 60000);
-        alert('Код подтверждения отправлен повторно');
+        setResendCountdown(60);
+        toast.success('Код отправлен повторно');
       } else {
         setFormErrors({ general: result.message });
       }
-    } catch (err) {
+    } catch {
       setFormErrors({ general: 'Не удалось отправить код' });
     } finally {
       setLoading(false);
@@ -667,56 +652,21 @@ const handleSubmit = async (e) => {
 
   // Функция для рендеринга аутентификационных экранов
   const renderAuthScreen = () => {
-    // Экран подтверждения email
     if (needsConfirmation) {
       return (
         <div className="app">
           <div className="auth-container">
-            <div className="auth-progress">
-              <div className="progress-step">
-                <div className="step-number">1</div>
-                <span className="step-label">email</span>
-              </div>
-              <div className="progress-line"></div>
-              <div className="progress-step active">
-                <div className="step-number">2</div>
-                <span className="step-label">Подтверждение</span>
-              </div>
+            <div className="auth-logo">
+              <img src="/icon-192.png" className="auth-logo-img" alt="DoubleDo" />
+              <span className="auth-logo-text">DoubleDo</span>
             </div>
 
-            <div className="auth-header">
-              <div className="logo">
-                <div className="logo-icon">DD</div>
-                <div className="logo-text">DoubleDo</div>
-              </div>
-              <div className="auth-welcome">
-                <h1 className="auth-title">Подтверждение email</h1>
-              </div>
-              <p className="auth-subtitle">Завершите вход в ваш аккаунт</p>
-            </div>
-
-            <div className="otp-info">
-              <p className="otp-email">{pendingEmail}</p>
-              <p className="otp-text">
-                Мы отправили 6-значный код подтверждения на вашу почту
-              </p>
-              <div className="paste-hint" style={{
-                fontSize: '13px',
-                color: 'var(--gray)',
-                marginTop: '8px',
-                fontStyle: 'italic'
-              }}>
-                {/* Можно вставить код через Ctrl+V или правой кнопкой → Вставить */}
+            <div className="otp-header">
+              <div className="otp-title">Введите код</div>
+              <div className="otp-desc">
+                Мы отправили 6-значный код на <strong>{pendingEmail}</strong>
               </div>
             </div>
-
-            {/* {!isLogin && (
-              <div className="username-notice">
-                <p className="username-notice-text">
-                  После регистрации ваш никнейм будет создан автоматически
-                </p>
-              </div>
-            )} */}
 
             {formErrors.general && (
               <div className="error-message" style={{ marginBottom: '16px' }}>
@@ -725,71 +675,47 @@ const handleSubmit = async (e) => {
             )}
 
             <form onSubmit={handleVerifyOTP} className="auth-form">
-              <div className="form-group">
-                <label className="form-label">Код из email</label>
-                <div 
-                  className="otp-container"
-                  onPaste={handleOTPPaste}
-                >
-                  {[...Array(6)].map((_, index) => (
-                    <input
-                      key={index}
-                      ref={el => otpRefs.current[index] = el}
-                      type="text"
-                      inputMode="numeric"
-                      pattern="[0-9]*"
-                      maxLength="1"
-                      className={`otp-input ${confirmationCode[index] ? 'filled' : ''} ${formErrors.confirmation ? 'error' : ''}`}
-                      value={confirmationCode[index] || ''}
-                      onChange={(e) => handleOTPChange(e, index)}
-                      onKeyDown={(e) => handleKeyDown(e, index)}
-                      onFocus={(e) => e.target.select()}
-                      disabled={loading}
-                      autoFocus={index === 0}
-                    />
-                  ))}
-                </div>
-                {formErrors.confirmation && (
-                  <div className="error-message">{formErrors.confirmation}</div>
-                )}
+              <div className="otp-container" onPaste={handleOTPPaste}>
+                {[...Array(6)].map((_, index) => (
+                  <input
+                    key={index}
+                    ref={el => otpRefs.current[index] = el}
+                    type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    maxLength="1"
+                    className={`otp-input ${confirmationCode[index] ? 'filled' : ''} ${formErrors.confirmation ? 'error' : ''}`}
+                    value={confirmationCode[index] || ''}
+                    onChange={(e) => handleOTPChange(e, index)}
+                    onKeyDown={(e) => handleKeyDown(e, index)}
+                    onFocus={(e) => e.target.select()}
+                    disabled={loading}
+                    autoFocus={index === 0}
+                  />
+                ))}
               </div>
+              {formErrors.confirmation && (
+                <div className="error-message" style={{ marginTop: '8px' }}>{formErrors.confirmation}</div>
+              )}
 
-              <button 
-  type="submit" 
-  className={`auth-button ${loading ? 'loading' : ''}`}
-  disabled={loading || !email.trim()}
->
-  <span className="button-content">
-    {loading ? (
-      <>
-        <div className="loading-spinner-small"></div>
-        <span>{isLogin ? 'Вход...' : 'Регистрация...'}</span>
-      </>
-    ) : (
-      <>
-        <span>{isLogin ? 'Войти с помощью OTP' : 'Отправить'}</span>
-        <svg className="button-icon" width="20" height="20" viewBox="0 0 24 24">
-          <path fill="currentColor" d="M10 17l5-5-5-5v10z"/>
-        </svg>
-      </>
-    )}
-  </span>
-</button>
+              <button
+                type="submit"
+                className="auth-button"
+                disabled={loading || confirmationCode.length !== 6}
+              >
+                {loading ? <div className="loading-spinner"></div> : (isLogin ? 'Войти' : 'Зарегистрироваться')}
+              </button>
             </form>
 
-            {/* <div className="auth-toggle">
-              <span className="toggle-text">
-                Не пришел код?
-              </span>
-              <button
-                type="button"
-                className="toggle-button"
-                onClick={handleResendCode}
-                disabled={!canResend || loading}
-              >
-                {canResend ? 'Отправить снова' : 'Подождите 60 сек'}
-              </button>
-            </div> */}
+            <div className="resend-section">
+              {resendCountdown > 0 ? (
+                <span className="resend-timer">Отправить повторно через {resendCountdown} с</span>
+              ) : (
+                <button type="button" className="resend-btn" onClick={handleResendCode} disabled={loading}>
+                  Отправить код повторно
+                </button>
+              )}
+            </div>
 
             <div className="back-container">
               <button
@@ -802,7 +728,7 @@ const handleSubmit = async (e) => {
                   setEmail(pendingEmail);
                 }}
               >
-                ← Вернуться к {isLogin ? 'входу' : 'регистрации'}
+                ← Назад
               </button>
             </div>
           </div>
@@ -810,39 +736,38 @@ const handleSubmit = async (e) => {
       );
     }
 
-    // Основная форма (регистрация/вход)
     return (
       <div className="app">
         <div className={`auth-container ${transitioning ? 'fade-out' : 'fade-in'}`}>
-          <div className="auth-progress">
-            <div className="progress-step active">
-              <div className="step-number">1</div>
-              <span className="step-label"> email</span>
-            </div>
-            <div className="progress-line"></div>
-            <div className="progress-step">
-              <div className="step-number">2</div>
-              <span className="step-label">Подтверждение</span>
-            </div>
+          <div className="auth-logo">
+            <img src="/icon-192.png" className="auth-logo-img" alt="DoubleDo" />
+            <span className="auth-logo-text">DoubleDo</span>
           </div>
 
-          <div className="auth-header">
-            <div className="logo">
-              <div className="logo-icon">DD</div>
-              <div className="logo-text">DoubleDo</div>
-            </div>
-            <div className="auth-welcome">
-              <h1 className="auth-title">
-                {isLogin ? 'С возвращением!' : 'Присоединяйтесь к сообществу'}
-              </h1>
-            </div>
-            <p className="auth-subtitle">
-              {isLogin 
-                ? 'Становитесь лучше вместе с друзьями'
-                : 'Создайте аккаунт и начните свой путь'
-              }
-            </p>
+          <div className="auth-tabs">
+            <button
+              type="button"
+              className={`auth-tab ${isLogin ? 'active' : ''}`}
+              onClick={() => !isLogin && toggleAuthMode()}
+              disabled={loading}
+            >
+              Войти
+            </button>
+            <button
+              type="button"
+              className={`auth-tab ${!isLogin ? 'active' : ''}`}
+              onClick={() => isLogin && toggleAuthMode()}
+              disabled={loading}
+            >
+              Регистрация
+            </button>
           </div>
+
+          <p className="auth-subtitle">
+            {isLogin
+              ? 'Введите email — мы пришлём код для входа'
+              : 'Введите email — мы пришлём код для регистрации'}
+          </p>
 
           {formErrors.general && (
             <div className="error-message" style={{ marginBottom: '16px' }}>
@@ -853,67 +778,31 @@ const handleSubmit = async (e) => {
           <form onSubmit={handleSubmit} className="auth-form">
             <div className="form-group">
               <label className="form-label">Email</label>
-              <div className="input-with-icon">
-                <svg className="input-icon" width="20" height="20" viewBox="0 0 24 24" fill="none">
-                  <path d="M20 4H4C2.9 4 2 4.9 2 6V18C2 19.1 2.9 20 4 20H20C21.1 20 22 19.1 22 18V6C22 4.9 21.1 4 20 4ZM20 8L12 13L4 8V6L12 11L20 6V8Z" 
-                    fill="var(--gray)"/>
-                </svg>
-                <input
-                  type="email" 
-                  className={`form-input ${formErrors.email ? 'error' : ''}`}
-                  placeholder="your@email.com"
-                  value={email}
-                  onChange={(e) => {
-                    setEmail(e.target.value);
-                    if (formErrors.email) {
-                      setFormErrors({ ...formErrors, email: '' });
-                    }
-                  }}
-                  disabled={loading}
-                  autoFocus
-                />
-              </div>
+              <input
+                type="email"
+                className={`form-input ${formErrors.email ? 'error' : ''}`}
+                placeholder="your@email.com"
+                value={email}
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                  if (formErrors.email) setFormErrors({ ...formErrors, email: '' });
+                }}
+                disabled={loading}
+                autoFocus
+              />
               {formErrors.email && (
                 <div className="error-message">{formErrors.email}</div>
               )}
             </div>
 
-            <button 
-              type="submit" 
-              className={`auth-button ${loading ? 'loading' : ''}`}
+            <button
+              type="submit"
+              className="auth-button"
               disabled={loading || !email.trim()}
             >
-              <span className="button-content">
-                {loading ? (
-                  <>
-                    <div className="loading-spinner-small"></div>
-                    <span>Отправка...</span>
-                  </>
-                ) : (
-                  <>
-                    <span>{isLogin ? 'Войти' : 'Зарегистрироваться'}</span>
-                    <svg className="button-icon" width="20" height="20" viewBox="0 0 24 24">
-                      <path fill="currentColor" d="M10 17l5-5-5-5v10z"/>
-                    </svg>
-                  </>
-                )}
-              </span>
+              {loading ? <div className="loading-spinner"></div> : (isLogin ? 'Войти' : 'Зарегистрироваться')}
             </button>
           </form>
-
-          <div className="auth-toggle">
-            <span className="toggle-text">
-              {isLogin ? 'Нет аккаунта?' : 'Уже есть аккаунт?'}
-            </span>
-            <button
-              type="button"
-              className="toggle-button"
-              onClick={toggleAuthMode}
-              disabled={loading}
-            >
-              {isLogin ? 'Создать аккаунт' : 'Войти'}
-            </button>
-          </div>
         </div>
       </div>
     );
