@@ -1009,9 +1009,9 @@
 }
 
 [data-theme="dark"] .calendar-day.missed {
-  background: rgba(229, 57, 53, 0.12);
-  color: #ef9a9a;
-  border-color: rgba(229, 57, 53, 0.2);
+  background: rgba(229, 57, 53, 0.28);
+  color: #ff8a80;
+  border-color: rgba(229, 57, 53, 0.55);
 }
 
 [data-theme="dark"] .calendar-day.empty {
@@ -3605,6 +3605,8 @@ button, .action-btn, .gradient-tab, .friends-tab, .nav-item {
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-appearance: none;
 }
 
 .view-toggle-btn.active {
@@ -3702,9 +3704,9 @@ button, .action-btn, .gradient-tab, .friends-tab, .nav-item {
 }
 
 [data-theme="dark"] .view-toggle-btn.active {
-  background: rgba(255, 255, 255, 0.12);
-  color: #a0b4ff;
-  box-shadow: none;
+  background: rgba(102, 126, 234, 0.3);
+  color: #c0d0ff;
+  box-shadow: inset 0 0 0 1px rgba(102, 126, 234, 0.4);
 }
 
 [data-theme="dark"] .heatmap-cell {
