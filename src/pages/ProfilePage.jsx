@@ -25,6 +25,7 @@ function ProfilePage() {
   const [reactionsEnabled, setReactionsEnabled] = useState(
     () => localStorage.getItem('ddo_reactions_disabled') !== '1'
   );
+  const [provocationsEnabled, setProvocationsEnabled] = useState(true);
   const [notifLoading, setNotifLoading] = useState(false);
   const [reminderTime, setReminderTime] = useState('');
   const [reminderLoading, setReminderLoading] = useState(false);
@@ -49,7 +50,7 @@ function ProfilePage() {
         // Загружаем данные из таблицы users (с username)
         const { data, error } = await supabase
           .from('users')
-          .select('username, avatar_url, notifications_enabled, notification_channel, reminder_time, reminder_time_updated_at')
+          .select('username, avatar_url, notifications_enabled, notification_channel, reminder_time, reminder_time_updated_at, provocation_notif_enabled')
           .eq('id', user.id)
           .single();
 
@@ -65,6 +66,7 @@ function ProfilePage() {
           setNotifChannel(data.notification_channel || 'email');
           setReminderTime(data.reminder_time ? data.reminder_time.substring(0, 5) : '');
           setReminderUpdatedAt(data.reminder_time_updated_at || null);
+          setProvocationsEnabled(data.provocation_notif_enabled !== false);
         } else {
           // Если записи нет (маловероятно), создаем временный username
           const tempUsername = `user_${user.id.substring(0, 8)}`;
@@ -504,6 +506,28 @@ function ProfilePage() {
                     }
                   }}
                   aria-label="Переключить реакции на пропуски"
+                />
+              </div>
+
+              <div className="setting-row" style={{ marginTop: '12px' }}>
+                <div className="setting-info">
+                  <span className="setting-label">Уведомления о вызовах</span>
+                  <span className="setting-desc">Получать пуш когда соперник бросает тебе вызов ⚡</span>
+                </div>
+                <button
+                  className={`toggle-switch ${provocationsEnabled ? 'on' : ''}`}
+                  onClick={async () => {
+                    const next = !provocationsEnabled;
+                    setProvocationsEnabled(next);
+                    try {
+                      await supabase.from('users').update({ provocation_notif_enabled: next }).eq('id', user.id);
+                      toast.success(next ? 'Уведомления о вызовах включены' : 'Уведомления о вызовах отключены');
+                    } catch {
+                      setProvocationsEnabled(!next);
+                      toast.error('Не удалось сохранить настройку');
+                    }
+                  }}
+                  aria-label="Переключить уведомления о вызовах"
                 />
               </div>
 
