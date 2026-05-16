@@ -257,7 +257,7 @@ function ProfilePage() {
     }
   };
 
-  const canChangeReminder = !reminderUpdatedAt || (() => {
+  const canChangeReminder = notifChannel === 'push' || !reminderUpdatedAt || (() => {
     const offset = 3 * 60 * 60 * 1000;
     const nowDate = new Date(Date.now() + offset).toISOString().split('T')[0];
     const updatedDate = new Date(new Date(reminderUpdatedAt).getTime() + offset).toISOString().split('T')[0];
