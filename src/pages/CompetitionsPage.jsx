@@ -1017,6 +1017,11 @@ function CompetitionCard({ competition, user, onRefresh, onDelete }) {
   const todayDay = isCurrentMonth ? now.getDate() : -1;
   const firstDayOfMonth = new Date(viewYear, viewMonth, 1).getDay();
   const startOffset = firstDayOfMonth === 0 ? 6 : firstDayOfMonth - 1;
+  const isBeforeCurrentMonth = viewYear < now.getFullYear() ||
+    (viewYear === now.getFullYear() && viewMonth < now.getMonth());
+  const compStartYear = competitionStart?.getFullYear() ?? 0;
+  const compStartMonth = competitionStart?.getMonth() ?? 0;
+  const compStartDay = competitionStart?.getDate() ?? 1;
 
   const days = Array.from({ length: daysInMonth }, (_, i) => i + 1);
   const weeks = [];
@@ -1174,9 +1179,15 @@ function CompetitionCard({ competition, user, onRefresh, onDelete }) {
                   if (day === null) return <div key={di} className="calendar-day empty"></div>;
                   const completed = myCompletedDays.includes(day);
                   const isToday = day === todayDay;
+                  const isPast = isBeforeCurrentMonth || (isCurrentMonth && day < todayDay);
+                  const isAfterCompStart = !competitionStart ||
+                    viewYear > compStartYear ||
+                    (viewYear === compStartYear && viewMonth > compStartMonth) ||
+                    (viewYear === compStartYear && viewMonth === compStartMonth && day >= compStartDay);
+                  const isMissed = isPast && isAfterCompStart && !completed;
                   return (
-                    <div key={di} className={`calendar-day${completed ? ' completed' : ''}${isToday ? ' today' : ''}`}
-                      title={`${day} ${viewMonth + 1}.${viewYear} — ${completed ? 'Выполнено' : 'Не выполнено'}`}>
+                    <div key={di} className={`calendar-day${completed ? ' completed' : isMissed ? ' missed' : ''}${isToday ? ' today' : ''}`}
+                      title={`${day} ${viewMonth + 1}.${viewYear} — ${completed ? 'Выполнено' : isMissed ? 'Пропущено' : 'Не выполнено'}`}>
                       <span className="day-number">{day}</span>
                       {completed && <div className="completion-check"></div>}
                     </div>
@@ -1202,9 +1213,15 @@ function CompetitionCard({ competition, user, onRefresh, onDelete }) {
                   if (day === null) return <div key={di} className="calendar-day empty"></div>;
                   const completed = friendCompletedDays.includes(day);
                   const isToday = day === todayDay;
+                  const isPast = isBeforeCurrentMonth || (isCurrentMonth && day < todayDay);
+                  const isAfterCompStart = !competitionStart ||
+                    viewYear > compStartYear ||
+                    (viewYear === compStartYear && viewMonth > compStartMonth) ||
+                    (viewYear === compStartYear && viewMonth === compStartMonth && day >= compStartDay);
+                  const isMissed = isPast && isAfterCompStart && !completed;
                   return (
-                    <div key={di} className={`calendar-day${completed ? ' completed' : ''}${isToday ? ' today' : ''}`}
-                      title={`${day} ${viewMonth + 1}.${viewYear} — ${completed ? 'Выполнено' : 'Не выполнено'}`}>
+                    <div key={di} className={`calendar-day${completed ? ' completed' : isMissed ? ' missed' : ''}${isToday ? ' today' : ''}`}
+                      title={`${day} ${viewMonth + 1}.${viewYear} — ${completed ? 'Выполнено' : isMissed ? 'Пропущено' : 'Не выполнено'}`}>
                       <span className="day-number">{day}</span>
                       {completed && <div className="completion-check"></div>}
                     </div>
