@@ -22,7 +22,7 @@ BEGIN
   SELECT value INTO v_api_key FROM app_secrets WHERE key = 'onesignal_rest_key';
   IF v_api_key IS NULL THEN RETURN; END IF;
 
-  PERFORM extensions.net.http_post(
+  PERFORM net.http_post(
     url     := 'https://onesignal.com/api/v1/notifications',
     headers := jsonb_build_object(
       'Authorization', 'Key ' || v_api_key,
