@@ -49,6 +49,14 @@ function HabitsPage() {
 
   const now = new Date();
   const today = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
+
+  // Форматируем дату используя локальные компоненты (без сдвига в UTC)
+  const formatDateLocal = (date) => {
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  };
   const currentMonth = today.getMonth();
   const currentYear = today.getFullYear();
   const currentDay = today.getDate();
@@ -527,7 +535,7 @@ function HabitsPage() {
     setUpdatingHabit(true);
     
     try {
-      const formattedDate = editForm.startDate.toISOString().split('T')[0];
+      const formattedDate = formatDateLocal(editForm.startDate);
       
       // Обновляем привычку в базе данных
       const { data, error } = await supabase
@@ -677,7 +685,7 @@ function HabitsPage() {
     try {
       console.log('1. Текущий пользователь:', user?.id);
       
-      const formattedDate = newHabit.startDate.toISOString().split('T')[0];
+      const formattedDate = formatDateLocal(newHabit.startDate);
       
       console.log('2. Данные для создания:', {
         title: newHabit.title.trim(),
@@ -749,7 +757,7 @@ function HabitsPage() {
       try {
         console.log('🔄 Пробуем через RPC...');
         
-        const formattedDate = newHabit.startDate.toISOString().split('T')[0];
+        const formattedDate = formatDateLocal(newHabit.startDate);
         
         const { data, error: rpcError } = await supabase.rpc('create_habit', {
           p_title: newHabit.title.trim(),
