@@ -370,6 +370,32 @@
   color: #fff;
 }
 
+.push-enable-btn {
+  margin-top: 10px;
+  width: 100%;
+  padding: 11px;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: opacity 0.2s;
+}
+
+.push-enable-btn:hover { opacity: 0.88; }
+
+.push-active-note {
+  margin-top: 8px;
+  font-size: 13px;
+  color: #52c41a;
+  text-align: center;
+}
+
+[data-theme="dark"] .push-active-note { color: #73d13d; }
+
 /* Reminder block */
 .reminder-block {
   margin-top: 16px;

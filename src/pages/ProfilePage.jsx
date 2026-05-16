@@ -4,6 +4,7 @@ import { useTheme } from '../context/ThemeContext.jsx';
 import { supabase } from '../services/supabase';
 import { useNavigate, useLocation } from 'react-router-dom';
 import toast from 'react-hot-toast';
+import { enablePushNotifications } from '../App.jsx';
 import './ProfilePage.css';
 
 function ProfilePage() {
@@ -20,6 +21,7 @@ function ProfilePage() {
   const [usernameError, setUsernameError] = useState('');
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [notifChannel, setNotifChannel] = useState('email'); // 'email' | 'push'
+  const [pushPermission, setPushPermission] = useState(() => ('Notification' in window ? Notification.permission : 'denied'));
   const [reactionsEnabled, setReactionsEnabled] = useState(
     () => localStorage.getItem('ddo_reactions_disabled') !== '1'
   );
@@ -430,6 +432,22 @@ function ProfilePage() {
                     🔔 Push
                   </button>
                 </div>
+                {notifChannel === 'push' && pushPermission !== 'granted' && (
+                  <button
+                    className="push-enable-btn"
+                    onClick={async () => {
+                      const granted = await enablePushNotifications(user.id);
+                      setPushPermission(granted ? 'granted' : 'denied');
+                      if (granted) toast.success('Push-уведомления включены!');
+                      else toast.error('Браузер заблокировал уведомления. Разреши их в настройках браузера.');
+                    }}
+                  >
+                    🔔 Включить push-уведомления
+                  </button>
+                )}
+                {notifChannel === 'push' && pushPermission === 'granted' && (
+                  <p className="push-active-note">✓ Push-уведомления активны</p>
+                )}
               </div>
             )}
 

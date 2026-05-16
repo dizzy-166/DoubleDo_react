@@ -6,8 +6,20 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { Toaster } from 'react-hot-toast';
 import OneSignal from 'react-onesignal';
 
-let oneSignalAttempted = false; // попытка init — только одна за жизнь страницы
-let oneSignalReady = false;    // true если init прошёл успешно
+let oneSignalAttempted = false;
+let oneSignalReady = false;
+
+// Вызывается из ProfilePage по клику пользователя
+export async function enablePushNotifications(userId) {
+  try {
+    if (!oneSignalReady) return false;
+    const granted = await OneSignal.Notifications.requestPermission();
+    if (granted) await OneSignal.login(userId);
+    return granted;
+  } catch {
+    return false;
+  }
+}
 import HabitsPage from './pages/HabitsPage.jsx';
 import CompetitionsPage from './pages/CompetitionsPage.jsx';
 import ProfilePage from './pages/ProfilePage.jsx';
@@ -206,10 +218,11 @@ function App() {
 
         oneSignalReady = true;
 
-        const granted = await OneSignal.Notifications.requestPermission();
-        if (granted) {
+        // Если разрешение уже дано ранее — сразу логиним
+        if (OneSignal.Notifications.permission) {
           await OneSignal.login(user.id);
         }
+        // Иначе — пользователь должен нажать кнопку в профиле
       } catch {
         // push не поддерживается или заблокирован — игнорируем
       }
