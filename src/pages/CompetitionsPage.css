@@ -3051,6 +3051,56 @@
   .friends-header h2 {
     font-size: 20px;
   }
+
+  .competition-card {
+    padding: 14px;
+    border-radius: 16px;
+    margin-bottom: 14px;
+  }
+
+  .competition-header {
+    margin-bottom: 12px;
+  }
+
+  .competition-title {
+    font-size: 17px;
+  }
+
+  .competition-score {
+    gap: 8px;
+    padding: 10px;
+    margin-bottom: 14px;
+  }
+
+  .score-section {
+    padding: 10px 6px;
+  }
+
+  .score-value {
+    font-size: 28px;
+  }
+
+  .score-label {
+    font-size: 10px;
+    letter-spacing: 0.3px;
+  }
+
+  .days-remaining {
+    padding: 10px;
+  }
+
+  .days-value {
+    font-size: 24px;
+  }
+
+  .days-label {
+    font-size: 10px;
+  }
+
+  .vs-text {
+    font-size: 13px;
+    padding: 6px 12px;
+  }
 }
 
 /* ── Навигация по месяцам ── */
