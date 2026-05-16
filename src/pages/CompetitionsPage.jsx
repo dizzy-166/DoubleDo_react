@@ -1205,10 +1205,10 @@ function CompetitionCard({ competition, user, onRefresh, onDelete }) {
                   const isSkipped = mySkippedDays.some(s => s.day === day && s.month === viewMonth && s.year === viewYear);
                   const isMissed = isPast && isAfterCompStart && !completed && !isSkipped;
                   return (
-                    <div key={di} className={`calendar-day${completed ? ' completed' : isSkipped ? ' skipped' : isMissed ? ' missed' : ''}${isToday ? ' today' : ''}`}
-                      title={`${day} ${viewMonth + 1}.${viewYear} — ${completed ? 'Выполнено' : isSkipped ? 'Пропуск засчитан' : isMissed ? 'Пропущено' : 'Не выполнено'}`}>
+                    <div key={di} className={`calendar-day${completed ? ' completed' : isSkipped ? ' skipped' : isMissed ? ' missed' : ''}${isToday ? ' today' : ''}`}>
                       <span className="day-number">{day}</span>
                       {completed && <div className="completion-check"></div>}
+                      {isSkipped && <div className="skip-indicator">~</div>}
                     </div>
                   );
                 })}
@@ -1240,10 +1240,10 @@ function CompetitionCard({ competition, user, onRefresh, onDelete }) {
                   const isSkipped = friendSkippedDays.some(s => s.day === day && s.month === viewMonth && s.year === viewYear);
                   const isMissed = isPast && isAfterCompStart && !completed && !isSkipped;
                   return (
-                    <div key={di} className={`calendar-day${completed ? ' completed' : isSkipped ? ' skipped' : isMissed ? ' missed' : ''}${isToday ? ' today' : ''}`}
-                      title={`${day} ${viewMonth + 1}.${viewYear} — ${completed ? 'Выполнено' : isSkipped ? 'Пропуск засчитан' : isMissed ? 'Пропущено' : 'Не выполнено'}`}>
+                    <div key={di} className={`calendar-day${completed ? ' completed' : isSkipped ? ' skipped' : isMissed ? ' missed' : ''}${isToday ? ' today' : ''}`}>
                       <span className="day-number">{day}</span>
                       {completed && <div className="completion-check"></div>}
+                      {isSkipped && <div className="skip-indicator">~</div>}
                     </div>
                   );
                 })}

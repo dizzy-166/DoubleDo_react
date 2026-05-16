@@ -1020,6 +1020,10 @@
   border: 1px solid rgba(234, 179, 8, 0.45) !important;
 }
 
+[data-theme="dark"] .skip-indicator {
+  color: #fbbf24;
+}
+
 [data-theme="dark"] .calendar-day.empty {
   background: rgba(255, 255, 255, 0.02);
   border-color: rgba(255, 255, 255, 0.04);
@@ -1180,17 +1184,14 @@
   border: 1px solid rgba(234, 179, 8, 0.35);
 }
 
-.calendar-day.skipped .day-number {
-  position: relative;
-}
-
-.calendar-day.skipped .day-number::after {
-  content: '~';
-  font-size: 8px;
+.skip-indicator {
   position: absolute;
-  bottom: -2px;
-  right: -3px;
-  opacity: 0.8;
+  bottom: 2px;
+  right: 3px;
+  font-size: 9px;
+  font-weight: 700;
+  color: #b45309;
+  line-height: 1;
 }
 
 .today-indicator {
