@@ -19,6 +19,7 @@ function ProfilePage() {
   const [avatarUrl, setAvatarUrl] = useState('');
   const [usernameError, setUsernameError] = useState('');
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
+  const [notifChannel, setNotifChannel] = useState('email'); // 'email' | 'push'
   const [reactionsEnabled, setReactionsEnabled] = useState(
     () => localStorage.getItem('ddo_reactions_disabled') !== '1'
   );
@@ -45,7 +46,7 @@ function ProfilePage() {
         // Загружаем данные из таблицы users (с username)
         const { data, error } = await supabase
           .from('users')
-          .select('username, avatar_url, notifications_enabled, reminder_time, reminder_time_updated_at')
+          .select('username, avatar_url, notifications_enabled, notification_channel, reminder_time, reminder_time_updated_at')
           .eq('id', user.id)
           .single();
 
@@ -58,6 +59,7 @@ function ProfilePage() {
           setInitialUsername(data.username || '');
           setAvatarUrl(data.avatar_url || '');
           setNotificationsEnabled(data.notifications_enabled !== false);
+          setNotifChannel(data.notification_channel || 'email');
           setReminderTime(data.reminder_time ? data.reminder_time.substring(0, 5) : '');
           setReminderUpdatedAt(data.reminder_time_updated_at || null);
         } else {
@@ -219,6 +221,17 @@ function ProfilePage() {
       toast.error('Не удалось сохранить настройку');
     } finally {
       setNotifLoading(false);
+    }
+  };
+
+  // Смена канала уведомлений
+  const handleChannelChange = async (channel) => {
+    setNotifChannel(channel);
+    try {
+      await supabase.from('users').update({ notification_channel: channel }).eq('id', user.id);
+      toast.success(channel === 'push' ? 'Включены push-уведомления' : 'Включены email-уведомления');
+    } catch {
+      toast.error('Не удалось сохранить настройку');
     }
   };
 
@@ -389,8 +402,8 @@ function ProfilePage() {
 
             <div className="setting-row" style={{ marginTop: '12px' }}>
               <div className="setting-info">
-                <span className="setting-label">Email-уведомления</span>
-                <span className="setting-desc">Получать письмо, когда соперник выполнил привычку</span>
+                <span className="setting-label">Уведомления</span>
+                <span className="setting-desc">Напоминания о привычках и соревнованиях</span>
               </div>
               <button
                 className={`toggle-switch ${notificationsEnabled ? 'on' : ''}`}
@@ -399,6 +412,26 @@ function ProfilePage() {
                 aria-label="Переключить уведомления"
               />
             </div>
+
+            {notificationsEnabled && (
+              <div className="notif-channel-selector">
+                <span className="setting-label" style={{ fontSize: '13px', color: 'var(--text-secondary, #888)', marginBottom: '8px', display: 'block' }}>Способ уведомлений</span>
+                <div className="channel-toggle">
+                  <button
+                    className={`channel-btn ${notifChannel === 'email' ? 'active' : ''}`}
+                    onClick={() => handleChannelChange('email')}
+                  >
+                    ✉️ Email
+                  </button>
+                  <button
+                    className={`channel-btn ${notifChannel === 'push' ? 'active' : ''}`}
+                    onClick={() => handleChannelChange('push')}
+                  >
+                    🔔 Push
+                  </button>
+                </div>
+              </div>
+            )}
 
             <div className="setting-row" style={{ marginTop: '12px' }}>
               <div className="setting-info">
@@ -425,7 +458,7 @@ function ProfilePage() {
                 <span className="reminder-bell">🔔</span>
                 <div className="reminder-block-info">
                   <span className="reminder-block-title">Ежедневное напоминание</span>
-                  <span className="reminder-block-desc">Письмо придёт если есть невыполненные привычки</span>
+                  <span className="reminder-block-desc">{notifChannel === 'push' ? 'Пуш придёт если есть невыполненные привычки' : 'Письмо придёт если есть невыполненные привычки'}</span>
                 </div>
               </div>
               <div className="reminder-block-body">

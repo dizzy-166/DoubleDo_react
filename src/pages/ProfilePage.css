@@ -327,6 +327,49 @@
   cursor: not-allowed;
 }
 
+/* Notification channel selector */
+.notif-channel-selector {
+  margin-top: 10px;
+  padding: 10px 12px;
+  background: rgba(102, 126, 234, 0.05);
+  border-radius: 12px;
+}
+
+.channel-toggle {
+  display: flex;
+  gap: 8px;
+}
+
+.channel-btn {
+  flex: 1;
+  padding: 9px 0;
+  border: 1.5px solid rgba(102, 126, 234, 0.2);
+  border-radius: 10px;
+  background: transparent;
+  color: #888;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.2s;
+}
+
+.channel-btn.active {
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  border-color: transparent;
+  color: #fff;
+  font-weight: 600;
+}
+
+[data-theme="dark"] .channel-btn {
+  border-color: rgba(102, 126, 234, 0.3);
+  color: #aaa;
+}
+
+[data-theme="dark"] .channel-btn.active {
+  color: #fff;
+}
+
 /* Reminder block */
 .reminder-block {
   margin-top: 16px;
