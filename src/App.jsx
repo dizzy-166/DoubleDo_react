@@ -268,7 +268,11 @@ function App() {
           }
         }
 
-        if (queue.length > 0) setNotifQueue(queue);
+        if (queue.length > 0) {
+          // Mark all as seen immediately so a page refresh won't re-show them
+          queue.forEach(n => localStorage.setItem(n.key, '1'));
+          setNotifQueue(queue);
+        }
       } catch {}
     }, 1500);
 
