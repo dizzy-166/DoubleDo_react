@@ -10,6 +10,7 @@ import ProfilePage from './pages/ProfilePage.jsx';
 import InvitePage from './pages/InvitePage.jsx';
 import StatsPage from './pages/StatsPage.jsx';
 import Onboarding from './components/Onboarding.jsx';
+import MissedNotificationOverlay from './components/MissedNotificationOverlay.jsx';
 import './App.css';
 
 // Функция для извлечения username из email
@@ -157,6 +158,7 @@ function App() {
   const [showOnboarding, setShowOnboarding] = useState(
     user && !localStorage.getItem('onboarding_done')
   );
+  const [notifQueue, setNotifQueue] = useState([]);
   const [email, setEmail] = useState('');
   const [confirmationCode, setConfirmationCode] = useState('');
   const [isLogin, setIsLogin] = useState(true);
@@ -199,6 +201,96 @@ function App() {
     
     checkUserProfile();
   }, [user]);
+
+  // Проверяем уведомления о пропущенных днях соперника
+  useEffect(() => {
+    if (!user) return;
+    const timer = setTimeout(async () => {
+      try {
+        const today = new Date().toISOString().split('T')[0];
+        const yesterday = new Date();
+        yesterday.setDate(yesterday.getDate() - 1);
+        const yesterdayStr = yesterday.toISOString().split('T')[0];
+        const yesterdayDay = yesterday.getDate();
+        const yesterdayMonth = yesterday.getMonth() + 1;
+        const yesterdayYear = yesterday.getFullYear();
+
+        const { data: comps, error } = await supabase.rpc('get_user_competitions');
+        if (error || !comps) return;
+
+        const queue = [];
+
+        for (const comp of comps.filter(c => c.status === 'active')) {
+          const compStartStr = comp.start_date?.split('T')[0];
+          if (!compStartStr || yesterdayStr < compStartStr) continue;
+
+          // Уведомление отправителя: соперник пропустил вчера
+          const sKey = `ddo_s_${comp.competition_id}_${today}`;
+          if (!localStorage.getItem(sKey)) {
+            try {
+              const { data: cal } = await supabase.rpc('get_competition_calendar_data_fixed', {
+                p_competition_id: comp.competition_id,
+                p_year: yesterdayYear,
+                p_month: yesterdayMonth,
+              });
+              const done = cal?.[0]?.friend_completed_days?.includes(yesterdayDay);
+              if (!done) {
+                queue.push({ type: 'sender', competition: comp, key: sKey });
+              }
+            } catch {}
+          }
+
+          // Уведомление получателя: соперник отправил мне реакцию сегодня
+          const rKey = `ddo_r_${comp.competition_id}_${today}`;
+          if (!localStorage.getItem(rKey)) {
+            try {
+              const { data: rxns } = await supabase
+                .from('competition_reactions')
+                .select('*')
+                .eq('competition_id', comp.competition_id)
+                .gte('created_at', `${today}T00:00:00`);
+
+              const incoming = (rxns || []).filter(r => {
+                const sid = r.sender_user_id ?? r.user_id;
+                return sid && sid !== user.id;
+              });
+
+              if (incoming.length > 0) {
+                queue.push({
+                  type: 'receiver',
+                  competition: comp,
+                  emoji: incoming[0].emoji,
+                  key: rKey,
+                });
+              }
+            } catch {}
+          }
+        }
+
+        if (queue.length > 0) setNotifQueue(queue);
+      } catch {}
+    }, 1500);
+
+    return () => clearTimeout(timer);
+  }, [user]);
+
+  const handleNotifClose = () => {
+    setNotifQueue(prev => {
+      if (prev[0]) localStorage.setItem(prev[0].key, '1');
+      return prev.slice(1);
+    });
+  };
+
+  const handleNotifSendEmoji = async (emoji) => {
+    const current = notifQueue[0];
+    if (!current) return;
+    try {
+      await supabase.rpc('send_competition_reaction', {
+        p_competition_id: current.competition.competition_id,
+        p_emoji: emoji,
+      });
+    } catch {}
+  };
 
   const validateEmail = (email) => {
     if (!email) return 'Email обязателен';
@@ -751,6 +843,19 @@ const handleSubmit = async (e) => {
           <Route path="*" element={renderAuthScreen()} />
         )}
       </Routes>
+      {notifQueue.length > 0 && (
+        <MissedNotificationOverlay
+          key={notifQueue[0].key}
+          notification={{
+            type: notifQueue[0].type,
+            friendUsername: notifQueue[0].competition.friend_username,
+            habitTitle: notifQueue[0].competition.habit_title,
+            emoji: notifQueue[0].emoji,
+          }}
+          onClose={handleNotifClose}
+          onSendEmoji={handleNotifSendEmoji}
+        />
+      )}
     </Router>
     </ThemeProvider>
   );
