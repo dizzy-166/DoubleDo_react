@@ -29,6 +29,7 @@ function ProfilePage() {
   const [reminderTime, setReminderTime] = useState('');
   const [reminderLoading, setReminderLoading] = useState(false);
   const [reminderUpdatedAt, setReminderUpdatedAt] = useState(null);
+  const [activeSection, setActiveSection] = useState('profile');
 
   // Определение активной вкладки
   const getActiveTab = () => {
@@ -307,229 +308,239 @@ function ProfilePage() {
 
       <main className="profile-main">
         <div className="profile-info-card">
-          <div className="avatar-section">
-            <div className="avatar-large">
-              {avatarUrl ? (
-                <img src={avatarUrl} alt={getDisplayName()} className="avatar-image" />
-              ) : (
-                <span>{getAvatarInitials()}</span>
-              )}
-            </div>
-            <div className="user-details">
-              {editingUsername ? (
-                <div className="username-edit-container">
-                  <input
-                    type="text"
-                    value={username}
-                    onChange={(e) => {
-                      setUsername(e.target.value);
-                      setUsernameError('');
-                    }}
-                    placeholder="Введите ваш никнейм"
-                    className={`username-input ${usernameError ? 'error' : ''}`}
-                    maxLength={20}
-                    autoFocus
-                    disabled={usernameLoading}
-                  />
-                  {usernameError && (
-                    <div className="username-error">{usernameError}</div>
+          <div className="profile-tabs">
+            <button
+              className={`profile-tab ${activeSection === 'profile' ? 'active' : ''}`}
+              onClick={() => setActiveSection('profile')}
+            >
+              Профиль
+            </button>
+            <button
+              className={`profile-tab ${activeSection === 'notifications' ? 'active' : ''}`}
+              onClick={() => setActiveSection('notifications')}
+            >
+              Уведомления
+            </button>
+          </div>
+
+          {activeSection === 'profile' && (
+            <>
+              <div className="avatar-section">
+                <div className="avatar-large">
+                  {avatarUrl ? (
+                    <img src={avatarUrl} alt={getDisplayName()} className="avatar-image" />
+                  ) : (
+                    <span>{getAvatarInitials()}</span>
                   )}
-                  <div className="username-edit-actions">
+                </div>
+                <div className="user-details">
+                  {editingUsername ? (
+                    <div className="username-edit-container">
+                      <input
+                        type="text"
+                        value={username}
+                        onChange={(e) => {
+                          setUsername(e.target.value);
+                          setUsernameError('');
+                        }}
+                        placeholder="Введите ваш никнейм"
+                        className={`username-input ${usernameError ? 'error' : ''}`}
+                        maxLength={20}
+                        autoFocus
+                        disabled={usernameLoading}
+                      />
+                      {usernameError && (
+                        <div className="username-error">{usernameError}</div>
+                      )}
+                      <div className="username-edit-actions">
+                        <button
+                          onClick={handleSaveUsername}
+                          disabled={usernameLoading || !username.trim()}
+                          className="save-username-btn"
+                        >
+                          {usernameLoading ? 'Сохранение...' : 'Сохранить'}
+                        </button>
+                        <button
+                          onClick={handleCancelEdit}
+                          disabled={usernameLoading}
+                          className="cancel-username-btn"
+                        >
+                          Отмена
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      <h2 className="user-username">{getDisplayName()}</h2>
+                      <p className="user-email">{user.email}</p>
+                      <button
+                        onClick={() => setEditingUsername(true)}
+                        className="edit-username-btn"
+                      >
+                        Изменить никнейм
+                      </button>
+                    </>
+                  )}
+                  <p className="user-id">ID: {user.id.substring(0, 8)}...</p>
+                </div>
+              </div>
+
+              <div className="profile-stats">
+                <div className="stat-item">
+                  <span className="stat-label">Дата регистрации:</span>
+                  <span className="stat-value">
+                    {new Date(user.created_at).toLocaleDateString('ru-RU')}
+                  </span>
+                </div>
+              </div>
+
+              <div className="settings-section">
+                <h3 className="settings-title">Настройки</h3>
+                <div className="setting-row">
+                  <div className="setting-info">
+                    <span className="setting-label">Тёмная тема</span>
+                    <span className="setting-desc">Переключить между светлой и тёмной темой</span>
+                  </div>
+                  <button
+                    className={`toggle-switch ${theme === 'dark' ? 'on' : ''}`}
+                    onClick={toggleTheme}
+                    aria-label="Переключить тему"
+                  />
+                </div>
+              </div>
+
+              <div className="logout-section">
+                <button
+                  onClick={handleLogout}
+                  disabled={loading}
+                  className="logout-btn"
+                >
+                  {loading ? 'Выход...' : 'Выйти из аккаунта'}
+                </button>
+                <div className="logout-note">
+                  При выходе все данные сохранятся. Вы сможете войти снова по email.
+                </div>
+              </div>
+            </>
+          )}
+
+          {activeSection === 'notifications' && (
+            <div className="settings-section" style={{ marginBottom: 0 }}>
+              <div className="setting-row">
+                <div className="setting-info">
+                  <span className="setting-label">Уведомления</span>
+                  <span className="setting-desc">Напоминания о привычках и соревнованиях</span>
+                </div>
+                <button
+                  className={`toggle-switch ${notificationsEnabled ? 'on' : ''}`}
+                  onClick={handleToggleNotifications}
+                  disabled={notifLoading}
+                  aria-label="Переключить уведомления"
+                />
+              </div>
+
+              {notificationsEnabled && (
+                <div className="notif-channel-selector">
+                  <span className="setting-label" style={{ fontSize: '13px', color: 'var(--text-secondary, #888)', marginBottom: '8px', display: 'block' }}>Способ уведомлений</span>
+                  <div className="channel-toggle">
                     <button
-                      onClick={handleSaveUsername}
-                      disabled={usernameLoading || !username.trim()}
-                      className="save-username-btn"
+                      className={`channel-btn ${notifChannel === 'email' ? 'active' : ''}`}
+                      onClick={() => handleChannelChange('email')}
                     >
-                      {usernameLoading ? 'Сохранение...' : 'Сохранить'}
+                      ✉️ Email
                     </button>
                     <button
-                      onClick={handleCancelEdit}
-                      disabled={usernameLoading}
-                      className="cancel-username-btn"
+                      className={`channel-btn ${notifChannel === 'push' ? 'active' : ''}`}
+                      onClick={() => handleChannelChange('push')}
                     >
-                      Отмена
+                      🔔 Push
                     </button>
                   </div>
-                </div>
-              ) : (
-                <>
-                  <h2 className="user-username">{getDisplayName()}</h2>
-                  <p className="user-email">{user.email}</p>
-                  <button
-                    onClick={() => setEditingUsername(true)}
-                    className="edit-username-btn"
-                  >
-                    Изменить никнейм
-                  </button>
-                </>
-              )}
-              <p className="user-id">ID: {user.id.substring(0, 8)}...</p>
-            </div>
-          </div>
-
-          <div className="profile-stats">
-            <div className="stat-item">
-              <span className="stat-label">Дата регистрации:</span>
-              <span className="stat-value">
-                {new Date(user.created_at).toLocaleDateString('ru-RU')}
-              </span>
-            </div>
-            {/* <div className="stat-item">
-              <span className="stat-label">Почта подтверждена:</span>
-              <span className="stat-value">
-                {user.email_confirmed_at ? 'Да' : 'Нет'}
-              </span>
-            </div>
-            <div className="stat-item">
-              <span className="stat-label">Никнейм:</span>
-              <span className="stat-value">
-                {username || 'Не установлен'}
-              </span>
-            </div> */}
-          </div>
-
-          <div className="settings-section">
-            <h3 className="settings-title">Настройки</h3>
-            <div className="setting-row">
-              <div className="setting-info">
-                <span className="setting-label">Тёмная тема</span>
-                <span className="setting-desc">Переключить между светлой и тёмной темой</span>
-              </div>
-              <button
-                className={`toggle-switch ${theme === 'dark' ? 'on' : ''}`}
-                onClick={toggleTheme}
-                aria-label="Переключить тему"
-              />
-            </div>
-
-            <div className="setting-row" style={{ marginTop: '12px' }}>
-              <div className="setting-info">
-                <span className="setting-label">Уведомления</span>
-                <span className="setting-desc">Напоминания о привычках и соревнованиях</span>
-              </div>
-              <button
-                className={`toggle-switch ${notificationsEnabled ? 'on' : ''}`}
-                onClick={handleToggleNotifications}
-                disabled={notifLoading}
-                aria-label="Переключить уведомления"
-              />
-            </div>
-
-            {notificationsEnabled && (
-              <div className="notif-channel-selector">
-                <span className="setting-label" style={{ fontSize: '13px', color: 'var(--text-secondary, #888)', marginBottom: '8px', display: 'block' }}>Способ уведомлений</span>
-                <div className="channel-toggle">
-                  <button
-                    className={`channel-btn ${notifChannel === 'email' ? 'active' : ''}`}
-                    onClick={() => handleChannelChange('email')}
-                  >
-                    ✉️ Email
-                  </button>
-                  <button
-                    className={`channel-btn ${notifChannel === 'push' ? 'active' : ''}`}
-                    onClick={() => handleChannelChange('push')}
-                  >
-                    🔔 Push
-                  </button>
-                </div>
-                {notifChannel === 'push' && pushPermission !== 'granted' && (
-                  <button
-                    className="push-enable-btn"
-                    onClick={async () => {
-                      const granted = await enablePushNotifications(user.id);
-                      setPushPermission(granted ? 'granted' : 'denied');
-                      if (granted) toast.success('Push-уведомления включены!');
-                      else toast.error('Браузер заблокировал уведомления. Разреши их в настройках браузера.');
-                    }}
-                  >
-                    🔔 Включить push-уведомления
-                  </button>
-                )}
-                {notifChannel === 'push' && pushPermission === 'granted' && (
-                  <p className="push-active-note">✓ Push-уведомления активны</p>
-                )}
-              </div>
-            )}
-
-            <div className="setting-row" style={{ marginTop: '12px' }}>
-              <div className="setting-info">
-                <span className="setting-label">Реакции на пропуски</span>
-                <span className="setting-desc">Показывать уведомление, если соперник пропустил вчера</span>
-              </div>
-              <button
-                className={`toggle-switch ${reactionsEnabled ? 'on' : ''}`}
-                onClick={() => {
-                  const next = !reactionsEnabled;
-                  setReactionsEnabled(next);
-                  if (next) {
-                    localStorage.removeItem('ddo_reactions_disabled');
-                  } else {
-                    localStorage.setItem('ddo_reactions_disabled', '1');
-                  }
-                }}
-                aria-label="Переключить реакции на пропуски"
-              />
-            </div>
-
-            <div className="reminder-block">
-              <div className="reminder-block-header">
-                <span className="reminder-bell">🔔</span>
-                <div className="reminder-block-info">
-                  <span className="reminder-block-title">Ежедневное напоминание</span>
-                  <span className="reminder-block-desc">{notifChannel === 'push' ? 'Пуш придёт если есть невыполненные привычки' : 'Письмо придёт если есть невыполненные привычки'}</span>
-                </div>
-              </div>
-              <div className="reminder-block-body">
-                <input
-                  type="time"
-                  className="reminder-time-input"
-                  value={reminderTime}
-                  onChange={(e) => setReminderTime(e.target.value)}
-                  disabled={reminderLoading || !canChangeReminder}
-                />
-                {canChangeReminder ? (
-                  <>
+                  {notifChannel === 'push' && pushPermission !== 'granted' && (
                     <button
-                      className="reminder-save-btn"
-                      onClick={() => handleSaveReminderTime(reminderTime)}
-                      disabled={reminderLoading || !reminderTime}
+                      className="push-enable-btn"
+                      onClick={async () => {
+                        const granted = await enablePushNotifications(user.id);
+                        setPushPermission(granted ? 'granted' : 'denied');
+                        if (granted) toast.success('Push-уведомления включены!');
+                        else toast.error('Браузер заблокировал уведомления. Разреши их в настройках браузера.');
+                      }}
                     >
-                      {reminderLoading ? '...' : 'Сохранить'}
+                      🔔 Включить push-уведомления
                     </button>
-                    {reminderTime && (
+                  )}
+                  {notifChannel === 'push' && pushPermission === 'granted' && (
+                    <p className="push-active-note">✓ Push-уведомления активны</p>
+                  )}
+                </div>
+              )}
+
+              <div className="setting-row" style={{ marginTop: '12px' }}>
+                <div className="setting-info">
+                  <span className="setting-label">Реакции на пропуски</span>
+                  <span className="setting-desc">Показывать уведомление, если соперник пропустил вчера</span>
+                </div>
+                <button
+                  className={`toggle-switch ${reactionsEnabled ? 'on' : ''}`}
+                  onClick={() => {
+                    const next = !reactionsEnabled;
+                    setReactionsEnabled(next);
+                    if (next) {
+                      localStorage.removeItem('ddo_reactions_disabled');
+                    } else {
+                      localStorage.setItem('ddo_reactions_disabled', '1');
+                    }
+                  }}
+                  aria-label="Переключить реакции на пропуски"
+                />
+              </div>
+
+              <div className="reminder-block">
+                <div className="reminder-block-header">
+                  <span className="reminder-bell">🔔</span>
+                  <div className="reminder-block-info">
+                    <span className="reminder-block-title">Ежедневное напоминание</span>
+                    <span className="reminder-block-desc">{notifChannel === 'push' ? 'Пуш придёт если есть невыполненные привычки' : 'Письмо придёт если есть невыполненные привычки'}</span>
+                  </div>
+                </div>
+                <div className="reminder-block-body">
+                  <input
+                    type="time"
+                    className="reminder-time-input"
+                    value={reminderTime}
+                    onChange={(e) => setReminderTime(e.target.value)}
+                    disabled={reminderLoading || !canChangeReminder}
+                  />
+                  {canChangeReminder ? (
+                    <>
                       <button
-                        className="reminder-clear-btn"
-                        onClick={() => handleSaveReminderTime('')}
-                        disabled={reminderLoading}
-                        title="Отключить напоминание"
+                        className="reminder-save-btn"
+                        onClick={() => handleSaveReminderTime(reminderTime)}
+                        disabled={reminderLoading || !reminderTime}
                       >
-                        ✕
+                        {reminderLoading ? '...' : 'Сохранить'}
                       </button>
-                    )}
-                  </>
-                ) : (
-                  <span className="reminder-locked">🔒 До завтра</span>
+                      {reminderTime && (
+                        <button
+                          className="reminder-clear-btn"
+                          onClick={() => handleSaveReminderTime('')}
+                          disabled={reminderLoading}
+                          title="Отключить напоминание"
+                        >
+                          ✕
+                        </button>
+                      )}
+                    </>
+                  ) : (
+                    <span className="reminder-locked">🔒 До завтра</span>
+                  )}
+                </div>
+                {!canChangeReminder && (
+                  <p className="reminder-limit-note">Можно изменить раз в сутки</p>
                 )}
               </div>
-              {!canChangeReminder && (
-                <p className="reminder-limit-note">Можно изменить раз в сутки</p>
-              )}
             </div>
-          </div>
-
-          <div className="logout-section">
-            <button
-              onClick={handleLogout}
-              disabled={loading}
-              className="logout-btn"
-            >
-              {loading ? 'Выход...' : 'Выйти из аккаунта'}
-            </button>
-            
-            <div className="logout-note">
-              При выходе все данные сохранятся. Вы сможете войти снова по email.
-            </div>
-          </div>
+          )}
         </div>
 
         <div className="app-info-section">

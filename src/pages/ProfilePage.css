@@ -59,6 +59,50 @@
   margin-bottom: 20px;
 }
 
+/* Profile tab switcher */
+.profile-tabs {
+  display: flex;
+  background: #f0f0f5;
+  border-radius: 12px;
+  padding: 4px;
+  margin-bottom: 24px;
+  gap: 4px;
+}
+
+.profile-tab {
+  flex: 1;
+  padding: 10px 0;
+  border: none;
+  border-radius: 9px;
+  background: transparent;
+  color: #888;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.2s;
+}
+
+.profile-tab.active {
+  background: white;
+  color: #333;
+  font-weight: 600;
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="dark"] .profile-tabs {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+[data-theme="dark"] .profile-tab {
+  color: #6666a0;
+}
+
+[data-theme="dark"] .profile-tab.active {
+  background: rgba(255, 255, 255, 0.12);
+  color: #e8e8f8;
+}
+
 .avatar-section {
   text-align: center;
   margin-bottom: 30px;
