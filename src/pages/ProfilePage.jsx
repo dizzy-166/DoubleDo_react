@@ -457,17 +457,29 @@ function ProfilePage() {
                     </button>
                   </div>
                   {notifChannel === 'push' && pushPermission !== 'granted' && (
-                    <button
-                      className="push-enable-btn"
-                      onClick={async () => {
-                        const granted = await enablePushNotifications(user.id);
-                        setPushPermission(granted ? 'granted' : 'denied');
-                        if (granted) toast.success('Push-уведомления включены!');
-                        else toast.error('Браузер заблокировал уведомления. Разреши их в настройках браузера.');
-                      }}
-                    >
-                      🔔 Включить push-уведомления
-                    </button>
+                    <>
+                      <button
+                        className="push-enable-btn"
+                        onClick={async () => {
+                          const granted = await enablePushNotifications(user.id);
+                          setPushPermission(granted ? 'granted' : 'denied');
+                          if (granted) toast.success('Push-уведомления включены!');
+                          else toast.error('Браузер заблокировал уведомления. Разреши их в настройках браузера.');
+                        }}
+                      >
+                        🔔 Включить push-уведомления
+                      </button>
+                      <div className="push-ios-guide">
+                        <p className="push-ios-guide-title">📱 Как включить на iPhone</p>
+                        <ol className="push-ios-steps">
+                          <li><span className="step-icon">🧭</span><span>Открой сайт в <b>Safari</b> (не Chrome)</span></li>
+                          <li><span className="step-icon">📤</span><span>Нажми кнопку <b>«Поделиться»</b> внизу экрана</span></li>
+                          <li><span className="step-icon">🏠</span><span>Выбери <b>«На экран «Домой»»</b></span></li>
+                          <li><span className="step-icon">📲</span><span>Открой <b>DoubleDo</b> с рабочего стола</span></li>
+                          <li><span className="step-icon">🔔</span><span>Вернись сюда и нажми кнопку выше</span></li>
+                        </ol>
+                      </div>
+                    </>
                   )}
                   {notifChannel === 'push' && pushPermission === 'granted' && (
                     <p className="push-active-note">✓ Push-уведомления активны</p>
