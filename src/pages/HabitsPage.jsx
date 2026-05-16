@@ -1304,6 +1304,10 @@ function HabitCard({
   const [showMenu, setShowMenu] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [justCompleted, setJustCompleted] = useState(false);
+  const [skipModalOpen, setSkipModalOpen] = useState(false);
+  const [selectedReason, setSelectedReason] = useState('');
+  const [customReason, setCustomReason] = useState('');
+  const [sendingSkip, setSendingSkip] = useState(false);
   const menuRef = useRef(null);
   const progress = progressData[habit.id] || [];
 
@@ -1386,6 +1390,31 @@ function HabitCard({
     setShowDeleteConfirm(false);
   };
 
+  const handleRequestSkip = async () => {
+    const reason = selectedReason || customReason.trim();
+    if (!reason) return;
+    setSendingSkip(true);
+    try {
+      const { data } = await supabase.rpc('request_habit_skip', {
+        p_competition_id: habit.competition_id,
+        p_skip_date: todayStr,
+        p_reason: reason,
+      });
+      if (data?.success) {
+        toast.success('Запрос отправлен сопернику');
+        setSkipModalOpen(false);
+        setSelectedReason('');
+        setCustomReason('');
+      } else {
+        toast.error('Ошибка отправки запроса');
+      }
+    } catch {
+      toast.error('Ошибка');
+    } finally {
+      setSendingSkip(false);
+    }
+  };
+
   // Определяем текст для кнопки
   const getButtonText = () => {
     if (isLoading) return '...';
@@ -1411,6 +1440,38 @@ function HabitCard({
 
   return (
     <>
+    {skipModalOpen && (
+      <div className="skip-modal-overlay" onClick={() => setSkipModalOpen(false)}>
+        <div className="skip-modal" onClick={e => e.stopPropagation()}>
+          <h3 className="skip-modal-title">Причина пропуска</h3>
+          <div className="skip-reason-presets">
+            {['Болел 🤒', 'В дороге ✈️', 'Форс-мажор ⚡'].map(r => (
+              <button
+                key={r}
+                className={`skip-preset-btn${selectedReason === r ? ' selected' : ''}`}
+                onClick={() => { setSelectedReason(r); setCustomReason(''); }}
+              >{r}</button>
+            ))}
+          </div>
+          <input
+            className="skip-custom-input"
+            type="text"
+            placeholder="Своя причина..."
+            value={customReason}
+            maxLength={100}
+            onChange={e => { setCustomReason(e.target.value); setSelectedReason(''); }}
+          />
+          <div className="skip-modal-actions">
+            <button className="skip-cancel-btn" onClick={() => setSkipModalOpen(false)}>Отмена</button>
+            <button
+              className="skip-submit-btn"
+              onClick={handleRequestSkip}
+              disabled={sendingSkip || (!selectedReason && !customReason.trim())}
+            >{sendingSkip ? '...' : 'Отправить'}</button>
+          </div>
+        </div>
+      </div>
+    )}
     {showDeleteConfirm && (
       <div className="confirm-overlay" onClick={() => setShowDeleteConfirm(false)}>
         <div className="confirm-dialog" onClick={e => e.stopPropagation()}>
@@ -1525,6 +1586,14 @@ function HabitCard({
         >
           {getButtonText()}
         </button>
+        {habit.source_type === 'competition' && habit.competition_id && isTodayActive && !isTodayCompleted && (
+          <button
+            className="skip-habit-btn"
+            onClick={() => setSkipModalOpen(true)}
+            disabled={isLoading}
+            title="Попросить засчитать пропуск"
+          >Пропустить</button>
+        )}
         
         <div className="habit-actions">
           {streak >= 2 && (

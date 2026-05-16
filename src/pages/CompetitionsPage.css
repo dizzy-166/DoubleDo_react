@@ -3730,3 +3730,90 @@ button, .action-btn, .gradient-tab, .friends-tab, .nav-item {
 
 [data-theme="dark"] .competitions-list-header h2 { color: #e8e8f8; }
 [data-theme="dark"] .competitions-list-header { border-bottom-color: rgba(255, 255, 255, 0.07); }
+/* ── Провокации ── */
+.provocation-btn {
+  margin-top: 10px;
+  width: 100%;
+  padding: 8px 0;
+  border: 1.5px solid #f59e0b;
+  border-radius: 10px;
+  background: transparent;
+  color: #f59e0b;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.provocation-btn:hover:not(:disabled) {
+  background: #f59e0b;
+  color: #fff;
+}
+.provocation-btn:disabled { opacity: 0.5; cursor: default; }
+
+/* ── Запросы на пропуск ── */
+.skip-requests-section {
+  margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.skip-request-card {
+  background: rgba(102, 126, 234, 0.07);
+  border: 1px solid rgba(102, 126, 234, 0.2);
+  border-radius: 12px;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.skip-request-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.skip-request-who {
+  font-size: 12px;
+  font-weight: 700;
+  color: #667eea;
+}
+.skip-request-date {
+  font-size: 11px;
+  color: #888;
+}
+.skip-request-reason {
+  font-size: 13px;
+  color: #333;
+}
+.skip-request-actions {
+  display: flex;
+  gap: 8px;
+}
+.skip-accept-btn, .skip-reject-btn {
+  flex: 1;
+  padding: 6px 0;
+  border-radius: 8px;
+  border: none;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+.skip-accept-btn {
+  background: #22c55e;
+  color: #fff;
+}
+.skip-reject-btn {
+  background: #ef4444;
+  color: #fff;
+}
+.skip-accept-btn:disabled, .skip-reject-btn:disabled { opacity: 0.5; cursor: default; }
+.skip-pending-label {
+  font-size: 11px;
+  color: #999;
+  font-style: italic;
+}
+
+/* dark mode */
+[data-theme="dark"] .provocation-btn { border-color: #f59e0b; color: #f59e0b; }
+[data-theme="dark"] .skip-request-card { background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.1); }
+[data-theme="dark"] .skip-request-reason { color: #e8e8f8; }

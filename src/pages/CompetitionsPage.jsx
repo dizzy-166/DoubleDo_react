@@ -842,6 +842,9 @@ function CompetitionCard({ competition, user, onRefresh, onDelete }) {
   const [stats, setStats] = useState({ totalMyDays: competition.my_score || 0, totalFriendDays: competition.friend_score || 0, myStreak: 0, friendStreak: 0 });
   const [reactions, setReactions] = useState([]);
   const [sendingReaction, setSendingReaction] = useState(null);
+  const [pendingSkips, setPendingSkips] = useState([]);
+  const [sendingProvocation, setSendingProvocation] = useState(false);
+  const [respondingToSkip, setRespondingToSkip] = useState(null);
   const viewMonthRef = useRef(new Date().getMonth());
   const viewYearRef = useRef(new Date().getFullYear());
 
@@ -906,6 +909,61 @@ function CompetitionCard({ competition, user, onRefresh, onDelete }) {
     } catch {}
   };
 
+  const loadPendingSkips = async () => {
+    if (!competition.competition_id) return;
+    try {
+      const { data } = await supabase.rpc('get_competition_skips', {
+        p_competition_id: competition.competition_id
+      });
+      setPendingSkips((data || []).filter(s => s.status === 'pending'));
+    } catch {}
+  };
+
+  const handleProvocation = async () => {
+    setSendingProvocation(true);
+    try {
+      const { data } = await supabase.rpc('send_provocation_push', {
+        p_competition_id: competition.competition_id
+      });
+      if (data?.success) {
+        toast.success('Вызов отправлен! 🔥');
+      } else if (data?.error === 'cooldown') {
+        toast.error('Уже отправлял вызов, подожди 24 часа');
+      } else {
+        toast.error('Ошибка отправки вызова');
+      }
+    } catch {
+      toast.error('Ошибка');
+    } finally {
+      setSendingProvocation(false);
+    }
+  };
+
+  const handleRespondToSkip = async (skipId, accepted) => {
+    setRespondingToSkip(skipId);
+    try {
+      const { data } = await supabase.rpc('respond_to_skip', {
+        p_skip_id: skipId,
+        p_accepted: accepted
+      });
+      if (data?.success) {
+        toast.success(accepted ? 'Пропуск принят ✅' : 'Пропуск отклонён');
+        setPendingSkips(prev => prev.filter(s => s.id !== skipId));
+      } else {
+        toast.error('Ошибка');
+      }
+    } catch {
+      toast.error('Ошибка');
+    } finally {
+      setRespondingToSkip(null);
+    }
+  };
+
+  const formatSkipDate = (dateStr) => {
+    const [y, m, d] = dateStr.split('-');
+    return `${d}.${m}.${y}`;
+  };
+
   const handleSendReaction = async (emoji) => {
     setSendingReaction(emoji);
     try {
@@ -934,6 +992,7 @@ function CompetitionCard({ competition, user, onRefresh, onDelete }) {
   useEffect(() => {
     loadCalendarData();
     loadReactions();
+    loadPendingSkips();
 
     const channel = supabase
       .channel(`competition-${competition.competition_id}-progress`)
@@ -1199,7 +1258,50 @@ function CompetitionCard({ competition, user, onRefresh, onDelete }) {
                 );
               })}
             </div>
+
+            {!isCompleted && !isPending && isCurrentMonth && todayDay > 0 && !friendCompletedDays.includes(todayDay) && (
+              <button
+                className="provocation-btn"
+                onClick={handleProvocation}
+                disabled={sendingProvocation}
+                title="Отправить вызов сопернику"
+              >
+                {sendingProvocation ? '...' : '⚡ Вызов!'}
+              </button>
+            )}
           </div>
+
+          {pendingSkips.length > 0 && (
+            <div className="skip-requests-section">
+              {pendingSkips.map(skip => (
+                <div key={skip.id} className="skip-request-card">
+                  <div className="skip-request-info">
+                    <span className="skip-request-who">
+                      {skip.requester_id === user.id ? 'Твой запрос' : skip.requester_username}
+                    </span>
+                    <span className="skip-request-date">{formatSkipDate(skip.skip_date)}</span>
+                    <span className="skip-request-reason">«{skip.reason}»</span>
+                  </div>
+                  {skip.requester_id !== user.id ? (
+                    <div className="skip-request-actions">
+                      <button
+                        className="skip-accept-btn"
+                        onClick={() => handleRespondToSkip(skip.id, true)}
+                        disabled={respondingToSkip === skip.id}
+                      >✓ Принять</button>
+                      <button
+                        className="skip-reject-btn"
+                        onClick={() => handleRespondToSkip(skip.id, false)}
+                        disabled={respondingToSkip === skip.id}
+                      >✕ Отклонить</button>
+                    </div>
+                  ) : (
+                    <span className="skip-pending-label">Ожидает ответа…</span>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
         </>
       </div>
