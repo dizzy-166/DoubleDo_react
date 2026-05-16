@@ -829,10 +829,15 @@ function HabitsPage() {
       } else {
         // Отмечаем выполнение
         if (habit.source_type === 'competition' && habit.competition_id) {
-          const { error } = await supabase.rpc('mark_competition_habit_complete', { 
-            p_habit_id: habitId 
+          const { error } = await supabase.rpc('mark_competition_habit_complete', {
+            p_habit_id: habitId
           });
           if (error) throw error;
+          // Push сопернику о выполнении
+          supabase.rpc('notify_rival_habit_complete_push', {
+            p_competition_id: habit.competition_id,
+            p_habit_title: habit.title,
+          });
         } else {
           const { error } = await supabase.rpc('mark_habit_completed', { 
             p_habit_id: habitId, 
