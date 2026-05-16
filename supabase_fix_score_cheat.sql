@@ -30,10 +30,10 @@ DECLARE
   v_already_done   boolean;
   v_is_user1       boolean;
 BEGIN
-  -- Проверяем что привычка принадлежит вызывающему
+  -- competition_id хранится в habit_members
   SELECT competition_id INTO v_competition_id
-  FROM habits
-  WHERE id = p_habit_id AND user_id = v_user_id;
+  FROM habit_members
+  WHERE habit_id = p_habit_id AND user_id = v_user_id;
 
   IF v_competition_id IS NULL THEN RETURN; END IF;
 
@@ -90,8 +90,8 @@ DECLARE
   v_is_user1       boolean;
 BEGIN
   SELECT competition_id INTO v_competition_id
-  FROM habits
-  WHERE id = p_habit_id AND user_id = v_user_id;
+  FROM habit_members
+  WHERE habit_id = p_habit_id AND user_id = v_user_id;
 
   IF v_competition_id IS NULL THEN RETURN; END IF;
 
