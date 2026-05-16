@@ -20,10 +20,10 @@ serve(async (req) => {
     Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
   );
 
-  // Проверяем что привычка всё ещё выполнена (не была отменена за 25 сек)
+  // Проверяем что привычка всё ещё выполнена и уведомление ещё не отправлялось сегодня
   const { data: progress } = await supabase
     .from('habit_progress')
-    .select('is_completed')
+    .select('is_completed, rival_notified_at')
     .eq('habit_id', habitId)
     .eq('user_id', userId)
     .eq('completed_date', completedDate)
@@ -31,7 +31,28 @@ serve(async (req) => {
 
   if (!progress?.is_completed) {
     console.log('Привычка была отменена, уведомление не отправляем');
-    return new Response('Skipped', { status: 200 });
+    return new Response('Skipped (cancelled)', { status: 200 });
+  }
+
+  if (progress?.rival_notified_at) {
+    console.log('Уведомление уже было отправлено сегодня:', progress.rival_notified_at);
+    return new Response('Skipped (already notified)', { status: 200 });
+  }
+
+  // Атомарно помечаем что уведомление отправляется — только если ещё не помечено
+  // (защита от race condition при двойном нажатии)
+  const { data: claimed, error: claimError } = await supabase
+    .from('habit_progress')
+    .update({ rival_notified_at: new Date().toISOString() })
+    .eq('habit_id', habitId)
+    .eq('user_id', userId)
+    .eq('completed_date', completedDate)
+    .is('rival_notified_at', null)
+    .select('id');
+
+  if (claimError || !claimed || claimed.length === 0) {
+    console.log('Другой вызов уже занял отправку, пропускаем');
+    return new Response('Skipped (race)', { status: 200 });
   }
 
   // Определяем канал уведомлений получателя по его email
@@ -44,7 +65,6 @@ serve(async (req) => {
   const channel = recipient?.notification_channel ?? 'email';
 
   if (channel === 'push' && recipient?.id) {
-    // Отправляем push через OneSignal
     const body = {
       app_id: ONESIGNAL_APP_ID,
       target_channel: 'push',
