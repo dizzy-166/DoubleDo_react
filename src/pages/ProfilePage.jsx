@@ -442,96 +442,96 @@ function ProfilePage() {
               </div>
 
               {notificationsEnabled && (
-                <div className="notif-channel-selector">
-                  <span className="setting-label" style={{ fontSize: '13px', color: 'var(--text-secondary, #888)', marginBottom: '8px', display: 'block' }}>Способ уведомлений</span>
-                  <div className="channel-toggle">
-                    <button
-                      className={`channel-btn ${notifChannel === 'email' ? 'active' : ''}`}
-                      onClick={() => handleChannelChange('email')}
-                    >
-                      ✉️ Email
-                    </button>
-                    <button
-                      className={`channel-btn ${notifChannel === 'push' ? 'active' : ''}`}
-                      onClick={() => handleChannelChange('push')}
-                    >
-                      🔔 Push
-                    </button>
-                  </div>
-                  {notifChannel === 'push' && pushPermission !== 'granted' && (
-                    <>
+                <>
+                  <div className="notif-channel-selector">
+                    <span className="setting-label" style={{ fontSize: '13px', color: 'var(--text-secondary, #888)', marginBottom: '8px', display: 'block' }}>Способ уведомлений</span>
+                    <div className="channel-toggle">
                       <button
-                        className="push-enable-btn"
-                        onClick={async () => {
-                          const granted = await enablePushNotifications(user.id);
-                          setPushPermission(granted ? 'granted' : 'denied');
-                          if (granted) toast.success('Push-уведомления включены!');
-                          else toast.error('Браузер заблокировал уведомления. Разреши их в настройках браузера.');
-                        }}
+                        className={`channel-btn ${notifChannel === 'email' ? 'active' : ''}`}
+                        onClick={() => handleChannelChange('email')}
                       >
-                        🔔 Включить push-уведомления
+                        ✉️ Email
                       </button>
-                      <div className="push-ios-guide">
-                        <p className="push-ios-guide-title">📱 Как включить на iPhone</p>
-                        <ol className="push-ios-steps">
-                          <li><span className="step-icon">🧭</span><span>Открой сайт в <b>Safari</b> (не Chrome)</span></li>
-                          <li><span className="step-icon">📤</span><span>Нажми кнопку <b>«Поделиться»</b> внизу экрана</span></li>
-                          <li><span className="step-icon">🏠</span><span>Выбери <b>«На экран «Домой»»</b></span></li>
-                          <li><span className="step-icon">📲</span><span>Открой <b>DoubleDo</b> с рабочего стола</span></li>
-                          <li><span className="step-icon">🔔</span><span>Вернись сюда и нажми кнопку выше</span></li>
-                        </ol>
-                      </div>
-                    </>
-                  )}
-                  {notifChannel === 'push' && pushPermission === 'granted' && (
-                    <p className="push-active-note">✓ Push-уведомления активны</p>
-                  )}
-                </div>
-              )}
+                      <button
+                        className={`channel-btn ${notifChannel === 'push' ? 'active' : ''}`}
+                        onClick={() => handleChannelChange('push')}
+                      >
+                        🔔 Push
+                      </button>
+                    </div>
+                    {notifChannel === 'push' && pushPermission !== 'granted' && (
+                      <>
+                        <button
+                          className="push-enable-btn"
+                          onClick={async () => {
+                            const granted = await enablePushNotifications(user.id);
+                            setPushPermission(granted ? 'granted' : 'denied');
+                            if (granted) toast.success('Push-уведомления включены!');
+                            else toast.error('Браузер заблокировал уведомления. Разреши их в настройках браузера.');
+                          }}
+                        >
+                          🔔 Включить push-уведомления
+                        </button>
+                        <div className="push-ios-guide">
+                          <p className="push-ios-guide-title">📱 Как включить на iPhone</p>
+                          <ol className="push-ios-steps">
+                            <li><span className="step-icon">🧭</span><span>Открой сайт в <b>Safari</b> (не Chrome)</span></li>
+                            <li><span className="step-icon">📤</span><span>Нажми кнопку <b>«Поделиться»</b> внизу экрана</span></li>
+                            <li><span className="step-icon">🏠</span><span>Выбери <b>«На экран «Домой»»</b></span></li>
+                            <li><span className="step-icon">📲</span><span>Открой <b>DoubleDo</b> с рабочего стола</span></li>
+                            <li><span className="step-icon">🔔</span><span>Вернись сюда и нажми кнопку выше</span></li>
+                          </ol>
+                        </div>
+                      </>
+                    )}
+                    {notifChannel === 'push' && pushPermission === 'granted' && (
+                      <p className="push-active-note">✓ Push-уведомления активны</p>
+                    )}
+                  </div>
 
-              <div className="setting-row" style={{ marginTop: '12px' }}>
-                <div className="setting-info">
-                  <span className="setting-label">Реакции на пропуски</span>
-                  <span className="setting-desc">Показывать уведомление, если соперник пропустил вчера</span>
-                </div>
-                <button
-                  className={`toggle-switch ${reactionsEnabled ? 'on' : ''}`}
-                  onClick={() => {
-                    const next = !reactionsEnabled;
-                    setReactionsEnabled(next);
-                    if (next) {
-                      localStorage.removeItem('ddo_reactions_disabled');
-                    } else {
-                      localStorage.setItem('ddo_reactions_disabled', '1');
-                    }
-                  }}
-                  aria-label="Переключить реакции на пропуски"
-                />
-              </div>
+                  <div className="setting-row" style={{ marginTop: '12px' }}>
+                    <div className="setting-info">
+                      <span className="setting-label">Реакции на пропуски</span>
+                      <span className="setting-desc">Показывать уведомление, если соперник пропустил вчера</span>
+                    </div>
+                    <button
+                      className={`toggle-switch ${reactionsEnabled ? 'on' : ''}`}
+                      onClick={() => {
+                        const next = !reactionsEnabled;
+                        setReactionsEnabled(next);
+                        if (next) {
+                          localStorage.removeItem('ddo_reactions_disabled');
+                        } else {
+                          localStorage.setItem('ddo_reactions_disabled', '1');
+                        }
+                      }}
+                      aria-label="Переключить реакции на пропуски"
+                    />
+                  </div>
 
-              <div className="setting-row" style={{ marginTop: '12px' }}>
-                <div className="setting-info">
-                  <span className="setting-label">Уведомления о вызовах</span>
-                  <span className="setting-desc">Получать пуш когда соперник бросает тебе вызов ⚡</span>
-                </div>
-                <button
-                  className={`toggle-switch ${provocationsEnabled ? 'on' : ''}`}
-                  onClick={async () => {
-                    const next = !provocationsEnabled;
-                    setProvocationsEnabled(next);
-                    try {
-                      await supabase.from('users').update({ provocation_notif_enabled: next }).eq('id', user.id);
-                      toast.success(next ? 'Уведомления о вызовах включены' : 'Уведомления о вызовах отключены');
-                    } catch {
-                      setProvocationsEnabled(!next);
-                      toast.error('Не удалось сохранить настройку');
-                    }
-                  }}
-                  aria-label="Переключить уведомления о вызовах"
-                />
-              </div>
+                  <div className="setting-row" style={{ marginTop: '12px' }}>
+                    <div className="setting-info">
+                      <span className="setting-label">Уведомления о вызовах</span>
+                      <span className="setting-desc">Получать пуш когда соперник бросает тебе вызов ⚡</span>
+                    </div>
+                    <button
+                      className={`toggle-switch ${provocationsEnabled ? 'on' : ''}`}
+                      onClick={async () => {
+                        const next = !provocationsEnabled;
+                        setProvocationsEnabled(next);
+                        try {
+                          await supabase.from('users').update({ provocation_notif_enabled: next }).eq('id', user.id);
+                          toast.success(next ? 'Уведомления о вызовах включены' : 'Уведомления о вызовах отключены');
+                        } catch {
+                          setProvocationsEnabled(!next);
+                          toast.error('Не удалось сохранить настройку');
+                        }
+                      }}
+                      aria-label="Переключить уведомления о вызовах"
+                    />
+                  </div>
 
-              <div className="reminder-block">
+                  <div className="reminder-block">
                 <div className="reminder-block-header">
                   <span className="reminder-bell">🔔</span>
                   <div className="reminder-block-info">
@@ -575,6 +575,8 @@ function ProfilePage() {
                   <p className="reminder-limit-note">Можно изменить раз в сутки</p>
                 )}
               </div>
+                </>
+              )}
             </div>
           )}
         </div>
