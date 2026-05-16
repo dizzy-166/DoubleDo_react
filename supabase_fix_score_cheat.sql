@@ -55,16 +55,16 @@ BEGIN
 
   -- Инкремент очков только один раз за день
   SELECT (user1_id = v_user_id) INTO v_is_user1
-  FROM competitions WHERE competition_id = v_competition_id;
+  FROM competitions WHERE id = v_competition_id;
 
   IF v_is_user1 THEN
     UPDATE competitions
       SET user1_score = user1_score + 1
-      WHERE competition_id = v_competition_id;
+      WHERE id = v_competition_id;
   ELSE
     UPDATE competitions
       SET user2_score = user2_score + 1
-      WHERE competition_id = v_competition_id;
+      WHERE id = v_competition_id;
   END IF;
 END;
 $$;
@@ -112,16 +112,16 @@ BEGIN
 
   -- Декремент, но не ниже 0
   SELECT (user1_id = v_user_id) INTO v_is_user1
-  FROM competitions WHERE competition_id = v_competition_id;
+  FROM competitions WHERE id = v_competition_id;
 
   IF v_is_user1 THEN
     UPDATE competitions
       SET user1_score = GREATEST(0, user1_score - 1)
-      WHERE competition_id = v_competition_id;
+      WHERE id = v_competition_id;
   ELSE
     UPDATE competitions
       SET user2_score = GREATEST(0, user2_score - 1)
-      WHERE competition_id = v_competition_id;
+      WHERE id = v_competition_id;
   END IF;
 END;
 $$;
