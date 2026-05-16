@@ -1014,6 +1014,12 @@
   border: 1px solid rgba(220, 50, 50, 0.65) !important;
 }
 
+[data-theme="dark"] .calendar-day.skipped {
+  background: rgba(234, 179, 8, 0.2) !important;
+  color: #fcd34d !important;
+  border: 1px solid rgba(234, 179, 8, 0.45) !important;
+}
+
 [data-theme="dark"] .calendar-day.empty {
   background: rgba(255, 255, 255, 0.02);
   border-color: rgba(255, 255, 255, 0.04);
@@ -1166,6 +1172,25 @@
   background: rgba(229, 57, 53, 0.08);
   color: #c62828;
   border: 1px solid rgba(229, 57, 53, 0.25);
+}
+
+.calendar-day.skipped {
+  background: rgba(234, 179, 8, 0.1);
+  color: #92610a;
+  border: 1px solid rgba(234, 179, 8, 0.35);
+}
+
+.calendar-day.skipped .day-number {
+  position: relative;
+}
+
+.calendar-day.skipped .day-number::after {
+  content: '~';
+  font-size: 8px;
+  position: absolute;
+  bottom: -2px;
+  right: -3px;
+  opacity: 0.8;
 }
 
 .today-indicator {

@@ -843,6 +843,8 @@ function CompetitionCard({ competition, user, onRefresh, onDelete }) {
   const [reactions, setReactions] = useState([]);
   const [sendingReaction, setSendingReaction] = useState(null);
   const [pendingSkips, setPendingSkips] = useState([]);
+  const [mySkippedDays, setMySkippedDays] = useState([]);
+  const [friendSkippedDays, setFriendSkippedDays] = useState([]);
   const [sendingProvocation, setSendingProvocation] = useState(false);
   const [respondingToSkip, setRespondingToSkip] = useState(null);
   const viewMonthRef = useRef(new Date().getMonth());
@@ -909,13 +911,23 @@ function CompetitionCard({ competition, user, onRefresh, onDelete }) {
     } catch {}
   };
 
-  const loadPendingSkips = async () => {
+  const loadSkips = async () => {
     if (!competition.competition_id) return;
     try {
       const { data } = await supabase.rpc('get_competition_skips', {
         p_competition_id: competition.competition_id
       });
-      setPendingSkips((data || []).filter(s => s.status === 'pending'));
+      const all = data || [];
+      setPendingSkips(all.filter(s => s.status === 'pending'));
+      const myId = user.id;
+      const friendId = competition.user1_id === myId ? competition.user2_id : competition.user1_id;
+      const accepted = all.filter(s => s.status === 'accepted');
+      const toDayObj = s => {
+        const [y, m, d] = s.skip_date.split('-').map(Number);
+        return { day: d, month: m - 1, year: y };
+      };
+      setMySkippedDays(accepted.filter(s => s.requester_id === myId).map(toDayObj));
+      setFriendSkippedDays(accepted.filter(s => s.requester_id === friendId).map(toDayObj));
     } catch {}
   };
 
@@ -992,7 +1004,7 @@ function CompetitionCard({ competition, user, onRefresh, onDelete }) {
   useEffect(() => {
     loadCalendarData();
     loadReactions();
-    loadPendingSkips();
+    loadSkips();
 
     const channel = supabase
       .channel(`competition-${competition.competition_id}-progress`)
@@ -1190,10 +1202,11 @@ function CompetitionCard({ competition, user, onRefresh, onDelete }) {
                     viewYear > compStartYear ||
                     (viewYear === compStartYear && viewMonth > compStartMonth) ||
                     (viewYear === compStartYear && viewMonth === compStartMonth && day >= compStartDay);
-                  const isMissed = isPast && isAfterCompStart && !completed;
+                  const isSkipped = mySkippedDays.some(s => s.day === day && s.month === viewMonth && s.year === viewYear);
+                  const isMissed = isPast && isAfterCompStart && !completed && !isSkipped;
                   return (
-                    <div key={di} className={`calendar-day${completed ? ' completed' : isMissed ? ' missed' : ''}${isToday ? ' today' : ''}`}
-                      title={`${day} ${viewMonth + 1}.${viewYear} — ${completed ? 'Выполнено' : isMissed ? 'Пропущено' : 'Не выполнено'}`}>
+                    <div key={di} className={`calendar-day${completed ? ' completed' : isSkipped ? ' skipped' : isMissed ? ' missed' : ''}${isToday ? ' today' : ''}`}
+                      title={`${day} ${viewMonth + 1}.${viewYear} — ${completed ? 'Выполнено' : isSkipped ? 'Пропуск засчитан' : isMissed ? 'Пропущено' : 'Не выполнено'}`}>
                       <span className="day-number">{day}</span>
                       {completed && <div className="completion-check"></div>}
                     </div>
@@ -1224,10 +1237,11 @@ function CompetitionCard({ competition, user, onRefresh, onDelete }) {
                     viewYear > compStartYear ||
                     (viewYear === compStartYear && viewMonth > compStartMonth) ||
                     (viewYear === compStartYear && viewMonth === compStartMonth && day >= compStartDay);
-                  const isMissed = isPast && isAfterCompStart && !completed;
+                  const isSkipped = friendSkippedDays.some(s => s.day === day && s.month === viewMonth && s.year === viewYear);
+                  const isMissed = isPast && isAfterCompStart && !completed && !isSkipped;
                   return (
-                    <div key={di} className={`calendar-day${completed ? ' completed' : isMissed ? ' missed' : ''}${isToday ? ' today' : ''}`}
-                      title={`${day} ${viewMonth + 1}.${viewYear} — ${completed ? 'Выполнено' : isMissed ? 'Пропущено' : 'Не выполнено'}`}>
+                    <div key={di} className={`calendar-day${completed ? ' completed' : isSkipped ? ' skipped' : isMissed ? ' missed' : ''}${isToday ? ' today' : ''}`}
+                      title={`${day} ${viewMonth + 1}.${viewYear} — ${completed ? 'Выполнено' : isSkipped ? 'Пропуск засчитан' : isMissed ? 'Пропущено' : 'Не выполнено'}`}>
                       <span className="day-number">{day}</span>
                       {completed && <div className="completion-check"></div>}
                     </div>
