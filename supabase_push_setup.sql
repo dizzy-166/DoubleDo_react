@@ -16,7 +16,7 @@ revoke all on app_secrets from anon, authenticated;
 
 -- 3. Сохраняем OneSignal REST API ключ
 insert into app_secrets (key, value)
-values ('onesignal_rest_key', 'os_v2_app_dueezcp6lzb6fgur73rpg7wum4qicerk2c6uxlv2cg44v3znv2b7pdsjuuilcslnc2yopalntcepes3ux4n5c2x3kx4b5o3ly4hyopy')
+values ('onesignal_rest_key', 'YOUR_ONESIGNAL_REST_KEY')
 on conflict (key) do update set value = excluded.value;
 
 -- ============================================================
