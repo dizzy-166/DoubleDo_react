@@ -115,24 +115,18 @@ function ProfilePage() {
     };
   }, [pullY, pullRefreshing]);
 
-  // Обработка выхода
   const handleLogout = async () => {
+    setLoading(true);
     try {
-      setLoading(true);
       const { error } = await supabase.auth.signOut();
-      
-      if (error) {
+      if (error && error.name !== 'AuthSessionMissingError') {
         console.error('Ошибка при выходе:', error);
-        toast.error('Не удалось выйти. Попробуйте снова.');
-      } else {
-        console.log('Успешный выход');
-        navigate('/login');
       }
     } catch (err) {
       console.error('Ошибка:', err);
-      toast.error('Произошла ошибка при выходе');
     } finally {
       setLoading(false);
+      navigate('/');
     }
   };
 
