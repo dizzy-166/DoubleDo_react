@@ -24,6 +24,10 @@ function CompetitionsPage() {
   const [showRecommendations, setShowRecommendations] = useState(true);
   const [confirmDialog, setConfirmDialog] = useState(null);
   const [showInviteLinkModal, setShowInviteLinkModal] = useState(false);
+  const [pullY, setPullY] = useState(0);
+  const [pullRefreshing, setPullRefreshing] = useState(false);
+  const mainRef = useRef(null);
+  const pullStartY = useRef(null);
 
   // Загрузка пользователя
   useEffect(() => {
@@ -35,6 +39,37 @@ function CompetitionsPage() {
     
     checkUser();
   }, []);
+
+  // Pull-to-refresh
+  useEffect(() => {
+    const el = mainRef.current;
+    if (!el) return;
+    const onTouchStart = (e) => {
+      if (el.scrollTop === 0) pullStartY.current = e.touches[0].clientY;
+    };
+    const onTouchMove = (e) => {
+      if (pullStartY.current === null) return;
+      const delta = e.touches[0].clientY - pullStartY.current;
+      if (delta > 0 && el.scrollTop === 0) setPullY(Math.min(delta * 0.4, 70));
+    };
+    const onTouchEnd = async () => {
+      if (pullY >= 60 && !pullRefreshing) {
+        setPullRefreshing(true);
+        await loadCompetitions();
+        setPullRefreshing(false);
+      }
+      setPullY(0);
+      pullStartY.current = null;
+    };
+    el.addEventListener('touchstart', onTouchStart, { passive: true });
+    el.addEventListener('touchmove', onTouchMove, { passive: true });
+    el.addEventListener('touchend', onTouchEnd);
+    return () => {
+      el.removeEventListener('touchstart', onTouchStart);
+      el.removeEventListener('touchmove', onTouchMove);
+      el.removeEventListener('touchend', onTouchEnd);
+    };
+  }, [pullY, pullRefreshing]);
 
   // Функция загрузки рекомендованных пользователей
   const loadRecommendedUsers = async () => {
@@ -463,7 +498,12 @@ function CompetitionsPage() {
             </div>
           </div>
 
-          <main className="competitions-main">
+          <main className="competitions-main" ref={mainRef}>
+            {(pullY > 0 || pullRefreshing) && (
+              <div className="pull-indicator" style={{ height: pullRefreshing ? 48 : pullY }}>
+                <div className={`pull-spinner${pullRefreshing ? ' spinning' : ''}`} />
+              </div>
+            )}
             {activeTab === 'competitions' ? (
               <>
                 <div className="competitions-list-header">

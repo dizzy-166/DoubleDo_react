@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useTheme } from '../context/ThemeContext.jsx';
 import { supabase } from '../services/supabase';
@@ -31,6 +31,10 @@ function ProfilePage() {
   const [reminderLoading, setReminderLoading] = useState(false);
   const [reminderUpdatedAt, setReminderUpdatedAt] = useState(null);
   const [activeSection, setActiveSection] = useState('profile');
+  const [pullY, setPullY] = useState(0);
+  const [pullRefreshing, setPullRefreshing] = useState(false);
+  const mainRef = useRef(null);
+  const pullStartY = useRef(null);
 
   // Определение активной вкладки
   const getActiveTab = () => {
@@ -80,6 +84,36 @@ function ProfilePage() {
 
     fetchUserData();
   }, [user]);
+
+  // Pull-to-refresh
+  useEffect(() => {
+    const el = mainRef.current;
+    if (!el) return;
+    const onTouchStart = (e) => {
+      if (el.scrollTop === 0) pullStartY.current = e.touches[0].clientY;
+    };
+    const onTouchMove = (e) => {
+      if (pullStartY.current === null) return;
+      const delta = e.touches[0].clientY - pullStartY.current;
+      if (delta > 0 && el.scrollTop === 0) setPullY(Math.min(delta * 0.4, 70));
+    };
+    const onTouchEnd = async () => {
+      if (pullY >= 60 && !pullRefreshing) {
+        setPullRefreshing(true);
+        window.location.reload();
+      }
+      setPullY(0);
+      pullStartY.current = null;
+    };
+    el.addEventListener('touchstart', onTouchStart, { passive: true });
+    el.addEventListener('touchmove', onTouchMove, { passive: true });
+    el.addEventListener('touchend', onTouchEnd);
+    return () => {
+      el.removeEventListener('touchstart', onTouchStart);
+      el.removeEventListener('touchmove', onTouchMove);
+      el.removeEventListener('touchend', onTouchEnd);
+    };
+  }, [pullY, pullRefreshing]);
 
   // Обработка выхода
   const handleLogout = async () => {
@@ -308,7 +342,12 @@ function ProfilePage() {
         </div>
       </header>
 
-      <main className="profile-main">
+      <main className="profile-main" ref={mainRef}>
+        {(pullY > 0 || pullRefreshing) && (
+          <div className="pull-indicator" style={{ height: pullRefreshing ? 48 : pullY }}>
+            <div className={`pull-spinner${pullRefreshing ? ' spinning' : ''}`} />
+          </div>
+        )}
         <div className="profile-info-card">
           <div className="profile-tabs">
             <button
