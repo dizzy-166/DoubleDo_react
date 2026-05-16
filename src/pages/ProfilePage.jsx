@@ -31,6 +31,7 @@ function ProfilePage() {
   const [reminderLoading, setReminderLoading] = useState(false);
   const [reminderUpdatedAt, setReminderUpdatedAt] = useState(null);
   const [activeSection, setActiveSection] = useState('profile');
+  const [showWhatsNew, setShowWhatsNew] = useState(false);
   const [pullY, setPullY] = useState(0);
   const [pullRefreshing, setPullRefreshing] = useState(false);
   const mainRef = useRef(null);
@@ -615,11 +616,51 @@ function ProfilePage() {
         </div>
 
         <div className="app-info-section">
+          <button className="whats-new-btn" onClick={() => setShowWhatsNew(true)}>
+            ✨ Что нового?
+          </button>
           <p className="app-info">
             DoubleDo — приложение для отслеживания привычек и соревнований
           </p>
           <p className="version">Версия 1.0.0</p>
         </div>
+
+        {showWhatsNew && (
+          <div className="whats-new-overlay" onClick={() => setShowWhatsNew(false)}>
+            <div className="whats-new-sheet" onClick={e => e.stopPropagation()}>
+              <div className="whats-new-handle" />
+              <div className="whats-new-header">
+                <span className="whats-new-title">✨ Что нового</span>
+                <button className="whats-new-close" onClick={() => setShowWhatsNew(false)}>✕</button>
+              </div>
+              <div className="whats-new-body">
+
+                <div className="wn-release">
+                  <div className="wn-date">17 мая 2026</div>
+                  <ul className="wn-list">
+                    <li><span className="wn-icon">🎨</span><span>Новый дизайн авторизации — вкладки «Войти / Регистрация», иконка приложения, автоматический ввод кода из 6 цифр и таймер повторной отправки</span></li>
+                    <li><span className="wn-icon">📅</span><span>Принятые пропуски на календаре соревнований выделяются жёлтым цветом со значком ~</span></li>
+                    <li><span className="wn-icon">🔄</span><span>Жест «потянуть вниз» для обновления данных на всех страницах</span></li>
+                    <li><span className="wn-icon">🔕</span><span>Новая настройка: отключить уведомления о вызовах от соперника</span></li>
+                    <li><span className="wn-icon">🙈</span><span>Все настройки уведомлений скрываются если уведомления полностью выключены</span></li>
+                  </ul>
+                </div>
+
+                <div className="wn-release">
+                  <div className="wn-date">16 мая 2026</div>
+                  <ul className="wn-list">
+                    <li><span className="wn-icon">⚡</span><span>Вызовы между участниками соревнований — бросай и принимай вызовы прямо в карточке соревнования</span></li>
+                    <li><span className="wn-icon">📋</span><span>Запрос на пропуск дня — можно попросить соперника засчитать пропуск по уважительной причине</span></li>
+                    <li><span className="wn-icon">🔔</span><span>Push-уведомления: напоминания о привычках, реакции на пропуски, уведомления о вызовах</span></li>
+                    <li><span className="wn-icon">🏆</span><span>Иконка приложения DoubleDo и поддержка установки на экран «Домой» (PWA)</span></li>
+                    <li><span className="wn-icon">📊</span><span>Разбивка профиля на вкладки «Профиль» и «Уведомления»</span></li>
+                  </ul>
+                </div>
+
+              </div>
+            </div>
+          </div>
+        )}
       </main>
 
       <nav className="bottom-nav">
