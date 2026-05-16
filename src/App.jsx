@@ -5,6 +5,8 @@ import { supabase } from './services/supabase';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import OneSignal from 'react-onesignal';
+
+let oneSignalReady = false; // гарантируем однократный init на всё время жизни страницы
 import HabitsPage from './pages/HabitsPage.jsx';
 import CompetitionsPage from './pages/CompetitionsPage.jsx';
 import ProfilePage from './pages/ProfilePage.jsx';
@@ -179,20 +181,35 @@ function App() {
   // OneSignal: инициализация + запрос разрешения + привязка пользователя
   useEffect(() => {
     if (!user?.id) return;
+    if (oneSignalReady) {
+      // Уже инициализирован — просто логиним пользователя
+      OneSignal.login(user.id).catch(() => {});
+      return;
+    }
     const setup = async () => {
       try {
+        // Проверяем поддержку push в браузере до инициализации
+        if (!('PushManager' in window) || !('serviceWorker' in navigator)) return;
+
+        // Ждём регистрации service worker
+        await navigator.serviceWorker.ready;
+
         await OneSignal.init({
           appId: '1d084c89-fe5e-43e2-9a91-fee2f37ed467',
           allowLocalhostAsSecureOrigin: true,
           notifyButton: { enable: false },
+          serviceWorkerParam: { scope: '/' },
         });
+
+        oneSignalReady = true;
+
         // Сначала разрешение — потом логин
         const granted = await OneSignal.Notifications.requestPermission();
         if (granted) {
           await OneSignal.login(user.id);
         }
       } catch {
-        // push не поддерживается или уже инициализирован — игнорируем
+        // push не поддерживается или заблокирован — игнорируем
       }
     };
     setup();
