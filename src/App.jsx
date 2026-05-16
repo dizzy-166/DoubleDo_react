@@ -220,11 +220,15 @@ function App() {
 
         // Если разрешение уже дано ранее — сразу логиним
         if (OneSignal.Notifications.permission) {
-          await OneSignal.login(user.id);
+          await OneSignal.login(user.id).catch(() => {});
         }
-        // Иначе — пользователь должен нажать кнопку в профиле
-      } catch {
-        // push не поддерживается или заблокирован — игнорируем
+      } catch (e) {
+        // Ошибка получения существующей подписки (Firefox/испорченная подписка):
+        // SDK инициализировался, просто старая подписка слетела — помечаем как готовый,
+        // чтобы пользователь мог нажать кнопку и подписаться заново.
+        if (e instanceof DOMException || String(e).includes('push subscription')) {
+          oneSignalReady = true;
+        }
       }
     };
     setup();
