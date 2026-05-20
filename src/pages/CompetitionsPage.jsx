@@ -3,6 +3,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '../services/supabase';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
+import BottomNav from '../components/BottomNav';
 import './CompetitionsPage.css';
 
 function CompetitionsPage() {
@@ -593,7 +594,7 @@ function CompetitionsPage() {
                       onChange={(e) => setSearchQuery(e.target.value)}
                       placeholder="Поиск по username..."
                       className="friend-search-input"
-                      onKeyPress={(e) => e.key === 'Enter' && handleSearchUsers()}
+                      onKeyDown={(e) => e.key === 'Enter' && handleSearchUsers()}
                     />
                     <button 
                       className="search-btn"
@@ -797,56 +798,7 @@ function CompetitionsPage() {
         />
       )}
 
-      <nav className="bottom-nav">
-        <button
-          className="nav-item active"
-          onClick={() => setActiveTab('competitions')}
-        >
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/>
-            <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/>
-            <path d="M4 22h16"/>
-            <path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/>
-            <path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/>
-            <path d="M18 2H6v7a6 6 0 0 0 12 0V2z"/>
-          </svg>
-          <span className="nav-label">Соревнования</span>
-        </button>
-
-        <button
-          className="nav-item"
-          onClick={() => navigate('/habits')}
-        >
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <circle cx="12" cy="12" r="10"/>
-            <path d="m9 12 2 2 4-4"/>
-          </svg>
-          <span className="nav-label">Привычки</span>
-        </button>
-
-        <button
-          className="nav-item"
-          onClick={() => navigate('/stats')}
-        >
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <line x1="18" y1="20" x2="18" y2="10"/>
-            <line x1="12" y1="20" x2="12" y2="4"/>
-            <line x1="6" y1="20" x2="6" y2="14"/>
-          </svg>
-          <span className="nav-label">Статистика</span>
-        </button>
-
-        <button
-          className="nav-item"
-          onClick={() => navigate('/profile')}
-        >
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <circle cx="12" cy="8" r="4"/>
-            <path d="M20 21a8 8 0 1 0-16 0"/>
-          </svg>
-          <span className="nav-label">Профиль</span>
-        </button>
-      </nav>
+      <BottomNav />
     </div>
   );
 }

@@ -528,6 +528,51 @@
   transform: translateY(0);
 }
 
+/* Навигация по месяцам внутри карточки привычки */
+.cal-month-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 2px 4px 6px;
+}
+
+.cal-nav-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 18px;
+  line-height: 1;
+  color: #667eea;
+  padding: 2px 6px;
+  border-radius: 6px;
+  transition: background 0.15s;
+}
+
+.cal-nav-btn:hover:not(:disabled) {
+  background: rgba(102, 126, 234, 0.12);
+}
+
+.cal-nav-btn:disabled {
+  color: #ccc;
+  cursor: default;
+}
+
+.cal-nav-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #555;
+  letter-spacing: 0.3px;
+}
+
+.cal-loading {
+  color: #999;
+  font-weight: 400;
+}
+
+[data-theme="dark"] .cal-nav-btn { color: #818cf8; }
+[data-theme="dark"] .cal-nav-btn:disabled { color: #444; }
+[data-theme="dark"] .cal-nav-label { color: #aaa; }
+
 /* Нижняя навигация */
 .bottom-nav {
   position: fixed;

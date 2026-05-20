@@ -1,22 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../services/supabase';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
+import BottomNav from '../components/BottomNav';
 import './StatsPage.css';
 
 function StatsPage() {
   const navigate = useNavigate();
-  const location = useLocation();
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState(null);
-
-  const getActiveTab = () => {
-    const path = location.pathname;
-    if (path.includes('/competitions')) return 'competitions';
-    if (path.includes('/profile')) return 'profile';
-    if (path.includes('/stats')) return 'stats';
-    return 'habits';
-  };
+  const [allProgress, setAllProgress] = useState([]);
 
   useEffect(() => {
     const init = async () => {
@@ -58,6 +51,7 @@ function StatsPage() {
         });
 
         setStats({ ...data, best_streak: bestStreak });
+        setAllProgress(progress || []);
       } catch (err) {
         console.error('Error loading stats:', err);
         setStats(null);
@@ -70,6 +64,108 @@ function StatsPage() {
 
   const monthNames = ['Янв', 'Фев', 'Мар', 'Апр', 'Май', 'Июн',
                       'Июл', 'Авг', 'Сен', 'Окт', 'Ноя', 'Дек'];
+
+  const renderHeatmap = () => {
+    if (!allProgress.length) return null;
+
+    // Подсчёт выполнений по датам
+    const completionCount = {};
+    allProgress.forEach(p => {
+      if (p.completed_date) {
+        completionCount[p.completed_date] = (completionCount[p.completed_date] || 0) + 1;
+      }
+    });
+
+    // Строим сетку: 52 недели заканчивающихся сегодня
+    const now = new Date();
+    const todayUTC = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
+
+    // Находим ближайший понедельник, чтобы начать сетку
+    const dayOfWeek = todayUTC.getUTCDay(); // 0=Вс
+    const daysToMon = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+    const mondayThisWeek = new Date(todayUTC);
+    mondayThisWeek.setUTCDate(mondayThisWeek.getUTCDate() - daysToMon);
+
+    const startMonday = new Date(mondayThisWeek);
+    startMonday.setUTCDate(startMonday.getUTCDate() - 51 * 7);
+
+    const weeks = [];
+    const cursor = new Date(startMonday);
+
+    while (cursor <= todayUTC) {
+      const week = [];
+      for (let d = 0; d < 7; d++) {
+        const isFuture = cursor > todayUTC;
+        const dateStr = cursor.toISOString().split('T')[0];
+        week.push({ date: dateStr, count: isFuture ? -1 : (completionCount[dateStr] || 0) });
+        cursor.setUTCDate(cursor.getUTCDate() + 1);
+      }
+      weeks.push(week);
+    }
+
+    // Метки месяцев над сеткой
+    const monthLabels = [];
+    let lastMonth = -1;
+    weeks.forEach((week, wi) => {
+      const m = new Date(week[0].date).getUTCMonth();
+      if (m !== lastMonth) {
+        monthLabels.push({ wi, label: monthNames[m] });
+        lastMonth = m;
+      }
+    });
+
+    const getHeatClass = (count) => {
+      if (count < 0) return 'hm-future';
+      if (count === 0) return 'hm-0';
+      if (count <= 2) return 'hm-1';
+      if (count <= 4) return 'hm-2';
+      return 'hm-3';
+    };
+
+    return (
+      <div className="stats-chart-section heatmap-section">
+        <h3 className="stats-section-title">Активность за год</h3>
+        <div className="heatmap-scroll">
+          <div className="heatmap-wrap">
+            {/* Метки месяцев */}
+            <div className="heatmap-month-row">
+              {weeks.map((week, wi) => {
+                const ml = monthLabels.find(l => l.wi === wi);
+                return (
+                  <div key={wi} className="heatmap-month-col">
+                    {ml ? <span className="heatmap-month-label">{ml.label}</span> : null}
+                  </div>
+                );
+              })}
+            </div>
+            {/* Сетка */}
+            <div className="heatmap-grid">
+              {weeks.map((week, wi) => (
+                <div key={wi} className="heatmap-col">
+                  {week.map((day, di) => (
+                    <div
+                      key={di}
+                      className={`heatmap-cell ${getHeatClass(day.count)}`}
+                      title={day.count >= 0 ? `${day.date}: ${day.count} выпол.` : ''}
+                    />
+                  ))}
+                </div>
+              ))}
+            </div>
+            {/* Легенда */}
+            <div className="heatmap-legend">
+              <span className="heatmap-legend-label">Меньше</span>
+              <div className="heatmap-cell hm-0" />
+              <div className="heatmap-cell hm-1" />
+              <div className="heatmap-cell hm-2" />
+              <div className="heatmap-cell hm-3" />
+              <span className="heatmap-legend-label">Больше</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
 
   const renderMonthlyChart = () => {
     if (!stats?.monthly_data || stats.monthly_data.length === 0) return null;
@@ -160,61 +256,13 @@ function StatsPage() {
               </div>
             </div>
 
+            {renderHeatmap()}
             {renderMonthlyChart()}
           </>
         )}
       </main>
 
-      <nav className="bottom-nav">
-        <button
-          className={`nav-item ${getActiveTab() === 'competitions' ? 'active' : ''}`}
-          onClick={() => navigate('/competitions')}
-        >
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/>
-            <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/>
-            <path d="M4 22h16"/>
-            <path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/>
-            <path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/>
-            <path d="M18 2H6v7a6 6 0 0 0 12 0V2z"/>
-          </svg>
-          <span className="nav-label">Соревнования</span>
-        </button>
-
-        <button
-          className={`nav-item ${getActiveTab() === 'habits' ? 'active' : ''}`}
-          onClick={() => navigate('/habits')}
-        >
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <circle cx="12" cy="12" r="10"/>
-            <path d="m9 12 2 2 4-4"/>
-          </svg>
-          <span className="nav-label">Привычки</span>
-        </button>
-
-        <button
-          className={`nav-item ${getActiveTab() === 'stats' ? 'active' : ''}`}
-          onClick={() => navigate('/stats')}
-        >
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <line x1="18" y1="20" x2="18" y2="10"/>
-            <line x1="12" y1="20" x2="12" y2="4"/>
-            <line x1="6" y1="20" x2="6" y2="14"/>
-          </svg>
-          <span className="nav-label">Статистика</span>
-        </button>
-
-        <button
-          className={`nav-item ${getActiveTab() === 'profile' ? 'active' : ''}`}
-          onClick={() => navigate('/profile')}
-        >
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <circle cx="12" cy="8" r="4"/>
-            <path d="M20 21a8 8 0 1 0-16 0"/>
-          </svg>
-          <span className="nav-label">Профиль</span>
-        </button>
-      </nav>
+      <BottomNav />
     </div>
   );
 }

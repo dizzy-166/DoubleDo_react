@@ -1,0 +1,98 @@
+/* Нижняя навигация */
+.bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  padding: 10px 8px;
+  padding-bottom: calc(10px + env(safe-area-inset-bottom));
+  border-top: 1px solid rgba(0, 0, 0, 0.06);
+  box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.06);
+  z-index: 100;
+}
+
+.nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  background: none;
+  border: none;
+  padding: 8px 20px;
+  border-radius: 14px;
+  cursor: pointer;
+  transition: color 0.2s, background 0.2s, transform 0.15s;
+  color: #aaa;
+  min-width: 70px;
+}
+
+.nav-item:active {
+  transform: scale(0.93);
+}
+
+.nav-item.active {
+  color: #667eea;
+  background: rgba(102, 126, 234, 0.1);
+}
+
+.nav-label {
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.2px;
+}
+
+/* Обёртка для иконки с бейджем */
+.nav-icon-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Бейдж с количеством входящих запросов */
+.nav-badge {
+  position: absolute;
+  top: -6px;
+  right: -8px;
+  background: #ef4444;
+  color: #fff;
+  font-size: 9px;
+  font-weight: 700;
+  line-height: 1;
+  min-width: 16px;
+  height: 16px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 3px;
+  box-shadow: 0 1px 4px rgba(239, 68, 68, 0.4);
+}
+
+/* Тёмная тема */
+[data-theme="dark"] .bottom-nav {
+  background: rgba(30, 30, 46, 0.95);
+  border-top-color: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.3);
+}
+
+[data-theme="dark"] .nav-item {
+  color: #666;
+}
+
+[data-theme="dark"] .nav-item.active {
+  color: #818cf8;
+  background: rgba(129, 140, 248, 0.12);
+}
+
+@media (max-width: 380px) {
+  .nav-item {
+    padding: 8px 12px;
+  }
+}

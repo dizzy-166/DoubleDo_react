@@ -269,10 +269,84 @@
   border-top-color: rgba(255, 255, 255, 0.06);
 }
 
-[data-theme="dark"] .bottom-nav {
-  background: rgba(14, 14, 28, 0.98);
-  border-top-color: rgba(255, 255, 255, 0.06);
+/* ── Тепловая карта активности ───────────────────────────────── */
+.heatmap-section {
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
 }
 
-[data-theme="dark"] .nav-item { color: #5555a0; }
-[data-theme="dark"] .nav-item.active { color: #a0b4ff; }
+.heatmap-scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 4px;
+}
+
+.heatmap-wrap {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.heatmap-month-row {
+  display: flex;
+  gap: 2px;
+  height: 14px;
+}
+
+.heatmap-month-col {
+  width: 11px;
+  flex-shrink: 0;
+  position: relative;
+}
+
+.heatmap-month-label {
+  font-size: 9px;
+  color: rgba(255, 255, 255, 0.5);
+  white-space: nowrap;
+  position: absolute;
+  left: 0;
+  top: 0;
+}
+
+.heatmap-grid {
+  display: flex;
+  gap: 2px;
+}
+
+.heatmap-col {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.heatmap-cell {
+  width: 11px;
+  height: 11px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.hm-future { background: transparent; }
+.hm-0      { background: rgba(255, 255, 255, 0.10); }
+.hm-1      { background: rgba(102, 126, 234, 0.45); }
+.hm-2      { background: rgba(102, 126, 234, 0.72); }
+.hm-3      { background: #667eea; }
+
+.heatmap-legend {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  justify-content: flex-end;
+  padding-top: 2px;
+}
+
+.heatmap-legend-label {
+  font-size: 9px;
+  color: rgba(255, 255, 255, 0.45);
+}
+
+/* Dark mode overrides for heatmap */
+[data-theme="dark"] .hm-0 { background: rgba(255, 255, 255, 0.06); }
+[data-theme="dark"] .hm-1 { background: rgba(129, 140, 248, 0.35); }
+[data-theme="dark"] .hm-2 { background: rgba(129, 140, 248, 0.65); }
+[data-theme="dark"] .hm-3 { background: #818cf8; }

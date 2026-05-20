@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '../services/supabase';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
+import BottomNav from '../components/BottomNav';
 import './HabitsPage.css';
 
 function HabitsPage() {
   const navigate = useNavigate();
-  const location = useLocation();
   const [habits, setHabits] = useState([]);
   const [newHabit, setNewHabit] = useState({
     title: '',
@@ -41,14 +41,6 @@ function HabitsPage() {
   const datePickerRef = useRef(null);
   const editDatePickerRef = useRef(null);
 
-  const getActiveTab = () => {
-    const path = location.pathname;
-    if (path.includes('/competitions')) return 'competitions';
-    if (path.includes('/profile')) return 'profile';
-    if (path.includes('/stats')) return 'stats';
-    return 'habits';
-  };
-
   const now = new Date();
   const today = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
 
@@ -70,14 +62,13 @@ function HabitsPage() {
         const { data: { user }, error } = await supabase.auth.getUser();
         
         if (error) {
-          console.error('❌ Ошибка получения пользователя:', error);
+          console.error('Ошибка получения пользователя:', error);
           setUser(null);
         } else {
-          console.log('✅ Пользователь получен:', user?.id);
           setUser(user);
         }
       } catch (err) {
-        console.error('❌ Исключение при получении пользователя:', err);
+        console.error('Исключение при получении пользователя:', err);
         setUser(null);
       } finally {
         setIsInitialized(true);
@@ -89,14 +80,7 @@ function HabitsPage() {
 
   // Загрузка привычек после получения пользователя
   useEffect(() => {
-    console.log('🔍 Проверка условий для загрузки привычек', {
-      user: !!user,
-      isInitialized,
-      loading
-    });
-    
     if (user && isInitialized && !loading) {
-      console.log('✅ Условия выполнены, запуск loadHabits');
       loadHabits();
     }
   }, [user, isInitialized]);
@@ -134,35 +118,20 @@ function HabitsPage() {
 
   // Загрузка привычек пользователя
   const loadHabits = async () => {
-    console.log('🚀 Начало загрузки привычек');
-    if (!user) {
-      console.error('❌ Пользователь не определен');
-      return;
-    }
+    if (!user) return;
 
     setLoading(true);
 
     try {
-      // Сбрасываем стрики для пропущенных дней перед загрузкой
-      supabase.rpc('reset_missed_streaks').then(null, () => {});
-
-      console.log('📥 Вызов loadHabitsSafe');
       const habitsData = await loadHabitsSafe();
-      console.log('✅ Данные привычек получены:', {
-        count: habitsData?.length || 0,
-        data: habitsData
-      });
-      
       setHabits(habitsData || []);
-      console.log('✅ Привычки установлены в состояние');
-      
+
       if (habitsData && habitsData.length > 0) {
-        console.log('📊 Загрузка прогресса для привычек');
         await loadAllProgress(habitsData);
         await loadCompetitionScores();
       }
     } catch (error) {
-      console.error('❌ Ошибка загрузки привычек:', error);
+      console.error('Ошибка загрузки привычек:', error);
     } finally {
       setLoading(false);
     }
@@ -170,21 +139,16 @@ function HabitsPage() {
 
   // Упрощенная загрузка привычек
   const loadHabitsSafe = async () => {
-    console.log('🔍 Загрузка привычек для пользователя:', user?.id);
-    
     try {
       // 1. Пробуем RPC функцию
-      console.log('📞 Вызов get_all_user_habits');
       const { data: habitsData, error } = await supabase
         .rpc('get_all_user_habits');
 
       if (error) {
-        console.error('❌ RPC ошибка:', error);
+        console.error('RPC ошибка get_all_user_habits:', error);
         throw error;
       }
-      
-      console.log('✅ RPC успешен, привычек:', habitsData?.length || 0);
-      
+
       if (habitsData && habitsData.length > 0) {
         return habitsData.map(habit => ({
           id: habit.habit_id,
@@ -205,7 +169,6 @@ function HabitsPage() {
       }
       
       // 2. Если RPC вернул 0, пробуем прямой запрос
-      console.log('🔄 Прямой запрос к habit_members');
       const { data: membersData, error: membersError } = await supabase
         .from('habit_members')
         .select(`
@@ -226,11 +189,9 @@ function HabitsPage() {
         .eq('status', 'accepted');
       
       if (membersError) {
-        console.error('❌ Ошибка запроса habit_members:', membersError);
+        console.error('Ошибка запроса habit_members:', membersError);
         throw membersError;
       }
-      
-      console.log('✅ Прямой запрос успешен, записей:', membersData?.length || 0);
       
       const formattedHabits = (membersData || []).map(member => ({
         id: member.habits.id,
@@ -249,26 +210,22 @@ function HabitsPage() {
         friend_score: 0
       }));
       
-      console.log('📝 Отформатировано привычек:', formattedHabits.length);
       return formattedHabits;
-      
+
     } catch (error) {
-      console.error('❌ Все методы не сработали:', error);
-      
+      console.error('Ошибка загрузки привычек, пробуем прямой запрос:', error);
+
       // 3. Последняя попытка: ручной запрос
       try {
-        console.log('🔍 Ручной запрос к привычкам');
         const { data: directHabits, error: directError } = await supabase
           .from('habits')
           .select('*')
           .eq('created_by', user.id);
         
         if (directError) {
-          console.error('❌ Ошибка прямого запроса привычек:', directError);
+          console.error('Ошибка прямого запроса привычек:', directError);
           return [];
         }
-        
-        console.log('✅ Найдено привычек созданных пользователем:', directHabits?.length || 0);
         
         return (directHabits || []).map(habit => ({
           id: habit.id,
@@ -288,7 +245,7 @@ function HabitsPage() {
         }));
         
       } catch (finalError) {
-        console.error('❌ Финальная ошибка:', finalError);
+        console.error('Финальная ошибка загрузки привычек:', finalError);
         return [];
       }
     }
@@ -296,8 +253,6 @@ function HabitsPage() {
 
   // Загрузка прогресса для всех привычек
   const loadAllProgress = async (habitsList) => {
-    console.log('📊 Загрузка прогресса для', habitsList?.length, 'привычек');
-    
     if (!user || !habitsList || habitsList.length === 0) {
       return;
     }
@@ -319,11 +274,9 @@ function HabitsPage() {
         .lte('completed_date', endOfMonth.toISOString().split('T')[0]);
 
       if (error) {
-        console.error('❌ Ошибка запроса прогресса:', error);
+        console.error('Ошибка запроса прогресса:', error);
         return;
       }
-
-      console.log('✅ Прогресс получен:', data?.length || 0, 'записей');
 
       if (data) {
         data.forEach(progress => {
@@ -335,7 +288,7 @@ function HabitsPage() {
 
       setProgressData(progressCache);
     } catch (error) {
-      console.error('❌ Ошибка загрузки прогресса:', error);
+      console.error('Ошибка загрузки прогресса:', error);
     }
   };
 
@@ -589,9 +542,7 @@ function HabitsPage() {
         console.error('Ошибка обновления привычки:', error);
         throw error;
       }
-      
-      console.log('✅ Привычка обновлена:', data);
-      
+
       // Обновляем локально
       setHabits(habits.map(habit => 
         habit.id === editingHabit.id 
@@ -717,11 +668,10 @@ function HabitsPage() {
     return 'future';
   };
 
-  // 🔥 ИСПРАВЛЕННАЯ ФУНКЦИЯ: Создание привычки
+  // Создание привычки
   const handleCreateHabit = async (e) => {
     e.preventDefault();
-    console.log('🎯 СОЗДАНИЕ ПРИВЫЧКИ');
-    
+
     if (!newHabit.title.trim()) {
       toast.error('Введите название привычки');
       return;
@@ -735,19 +685,8 @@ function HabitsPage() {
     setCreatingHabit(true);
     
     try {
-      console.log('1. Текущий пользователь:', user?.id);
-      
       const formattedDate = formatDateLocal(newHabit.startDate);
-      
-      console.log('2. Данные для создания:', {
-        title: newHabit.title.trim(),
-        start_date: formattedDate,
-        user_id: user?.id
-      });
-      
-      // 🔥 ПРЯМОЙ ЗАПРОС вместо RPC
-      console.log('3. Создаем привычку напрямую...');
-      
+
       // 1. Создаем запись в habits
       const { data: habitData, error: habitError } = await supabase
         .from('habits')
@@ -762,12 +701,10 @@ function HabitsPage() {
         .single();
       
       if (habitError) {
-        console.error('❌ Ошибка создания привычки:', habitError);
+        console.error('Ошибка создания привычки:', habitError);
         throw habitError;
       }
-      
-      console.log('✅ Привычка создана:', habitData);
-      
+
       // 2. Добавляем пользователя как владельца в habit_members
       const { error: memberError } = await supabase
         .from('habit_members')
@@ -781,16 +718,12 @@ function HabitsPage() {
         });
       
       if (memberError) {
-        console.error('❌ Ошибка добавления в habit_members:', memberError);
+        console.error('Ошибка добавления в habit_members:', memberError);
         throw memberError;
       }
-      
-      console.log('✅ Пользователь добавлен как владелец');
-      
+
       // 3. Перезагружаем список привычек
       await loadHabits();
-      
-      console.log('=== ПРИВЫЧКА УСПЕШНО СОЗДАНА ===');
 
       // 4. Сброс формы
       setNewHabit({
@@ -805,10 +738,8 @@ function HabitsPage() {
     } catch (error) {
       console.error('🔥 ОШИБКА СОЗДАНИЯ ПРИВЫЧКИ:', error);
       
-      // Попробуем альтернативный метод
+      // Попробуем альтернативный метод через RPC
       try {
-        console.log('🔄 Пробуем через RPC...');
-        
         const formattedDate = formatDateLocal(newHabit.startDate);
         
         const { data, error: rpcError } = await supabase.rpc('create_habit', {
@@ -817,11 +748,10 @@ function HabitsPage() {
         });
         
         if (rpcError) {
-          console.error('RPC ошибка:', rpcError);
+          console.error('RPC ошибка create_habit:', rpcError);
           throw new Error(`RPC: ${rpcError.message}`);
         }
-        
-        console.log('✅ RPC успешно:', data);
+
         await loadHabits();
         
         setNewHabit({ 
@@ -968,18 +898,8 @@ function HabitsPage() {
 
   // Обработчик нажатия на кнопку создания привычки на пустом экране
   const handleCreateFirstHabitClick = () => {
-    console.log('🎯 КНОПКА "СОЗДАТЬ ПРИВЫЧКУ" НАЖАТА');
     setShowCreateForm(true);
   };
-
-  // Логи для отладки
-  console.log('🎯 Состояние компонента:', {
-    isInitialized,
-    user: !!user,
-    loading,
-    habitsCount: habits.length,
-    showCreateForm
-  });
 
   // Если загрузка данных
   if (!isInitialized || (user && loading && habits.length === 0)) {
@@ -1067,56 +987,7 @@ function HabitsPage() {
           </div>
         </div>
 
-        <nav className="bottom-nav">
-          <button
-            className={`nav-item ${getActiveTab() === 'competitions' ? 'active' : ''}`}
-            onClick={() => navigate('/competitions')}
-          >
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/>
-              <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/>
-              <path d="M4 22h16"/>
-              <path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/>
-              <path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/>
-              <path d="M18 2H6v7a6 6 0 0 0 12 0V2z"/>
-            </svg>
-            <span className="nav-label">Соревнования</span>
-          </button>
-
-          <button
-            className={`nav-item ${getActiveTab() === 'habits' ? 'active' : ''}`}
-            onClick={() => navigate('/habits')}
-          >
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="12" cy="12" r="10"/>
-              <path d="m9 12 2 2 4-4"/>
-            </svg>
-            <span className="nav-label">Привычки</span>
-          </button>
-
-          <button
-            className={`nav-item ${getActiveTab() === 'stats' ? 'active' : ''}`}
-            onClick={() => navigate('/stats')}
-          >
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="18" y1="20" x2="18" y2="10"/>
-              <line x1="12" y1="20" x2="12" y2="4"/>
-              <line x1="6" y1="20" x2="6" y2="14"/>
-            </svg>
-            <span className="nav-label">Статистика</span>
-          </button>
-
-          <button
-            className={`nav-item ${getActiveTab() === 'profile' ? 'active' : ''}`}
-            onClick={() => navigate('/profile')}
-          >
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="12" cy="8" r="4"/>
-              <path d="M20 21a8 8 0 1 0-16 0"/>
-            </svg>
-            <span className="nav-label">Профиль</span>
-          </button>
-        </nav>
+        <BottomNav />
 
         {showCreateForm && (
           <CreateHabitModal
@@ -1239,56 +1110,7 @@ function HabitsPage() {
       </main>
 
       {/* НАВИГАЦИЯ */}
-      <nav className="bottom-nav">
-        <button
-          className={`nav-item ${getActiveTab() === 'competitions' ? 'active' : ''}`}
-          onClick={() => navigate('/competitions')}
-        >
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/>
-            <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/>
-            <path d="M4 22h16"/>
-            <path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/>
-            <path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/>
-            <path d="M18 2H6v7a6 6 0 0 0 12 0V2z"/>
-          </svg>
-          <span className="nav-label">Соревнования</span>
-        </button>
-
-        <button
-          className={`nav-item ${getActiveTab() === 'habits' ? 'active' : ''}`}
-          onClick={() => navigate('/habits')}
-        >
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <circle cx="12" cy="12" r="10"/>
-            <path d="m9 12 2 2 4-4"/>
-          </svg>
-          <span className="nav-label">Привычки</span>
-        </button>
-
-        <button
-          className={`nav-item ${getActiveTab() === 'stats' ? 'active' : ''}`}
-          onClick={() => navigate('/stats')}
-        >
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <line x1="18" y1="20" x2="18" y2="10"/>
-            <line x1="12" y1="20" x2="12" y2="4"/>
-            <line x1="6" y1="20" x2="6" y2="14"/>
-          </svg>
-          <span className="nav-label">Статистика</span>
-        </button>
-
-        <button
-          className={`nav-item ${getActiveTab() === 'profile' ? 'active' : ''}`}
-          onClick={() => navigate('/profile')}
-        >
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <circle cx="12" cy="8" r="4"/>
-            <path d="M20 21a8 8 0 1 0-16 0"/>
-          </svg>
-          <span className="nav-label">Профиль</span>
-        </button>
-      </nav>
+      <BottomNav />
 
       {showCreateForm && (
         <CreateHabitModal
@@ -1366,8 +1188,17 @@ function HabitCard({
   const [selectedReason, setSelectedReason] = useState('');
   const [customReason, setCustomReason] = useState('');
   const [sendingSkip, setSendingSkip] = useState(false);
+  // Навигация по месяцам в календаре
+  const [calViewMonth, setCalViewMonth] = useState(currentMonth);
+  const [calViewYear, setCalViewYear] = useState(currentYear);
+  const [extraProgress, setExtraProgress] = useState(null);
+  const [loadingCal, setLoadingCal] = useState(false);
   const menuRef = useRef(null);
-  const progress = progressData[habit.id] || [];
+
+  const isCurrentView = calViewMonth === currentMonth && calViewYear === currentYear;
+  const progress = isCurrentView
+    ? (progressData[habit.id] || [])
+    : (extraProgress || []);
 
   const now = new Date();
   const todayUTC = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
@@ -1417,6 +1248,107 @@ function HabitCard({
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  // Загрузка прогресса при переходе на другой месяц
+  useEffect(() => {
+    if (isCurrentView) {
+      setExtraProgress(null);
+      return;
+    }
+    let cancelled = false;
+    const fetchMonth = async () => {
+      setLoadingCal(true);
+      try {
+        const startDate = `${calViewYear}-${String(calViewMonth + 1).padStart(2, '0')}-01`;
+        const lastDay = new Date(calViewYear, calViewMonth + 1, 0).getDate();
+        const endDate = `${calViewYear}-${String(calViewMonth + 1).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
+        const { data } = await supabase
+          .from('habit_progress')
+          .select('habit_id, completed_date, is_completed')
+          .eq('habit_id', habit.id)
+          .eq('user_id', user.id)
+          .gte('completed_date', startDate)
+          .lte('completed_date', endDate);
+        if (!cancelled) {
+          setExtraProgress((data || []).map(p => ({
+            ...p,
+            completed_date: new Date(p.completed_date).toISOString().split('T')[0]
+          })));
+        }
+      } catch {
+        if (!cancelled) setExtraProgress([]);
+      } finally {
+        if (!cancelled) setLoadingCal(false);
+      }
+    };
+    fetchMonth();
+    return () => { cancelled = true; };
+  }, [calViewMonth, calViewYear, isCurrentView]);
+
+  const calMonthNames = ['Янв', 'Фев', 'Мар', 'Апр', 'Май', 'Июн',
+                         'Июл', 'Авг', 'Сен', 'Окт', 'Ноя', 'Дек'];
+
+  const handleCalPrev = () => {
+    if (calViewMonth === 0) {
+      setCalViewMonth(11);
+      setCalViewYear(y => y - 1);
+    } else {
+      setCalViewMonth(m => m - 1);
+    }
+  };
+
+  const handleCalNext = () => {
+    if (calViewYear === currentYear && calViewMonth >= currentMonth) return;
+    if (calViewMonth === 11) {
+      setCalViewMonth(0);
+      setCalViewYear(y => y + 1);
+    } else {
+      setCalViewMonth(m => m + 1);
+    }
+  };
+
+  // Генерация календаря для просматриваемого месяца
+  const generateViewCalendar = () => {
+    const firstDayOfMonth = new Date(calViewYear, calViewMonth, 1);
+    const lastDayOfMonth = new Date(calViewYear, calViewMonth + 1, 0);
+    const daysInMonth = lastDayOfMonth.getDate();
+    const firstDayOfWeek = firstDayOfMonth.getDay();
+    const startOffset = firstDayOfWeek === 0 ? 6 : firstDayOfWeek - 1;
+    const weeks = [];
+    let week = [];
+    for (let i = 0; i < startOffset; i++) week.push(null);
+    for (let day = 1; day <= daysInMonth; day++) {
+      week.push(day);
+      if (week.length === 7) { weeks.push(week); week = []; }
+    }
+    if (week.length > 0) { while (week.length < 7) week.push(null); weeks.push(week); }
+    return weeks;
+  };
+
+  const viewCalendarWeeks = generateViewCalendar();
+
+  // Статус дня для просматриваемого месяца
+  const getViewDayStatus = (day) => {
+    if (!day || !habit) return 'empty';
+    const dayDate = new Date(Date.UTC(calViewYear, calViewMonth, day));
+    const dayStr = dayDate.toISOString().split('T')[0];
+    const habitStartDate = new Date(habit.startDate);
+    const habitStartStr = new Date(Date.UTC(
+      habitStartDate.getFullYear(),
+      habitStartDate.getMonth(),
+      habitStartDate.getDate()
+    )).toISOString().split('T')[0];
+    const todayUTC = new Date(Date.UTC(currentYear, currentMonth, currentDay));
+    const todayStr = todayUTC.toISOString().split('T')[0];
+    if (dayStr < habitStartStr) return 'before-start';
+    const progressForDate = progress?.find(p => p.completed_date === dayStr);
+    if (dayStr === todayStr) return progressForDate?.is_completed ? 'today-completed' : 'today';
+    if (progressForDate?.is_completed) return 'completed';
+    if (dayStr < todayStr && dayStr >= habitStartStr) return 'missed';
+    return 'future';
+  };
+
+  const canGoNext = !(calViewYear === currentYear && calViewMonth >= currentMonth);
 
   const handleComplete = async () => {
     if (!isTodayActive) return;
@@ -1601,6 +1533,19 @@ function HabitCard({
       </div>
 
       <div className="habit-calendar-small">
+        <div className="cal-month-nav">
+          <button className="cal-nav-btn" onClick={handleCalPrev} type="button">‹</button>
+          <span className="cal-nav-label">
+            {calMonthNames[calViewMonth]}{calViewYear !== currentYear ? ` ${calViewYear}` : ''}
+            {loadingCal && <span className="cal-loading"> ·</span>}
+          </span>
+          <button
+            className="cal-nav-btn"
+            onClick={handleCalNext}
+            type="button"
+            disabled={!canGoNext}
+          >›</button>
+        </div>
         <div className="calendar-grid-small">
           <div className="weekdays-row-small">
             {dayNames.map((dayName, index) => (
@@ -1609,22 +1554,22 @@ function HabitCard({
               </div>
             ))}
           </div>
-          
-          {calendarWeeks.map((week, weekIndex) => (
+
+          {viewCalendarWeeks.map((week, weekIndex) => (
             <div key={weekIndex} className="calendar-week-small">
               {week.map((day, dayIndex) => {
                 if (day === null) {
                   return <div key={dayIndex} className="calendar-day-small empty"></div>;
                 }
-                
-                const status = getDayStatus(habit, day, progress);
-                const isToday = day === currentDay;
-                
+
+                const status = getViewDayStatus(day);
+                const isToday = isCurrentView && day === currentDay;
+
                 return (
-                  <div 
-                    key={dayIndex} 
+                  <div
+                    key={dayIndex}
                     className={`calendar-day-small ${status} ${isToday ? 'today-highlight' : ''}`}
-                    title={`${day}.${currentMonth + 1}.${currentYear}`}
+                    title={`${day}.${calViewMonth + 1}.${calViewYear}`}
                   >
                     <span className="day-number-small">{day}</span>
                   </div>
