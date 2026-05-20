@@ -10,6 +10,7 @@ function StatsPage() {
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState(null);
   const [allProgress, setAllProgress] = useState([]);
+  const [heatmapOpen, setHeatmapOpen] = useState(false);
 
   useEffect(() => {
     const init = async () => {
@@ -65,10 +66,7 @@ function StatsPage() {
   const monthNames = ['Янв', 'Фев', 'Мар', 'Апр', 'Май', 'Июн',
                       'Июл', 'Авг', 'Сен', 'Окт', 'Ноя', 'Дек'];
 
-  const renderHeatmap = () => {
-    if (!allProgress.length) return null;
-
-    // Подсчёт выполнений по датам
+  const buildHeatmapData = () => {
     const completionCount = {};
     allProgress.forEach(p => {
       if (p.completed_date) {
@@ -76,22 +74,17 @@ function StatsPage() {
       }
     });
 
-    // Строим сетку: 52 недели заканчивающихся сегодня
     const now = new Date();
     const todayUTC = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
-
-    // Находим ближайший понедельник, чтобы начать сетку
-    const dayOfWeek = todayUTC.getUTCDay(); // 0=Вс
+    const dayOfWeek = todayUTC.getUTCDay();
     const daysToMon = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
     const mondayThisWeek = new Date(todayUTC);
     mondayThisWeek.setUTCDate(mondayThisWeek.getUTCDate() - daysToMon);
-
     const startMonday = new Date(mondayThisWeek);
     startMonday.setUTCDate(startMonday.getUTCDate() - 51 * 7);
 
     const weeks = [];
     const cursor = new Date(startMonday);
-
     while (cursor <= todayUTC) {
       const week = [];
       for (let d = 0; d < 7; d++) {
@@ -103,7 +96,6 @@ function StatsPage() {
       weeks.push(week);
     }
 
-    // Метки месяцев над сеткой
     const monthLabels = [];
     let lastMonth = -1;
     weeks.forEach((week, wi) => {
@@ -114,56 +106,92 @@ function StatsPage() {
       }
     });
 
-    const getHeatClass = (count) => {
-      if (count < 0) return 'hm-future';
-      if (count === 0) return 'hm-0';
-      if (count <= 2) return 'hm-1';
-      if (count <= 4) return 'hm-2';
-      return 'hm-3';
-    };
+    return { weeks, monthLabels };
+  };
+
+  const getHeatClass = (count) => {
+    if (count < 0) return 'hm-future';
+    if (count === 0) return 'hm-0';
+    if (count <= 2) return 'hm-1';
+    if (count <= 4) return 'hm-2';
+    return 'hm-3';
+  };
+
+  const renderHeatmap = () => {
+    if (!allProgress.length) return null;
+    const { weeks, monthLabels } = buildHeatmapData();
 
     return (
-      <div className="stats-chart-section heatmap-section">
-        <h3 className="stats-section-title">Активность за год</h3>
-        <div className="heatmap-scroll">
-          <div className="heatmap-wrap">
-            {/* Метки месяцев */}
-            <div className="heatmap-month-row">
-              {weeks.map((week, wi) => {
-                const ml = monthLabels.find(l => l.wi === wi);
-                return (
-                  <div key={wi} className="heatmap-month-col">
-                    {ml ? <span className="heatmap-month-label">{ml.label}</span> : null}
-                  </div>
-                );
-              })}
-            </div>
-            {/* Сетка */}
-            <div className="heatmap-grid">
+      <>
+        {/* ── Превью ── */}
+        <div className="stats-chart-section heatmap-section">
+          <div className="heatmap-preview-header">
+            <h3 className="stats-section-title" style={{ margin: 0 }}>Активность за год</h3>
+            <button className="heatmap-open-btn" onClick={() => setHeatmapOpen(true)}>
+              Подробнее →
+            </button>
+          </div>
+          <div className="heatmap-preview-tap" onClick={() => setHeatmapOpen(true)}>
+            <div className="heatmap-mini-grid">
               {weeks.map((week, wi) => (
-                <div key={wi} className="heatmap-col">
+                <div key={wi} className="heatmap-mini-col">
                   {week.map((day, di) => (
-                    <div
-                      key={di}
-                      className={`heatmap-cell ${getHeatClass(day.count)}`}
-                      title={day.count >= 0 ? `${day.date}: ${day.count} выпол.` : ''}
-                    />
+                    <div key={di} className={`heatmap-mini-cell ${getHeatClass(day.count)}`} />
                   ))}
                 </div>
               ))}
             </div>
-            {/* Легенда */}
-            <div className="heatmap-legend">
-              <span className="heatmap-legend-label">Меньше</span>
-              <div className="heatmap-cell hm-0" />
-              <div className="heatmap-cell hm-1" />
-              <div className="heatmap-cell hm-2" />
-              <div className="heatmap-cell hm-3" />
-              <span className="heatmap-legend-label">Больше</span>
-            </div>
+            <div className="heatmap-preview-fade" />
           </div>
         </div>
-      </div>
+
+        {/* ── Bottom-sheet ── */}
+        {heatmapOpen && (
+          <div className="heatmap-backdrop" onClick={() => setHeatmapOpen(false)}>
+            <div className="heatmap-sheet" onClick={e => e.stopPropagation()}>
+              <div className="heatmap-sheet-header">
+                <span className="heatmap-sheet-title">Активность за год</span>
+                <button className="heatmap-sheet-close" onClick={() => setHeatmapOpen(false)}>✕</button>
+              </div>
+              <div className="heatmap-scroll">
+                <div className="heatmap-wrap">
+                  <div className="heatmap-month-row">
+                    {weeks.map((week, wi) => {
+                      const ml = monthLabels.find(l => l.wi === wi);
+                      return (
+                        <div key={wi} className="heatmap-month-col">
+                          {ml ? <span className="heatmap-month-label">{ml.label}</span> : null}
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <div className="heatmap-grid">
+                    {weeks.map((week, wi) => (
+                      <div key={wi} className="heatmap-col">
+                        {week.map((day, di) => (
+                          <div
+                            key={di}
+                            className={`heatmap-cell ${getHeatClass(day.count)}`}
+                            title={day.count >= 0 ? `${day.date}: ${day.count} выпол.` : ''}
+                          />
+                        ))}
+                      </div>
+                    ))}
+                  </div>
+                  <div className="heatmap-legend">
+                    <span className="heatmap-legend-label">Меньше</span>
+                    <div className="heatmap-cell hm-0" />
+                    <div className="heatmap-cell hm-1" />
+                    <div className="heatmap-cell hm-2" />
+                    <div className="heatmap-cell hm-3" />
+                    <span className="heatmap-legend-label">Больше</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </>
     );
   };
 

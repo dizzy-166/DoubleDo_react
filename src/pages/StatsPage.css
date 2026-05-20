@@ -232,11 +232,118 @@
   border-top-color: rgba(255, 255, 255, 0.06);
 }
 
-/* ── Heatmap ─────────────────────────────────────────────────── */
+/* ── Heatmap preview ─────────────────────────────────────────── */
 .heatmap-section {
   /* inherits border-top from .stats-chart-section */
 }
 
+.heatmap-preview-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.heatmap-open-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 11px;
+  font-weight: 600;
+  color: #667eea;
+  cursor: pointer;
+}
+
+/* Tappable preview area */
+.heatmap-preview-tap {
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+  border-radius: 6px;
+}
+
+/* Mini grid — 5 px cells so all 52 weeks fit in ~310 px */
+.heatmap-mini-grid {
+  display: flex;
+  gap: 1px;
+}
+
+.heatmap-mini-col {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.heatmap-mini-cell {
+  width: 5px;
+  height: 5px;
+  border-radius: 1px;
+  flex-shrink: 0;
+}
+
+/* Right-edge fade to hint there is more */
+.heatmap-preview-fade {
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 48px;
+  background: linear-gradient(to right, transparent, white);
+  pointer-events: none;
+}
+
+/* ── Bottom-sheet modal ──────────────────────────────────────── */
+.heatmap-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  z-index: 200;
+  display: flex;
+  align-items: flex-end;
+}
+
+.heatmap-sheet {
+  background: white;
+  border-radius: 20px 20px 0 0;
+  padding: 20px 16px;
+  padding-bottom: calc(24px + env(safe-area-inset-bottom));
+  width: 100%;
+  animation: slideUp 0.25s ease;
+}
+
+@keyframes slideUp {
+  from { transform: translateY(100%); }
+  to   { transform: translateY(0); }
+}
+
+.heatmap-sheet-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.heatmap-sheet-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: #1a1a2e;
+}
+
+.heatmap-sheet-close {
+  background: #f0f0f7;
+  border: none;
+  border-radius: 50%;
+  width: 28px;
+  height: 28px;
+  font-size: 13px;
+  color: #666;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Full-size grid inside sheet */
 .heatmap-scroll {
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
@@ -309,7 +416,22 @@
   color: #bbb;
 }
 
-/* Dark mode overrides for heatmap */
+/* ── Dark mode: heatmap ──────────────────────────────────────── */
+[data-theme="dark"] .heatmap-preview-fade {
+  background: linear-gradient(to right, transparent, rgba(20, 20, 38, 0.98));
+}
+
+[data-theme="dark"] .heatmap-sheet {
+  background: #1a1a2e;
+}
+
+[data-theme="dark"] .heatmap-sheet-title { color: #e8e8f8; }
+
+[data-theme="dark"] .heatmap-sheet-close {
+  background: rgba(255, 255, 255, 0.08);
+  color: #aaa;
+}
+
 [data-theme="dark"] .heatmap-month-label { color: #555; }
 [data-theme="dark"] .heatmap-legend-label { color: #555; }
 [data-theme="dark"] .hm-0 { background: rgba(255, 255, 255, 0.07); }
