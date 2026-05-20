@@ -254,7 +254,7 @@
   cursor: pointer;
 }
 
-/* Tappable preview area */
+/* Tappable preview area — shows last 16 weeks at full cell size */
 .heatmap-preview-tap {
   position: relative;
   overflow: hidden;
@@ -262,26 +262,7 @@
   border-radius: 6px;
 }
 
-/* Mini grid — 5 px cells so all 52 weeks fit in ~310 px */
-.heatmap-mini-grid {
-  display: flex;
-  gap: 1px;
-}
-
-.heatmap-mini-col {
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-}
-
-.heatmap-mini-cell {
-  width: 5px;
-  height: 5px;
-  border-radius: 1px;
-  flex-shrink: 0;
-}
-
-/* Right-edge fade to hint there is more */
+/* Right-edge fade to hint the full year is behind the sheet */
 .heatmap-preview-fade {
   position: absolute;
   right: 0;

@@ -123,20 +123,20 @@ function StatsPage() {
 
     return (
       <>
-        {/* ── Превью ── */}
+        {/* ── Превью: последние 16 недель ── */}
         <div className="stats-chart-section heatmap-section">
           <div className="heatmap-preview-header">
             <h3 className="stats-section-title" style={{ margin: 0 }}>Активность за год</h3>
             <button className="heatmap-open-btn" onClick={() => setHeatmapOpen(true)}>
-              Подробнее →
+              Весь год →
             </button>
           </div>
           <div className="heatmap-preview-tap" onClick={() => setHeatmapOpen(true)}>
-            <div className="heatmap-mini-grid">
-              {weeks.map((week, wi) => (
-                <div key={wi} className="heatmap-mini-col">
+            <div className="heatmap-grid">
+              {weeks.slice(-16).map((week, wi) => (
+                <div key={wi} className="heatmap-col">
                   {week.map((day, di) => (
-                    <div key={di} className={`heatmap-mini-cell ${getHeatClass(day.count)}`} />
+                    <div key={di} className={`heatmap-cell ${getHeatClass(day.count)}`} />
                   ))}
                 </div>
               ))}
