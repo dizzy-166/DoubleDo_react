@@ -1,61 +1,55 @@
 /* src/pages/StatsPage.css */
 .stats-page {
-  min-height: 100vh;
+  height: 100dvh;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  padding: 12px;
-  padding-top: calc(12px + env(safe-area-inset-top));
-  padding-bottom: calc(80px + env(safe-area-inset-bottom));
+  display: flex;
+  flex-direction: column;
+  padding-top: env(safe-area-inset-top);
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
 }
 
-.stats-header {
-  margin-bottom: 12px;
+.stats-main {
+  flex: 1;
+  background: white;
+  border-radius: 20px 20px 0 0;
+  padding: 14px 14px;
+  padding-bottom: calc(72px + env(safe-area-inset-bottom));
+  overflow-y: auto;
+  overflow-x: hidden;
+  box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.10);
+  display: flex;
+  flex-direction: column;
+  gap: 0;
 }
 
-.header-content {
+/* Title row */
+.stats-title-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0 4px;
+  margin-bottom: 12px;
 }
 
-.header-content h1 {
-  color: white;
-  font-size: 22px;
-  font-weight: 800;
+.stats-page-title {
+  font-size: 17px;
+  font-weight: 700;
+  color: #1a1a2e;
   margin: 0;
-  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-  letter-spacing: -0.5px;
 }
 
 .user-avatar-stats {
-  width: 40px;
-  height: 40px;
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.85));
+  width: 34px;
+  height: 34px;
+  background: linear-gradient(135deg, #667eea, #764ba2);
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: 700;
-  color: #667eea;
-  font-size: 18px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  color: white;
+  font-size: 15px;
   cursor: pointer;
-}
-
-.stats-main {
-  background: white;
-  border-radius: 20px;
-  padding: 16px 14px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
-  overflow-x: hidden; /* prevent heatmap from expanding the card width */
-}
-
-.stats-page-title {
-  font-size: 16px;
-  font-weight: 700;
-  color: #1a1a2e;
-  margin: 0 0 14px 0;
+  flex-shrink: 0;
 }
 
 .stats-loading {
@@ -77,20 +71,20 @@
 .stats-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 8px;
-  margin-bottom: 16px;
+  gap: 7px;
+  margin-bottom: 12px;
 }
 
 .stat-card {
   background: #f7f7fc;
-  border-radius: 12px;
-  padding: 12px 8px;
+  border-radius: 10px;
+  padding: 9px 6px;
   text-align: center;
   border: 1px solid rgba(0, 0, 0, 0.05);
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
+  gap: 3px;
 }
 
 .stat-card.accent {
@@ -99,12 +93,12 @@
 }
 
 .stat-card-icon {
-  font-size: 18px;
+  font-size: 16px;
   line-height: 1;
 }
 
 .stat-card-value {
-  font-size: 20px;
+  font-size: 18px;
   font-weight: 800;
   color: #1a1a2e;
   line-height: 1;
@@ -115,7 +109,7 @@
 }
 
 .stat-card-label {
-  font-size: 10px;
+  font-size: 9px;
   color: #999;
   font-weight: 500;
   text-align: center;
@@ -126,14 +120,14 @@
 .stats-chart-section {
   margin-top: 6px;
   border-top: 1px solid rgba(0,0,0,0.06);
-  padding-top: 12px;
+  padding-top: 10px;
 }
 
 .stats-section-title {
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 700;
   color: #999;
-  margin: 0 0 10px 0;
+  margin: 0 0 8px 0;
   text-transform: uppercase;
   letter-spacing: 0.6px;
 }
@@ -141,8 +135,8 @@
 .bar-chart {
   display: flex;
   align-items: flex-end;
-  gap: 6px;
-  height: 80px;
+  gap: 5px;
+  height: 64px;
 }
 
 .bar-col {
@@ -150,15 +144,15 @@
   flex-direction: column;
   align-items: center;
   flex: 1;
-  min-width: 28px;
+  min-width: 0;
   height: 100%;
 }
 
 .bar-value {
-  font-size: 10px;
+  font-size: 9px;
   color: #aaa;
   font-weight: 600;
-  margin-bottom: 4px;
+  margin-bottom: 3px;
   line-height: 1;
 }
 
@@ -180,16 +174,16 @@
 }
 
 .bar-label {
-  font-size: 10px;
+  font-size: 9px;
   color: #aaa;
-  margin-top: 5px;
+  margin-top: 4px;
   text-align: center;
 }
 
 /* Loading spinner */
 .loading-spinner {
-  width: 32px;
-  height: 32px;
+  width: 28px;
+  height: 28px;
   border: 3px solid rgba(102, 126, 234, 0.2);
   border-top-color: #667eea;
   border-radius: 50%;
@@ -202,11 +196,16 @@
 
 /* ── Dark mode ───────────────────────────────────────────────── */
 [data-theme="dark"] .stats-main {
-  background: rgba(20, 20, 38, 0.95);
+  background: rgba(20, 20, 38, 0.98);
 }
 
 [data-theme="dark"] .stats-page-title { color: #e8e8f8; }
 [data-theme="dark"] .stats-section-title { color: #9090b8; }
+
+[data-theme="dark"] .user-avatar-stats {
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: white;
+}
 
 [data-theme="dark"] .stat-card {
   background: rgba(255, 255, 255, 0.05);
@@ -233,29 +232,29 @@
   border-top-color: rgba(255, 255, 255, 0.06);
 }
 
-/* ── Тепловая карта активности ───────────────────────────────── */
+/* ── Heatmap ─────────────────────────────────────────────────── */
 .heatmap-section {
-  /* наследует border-top из .stats-chart-section */
+  /* inherits border-top from .stats-chart-section */
 }
 
 .heatmap-scroll {
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
-  padding-bottom: 6px;
+  padding-bottom: 4px;
   width: 100%;
 }
 
 .heatmap-wrap {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  width: max-content; /* содержимое шире экрана — скроллим */
+  gap: 3px;
+  width: max-content;
 }
 
 .heatmap-month-row {
   display: flex;
   gap: 2px;
-  height: 14px;
+  height: 12px;
 }
 
 .heatmap-month-col {
@@ -265,7 +264,7 @@
 }
 
 .heatmap-month-label {
-  font-size: 9px;
+  font-size: 8px;
   color: #aaa;
   white-space: nowrap;
   position: absolute;
@@ -302,11 +301,11 @@
   align-items: center;
   gap: 3px;
   justify-content: flex-end;
-  padding-top: 4px;
+  padding-top: 3px;
 }
 
 .heatmap-legend-label {
-  font-size: 9px;
+  font-size: 8px;
   color: #bbb;
 }
 

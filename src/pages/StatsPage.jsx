@@ -196,17 +196,13 @@ function StatsPage() {
 
   return (
     <div className="stats-page">
-      <header className="stats-header">
-        <div className="header-content">
-          <h1>DoubleDo</h1>
+      <main className="stats-main">
+        <div className="stats-title-row">
+          <h2 className="stats-page-title">Статистика</h2>
           <div className="user-avatar-stats" onClick={() => navigate('/profile')}>
             <span>{user?.email?.charAt(0).toUpperCase() || 'U'}</span>
           </div>
         </div>
-      </header>
-
-      <main className="stats-main">
-        <h2 className="stats-page-title">Моя статистика</h2>
 
         {loading ? (
           <div className="stats-loading">
