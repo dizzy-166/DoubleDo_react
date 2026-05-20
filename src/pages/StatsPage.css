@@ -271,13 +271,14 @@
 
 /* ── Тепловая карта активности ───────────────────────────────── */
 .heatmap-section {
-  border-top: 1px solid rgba(255, 255, 255, 0.12);
+  /* наследует border-top из .stats-chart-section */
 }
 
 .heatmap-scroll {
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
-  padding-bottom: 4px;
+  padding-bottom: 6px;
+  width: 100%;
 }
 
 .heatmap-wrap {
@@ -301,7 +302,7 @@
 
 .heatmap-month-label {
   font-size: 9px;
-  color: rgba(255, 255, 255, 0.5);
+  color: #aaa;
   white-space: nowrap;
   position: absolute;
   left: 0;
@@ -327,9 +328,9 @@
 }
 
 .hm-future { background: transparent; }
-.hm-0      { background: rgba(255, 255, 255, 0.10); }
-.hm-1      { background: rgba(102, 126, 234, 0.45); }
-.hm-2      { background: rgba(102, 126, 234, 0.72); }
+.hm-0      { background: #e8e8f0; }
+.hm-1      { background: #b8c4f8; }
+.hm-2      { background: #8196f0; }
 .hm-3      { background: #667eea; }
 
 .heatmap-legend {
@@ -337,16 +338,18 @@
   align-items: center;
   gap: 3px;
   justify-content: flex-end;
-  padding-top: 2px;
+  padding-top: 4px;
 }
 
 .heatmap-legend-label {
   font-size: 9px;
-  color: rgba(255, 255, 255, 0.45);
+  color: #bbb;
 }
 
 /* Dark mode overrides for heatmap */
-[data-theme="dark"] .hm-0 { background: rgba(255, 255, 255, 0.06); }
+[data-theme="dark"] .heatmap-month-label { color: #555; }
+[data-theme="dark"] .heatmap-legend-label { color: #555; }
+[data-theme="dark"] .hm-0 { background: rgba(255, 255, 255, 0.07); }
 [data-theme="dark"] .hm-1 { background: rgba(129, 140, 248, 0.35); }
 [data-theme="dark"] .hm-2 { background: rgba(129, 140, 248, 0.65); }
 [data-theme="dark"] .hm-3 { background: #818cf8; }
