@@ -390,10 +390,7 @@ function App() {
   }, [user]);
 
   const handleNotifClose = () => {
-    setNotifQueue(prev => {
-      if (prev[0]) localStorage.setItem(prev[0].key, '1');
-      return prev.slice(1);
-    });
+    setNotifQueue(prev => prev.slice(1));
   };
 
   const handleNotifSendEmoji = async (emoji) => {

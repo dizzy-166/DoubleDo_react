@@ -102,7 +102,7 @@ function CompetitionsPage() {
     try {
       // Получаем случайных пользователей, которые не в друзьях
       const { data: allUsers, error } = await supabase
-        .from('profiles')
+        .from('users')
         .select('id, username, created_at')
         .neq('id', user.id)
         .limit(20);
@@ -201,30 +201,12 @@ function CompetitionsPage() {
           table: 'habit_progress',
           filter: `user_id=eq.${user.id}`
         },
-        (payload) => {
-          console.log('User progress changed:', payload);
+        () => {
           loadCompetitions();
         }
       )
       .subscribe();
     channels.push(userChannel);
-
-    const competitionChannel = supabase
-      .channel('competitions_changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'competitions'
-        },
-        (payload) => {
-          console.log('Competition changed:', payload);
-          loadCompetitions();
-        }
-      )
-      .subscribe();
-    channels.push(competitionChannel);
 
     return () => {
       channels.forEach(channel => {

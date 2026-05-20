@@ -292,9 +292,10 @@ function ProfilePage() {
   };
 
   const canChangeReminder = notifChannel === 'push' || !reminderUpdatedAt || (() => {
-    const offset = 3 * 60 * 60 * 1000;
-    const nowDate = new Date(Date.now() + offset).toISOString().split('T')[0];
-    const updatedDate = new Date(new Date(reminderUpdatedAt).getTime() + offset).toISOString().split('T')[0];
+    const now = new Date();
+    const nowDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    const upd = new Date(reminderUpdatedAt);
+    const updatedDate = `${upd.getFullYear()}-${String(upd.getMonth() + 1).padStart(2, '0')}-${String(upd.getDate()).padStart(2, '0')}`;
     return nowDate !== updatedDate;
   })();
 

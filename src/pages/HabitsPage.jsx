@@ -25,6 +25,8 @@ function HabitsPage() {
   const [loading, setLoading] = useState(false);
   const [datePickerMonth, setDatePickerMonth] = useState(new Date().getMonth());
   const [datePickerYear, setDatePickerYear] = useState(new Date().getFullYear());
+  const [editDatePickerMonth, setEditDatePickerMonth] = useState(new Date().getMonth());
+  const [editDatePickerYear, setEditDatePickerYear] = useState(new Date().getFullYear());
   const [user, setUser] = useState(null);
   const [progressData, setProgressData] = useState({});
   const [isInitialized, setIsInitialized] = useState(false);
@@ -304,8 +306,8 @@ function HabitsPage() {
       const progressCache = {};
       const habitIds = habitsList.map(h => h.id);
 
-      // Текущий месяц
-      const startOfMonth = new Date(Date.UTC(currentYear, currentMonth, 1));
+      // Предыдущий + текущий месяц, чтобы streak не обрезался на границе месяца
+      const startOfMonth = new Date(Date.UTC(currentYear, currentMonth - 1, 1));
       const endOfMonth = new Date(Date.UTC(currentYear, currentMonth + 1, 0));
 
       const { data, error } = await supabase
@@ -439,8 +441,26 @@ function HabitsPage() {
     return weeks;
   };
 
+  const generateEditDatePickerCalendar = () => {
+    const firstDayOfMonth = new Date(editDatePickerYear, editDatePickerMonth, 1);
+    const lastDayOfMonth = new Date(editDatePickerYear, editDatePickerMonth + 1, 0);
+    const daysInMonth = lastDayOfMonth.getDate();
+    const firstDayOfWeek = firstDayOfMonth.getDay();
+    const startOffset = firstDayOfWeek === 0 ? 6 : firstDayOfWeek - 1;
+    const weeks = [];
+    let week = [];
+    for (let i = 0; i < startOffset; i++) week.push(null);
+    for (let day = 1; day <= daysInMonth; day++) {
+      week.push(day);
+      if (week.length === 7) { weeks.push(week); week = []; }
+    }
+    if (week.length > 0) { while (week.length < 7) week.push(null); weeks.push(week); }
+    return weeks;
+  };
+
   const calendarWeeks = generateHabitCalendar();
   const datePickerWeeks = generateDatePickerCalendar();
+  const editDatePickerWeeks = generateEditDatePickerCalendar();
   
   const dayNames = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
   const monthNames = [
@@ -476,6 +496,24 @@ function HabitsPage() {
     }
   };
 
+  const handleEditPrevMonth = () => {
+    if (editDatePickerMonth === 0) {
+      setEditDatePickerMonth(11);
+      setEditDatePickerYear(editDatePickerYear - 1);
+    } else {
+      setEditDatePickerMonth(editDatePickerMonth - 1);
+    }
+  };
+
+  const handleEditNextMonth = () => {
+    if (editDatePickerMonth === 11) {
+      setEditDatePickerMonth(0);
+      setEditDatePickerYear(editDatePickerYear + 1);
+    } else {
+      setEditDatePickerMonth(editDatePickerMonth + 1);
+    }
+  };
+
   // Выбор даты для создания
   const handleDateSelect = (day) => {
     const selectedDate = new Date(Date.UTC(datePickerYear, datePickerMonth, day));
@@ -492,10 +530,10 @@ function HabitsPage() {
 
   // Выбор даты для редактирования
   const handleEditDateSelect = (day) => {
-    const selectedDate = new Date(Date.UTC(datePickerYear, datePickerMonth, day));
+    const selectedDate = new Date(Date.UTC(editDatePickerYear, editDatePickerMonth, day));
     const now = new Date();
     const todayUTC = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
-    
+
     if (selectedDate >= todayUTC) {
       setEditForm({...editForm, startDate: selectedDate});
       setEditDatePicker(false);
@@ -507,10 +545,13 @@ function HabitsPage() {
   // Открытие формы редактирования
   const handleEditClick = (habit) => {
     setEditingHabit(habit);
+    const startDate = new Date(habit.startDate);
     setEditForm({
       title: habit.title,
-      startDate: new Date(habit.startDate)
+      startDate: startDate
     });
+    setEditDatePickerMonth(startDate.getMonth());
+    setEditDatePickerYear(startDate.getFullYear());
     setShowEditForm(true);
   };
 
@@ -609,19 +650,34 @@ function HabitsPage() {
   // Проверка, выбран ли день в date picker для редактирования
   const isSelectedInEditDatePicker = (day) => {
     if (!editForm.startDate) return false;
-    
     const selectedDate = new Date(editForm.startDate);
     const selectedUTC = new Date(Date.UTC(
       selectedDate.getFullYear(),
       selectedDate.getMonth(),
       selectedDate.getDate()
     ));
-    
     return (
       day === selectedUTC.getDate() &&
-      datePickerMonth === selectedUTC.getMonth() &&
-      datePickerYear === selectedUTC.getFullYear()
+      editDatePickerMonth === selectedUTC.getMonth() &&
+      editDatePickerYear === selectedUTC.getFullYear()
     );
+  };
+
+  const isTodayInEditDatePicker = (day) => {
+    const now = new Date();
+    const todayUTC = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
+    return (
+      day === todayUTC.getDate() &&
+      editDatePickerMonth === todayUTC.getMonth() &&
+      editDatePickerYear === todayUTC.getFullYear()
+    );
+  };
+
+  const isPastDayInEditDatePicker = (day) => {
+    const now = new Date();
+    const todayUTC = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
+    const date = new Date(Date.UTC(editDatePickerYear, editDatePickerMonth, day));
+    return date < todayUTC;
   };
 
   // Проверка, является ли день в date picker прошедшим
@@ -888,8 +944,6 @@ function HabitsPage() {
 
   // Удаление привычки
   const deleteHabit = async (id) => {
-    if (!confirm('Вы уверены, что хотите удалить эту привычку?')) return;
-    
     try {
       const { error } = await supabase.rpc('delete_habit', {
         p_habit_id: id
@@ -1269,15 +1323,15 @@ function HabitsPage() {
           editDatePicker={editDatePicker}
           setEditDatePicker={setEditDatePicker}
           datePickerRef={editDatePickerRef}
-          datePickerMonth={datePickerMonth}
-          datePickerYear={datePickerYear}
-          handlePrevMonth={handlePrevMonth}
-          handleNextMonth={handleNextMonth}
-          datePickerWeeks={datePickerWeeks}
+          datePickerMonth={editDatePickerMonth}
+          datePickerYear={editDatePickerYear}
+          handlePrevMonth={handleEditPrevMonth}
+          handleNextMonth={handleEditNextMonth}
+          datePickerWeeks={editDatePickerWeeks}
           handleDateSelect={handleEditDateSelect}
-          isTodayInDatePicker={isTodayInDatePicker}
+          isTodayInDatePicker={isTodayInEditDatePicker}
           isSelectedInDatePicker={isSelectedInEditDatePicker}
-          isPastDayInDatePicker={isPastDayInDatePicker}
+          isPastDayInDatePicker={isPastDayInEditDatePicker}
           dayNames={dayNames}
         />
       )}
