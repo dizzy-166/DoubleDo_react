@@ -426,13 +426,19 @@ function ProfilePage() {
                 <h3 className="settings-title">Настройки</h3>
                 <div className="setting-row">
                   <div className="setting-info">
-                    <span className="setting-label">Тёмная тема</span>
-                    <span className="setting-desc">Переключить между светлой и тёмной темой</span>
+                    <span className="setting-label">
+                      {theme === 'classic' ? '← Классический дизайн' : '✦ hi. дизайн'}
+                    </span>
+                    <span className="setting-desc">
+                      {theme === 'classic'
+                        ? 'Переключиться на новый дизайн экосистемы hi.'
+                        : 'Переключиться на классический тёмный дизайн'}
+                    </span>
                   </div>
                   <button
-                    className={`toggle-switch ${theme === 'dark' ? 'on' : ''}`}
+                    className={`toggle-switch ${theme === 'classic' ? 'on' : ''}`}
                     onClick={toggleTheme}
-                    aria-label="Переключить тему"
+                    aria-label="Переключить дизайн"
                   />
                 </div>
               </div>

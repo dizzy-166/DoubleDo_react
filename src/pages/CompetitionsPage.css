@@ -1,13 +1,16 @@
 /* src/pages/CompetitionsPage.css */
 .competitions-page {
   min-height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: #F5F0E8;
   padding: 12px;
   padding-top: calc(12px + env(safe-area-inset-top));
   padding-bottom: calc(80px + env(safe-area-inset-bottom));
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+  font-family: 'Geist', 'Inter', -apple-system, sans-serif;
   position: relative;
   overflow-x: hidden;
+}
+[data-theme="classic"] .competitions-page {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
 }
 
 .competitions-container {
@@ -27,37 +30,37 @@
 }
 
 .header-content h1 {
-  color: white;
+  color: #1A1A1A;
   font-size: 22px;
-  font-weight: 800;
+  font-weight: 500;
   margin: 0;
-  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-  letter-spacing: -0.5px;
+  letter-spacing: -0.02em;
 }
 
 .user-avatar {
-  width: 40px;
-  height: 40px;
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.85));
-  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  background: #E8E4DC;
+  border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-weight: 700;
-  color: #667eea;
-  font-size: 18px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
-  border: 2px solid rgba(255, 255, 255, 0.4);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  font-weight: 500;
+  color: #1A1A1A;
+  font-size: 16px;
+  border: none;
+  transition: all 0.2s;
   cursor: pointer;
   outline: none;
 }
 
 .user-avatar:hover {
-  transform: scale(1.05) rotate(5deg);
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
-  border-color: rgba(255, 255, 255, 0.6);
+  background: #DEDAD2;
+  transform: scale(1.03);
 }
+
+[data-theme="classic"] .header-content h1 { color: white; font-weight: 800; text-shadow: 0 2px 8px rgba(0,0,0,0.2); letter-spacing: -0.5px; }
+[data-theme="classic"] .user-avatar { background: linear-gradient(135deg, rgba(255,255,255,0.95), rgba(255,255,255,0.85)); border-radius: 50%; color: #667eea; font-weight: 700; font-size: 18px; box-shadow: 0 4px 16px rgba(0,0,0,0.15); border: 2px solid rgba(255,255,255,0.4); }
 
 /* Прозрачные вкладки на градиентном фоне */
 .tabs-on-gradient {
@@ -69,16 +72,11 @@
 
 .gradient-tabs {
   display: flex;
-  background: rgba(255, 255, 255, 0.15);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  border-radius: 18px;
-  padding: 6px;
-  gap: 6px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  box-shadow: 
-    0 8px 32px rgba(0, 0, 0, 0.1),
-    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  background: #F5F0E8;
+  border-radius: 10px;
+  padding: 3px;
+  gap: 3px;
+  border: 1px solid #E8E4DC;
   position: relative;
   z-index: 25;
 }
@@ -88,19 +86,36 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 10px;
-  padding: 16px 12px;
+  gap: 8px;
+  padding: 10px 12px;
   background: transparent;
   border: none;
-  border-radius: 14px;
-  font-size: 15px;
-  font-weight: 600;
-  color: rgba(255, 255, 255, 0.9);
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #999690;
   cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.2s;
   position: relative;
   overflow: hidden;
   outline: none;
+}
+
+[data-theme="classic"] .gradient-tabs {
+  background: rgba(255,255,255,0.15);
+  backdrop-filter: blur(10px);
+  border-radius: 18px;
+  padding: 6px;
+  gap: 6px;
+  border: 1px solid rgba(255,255,255,0.2);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.1), inset 0 1px 0 rgba(255,255,255,0.2);
+}
+[data-theme="classic"] .gradient-tab {
+  padding: 16px 12px;
+  border-radius: 14px;
+  font-size: 15px;
+  font-weight: 600;
+  color: rgba(255,255,255,0.9);
 }
 
 .gradient-tab::before {
@@ -125,20 +140,23 @@
 }
 
 .gradient-tab.active {
-  background: rgba(255, 255, 255, 0.95);
-  color: #667eea;
-  box-shadow: 
-    0 8px 24px rgba(0, 0, 0, 0.2),
-    0 4px 12px rgba(255, 255, 255, 0.3);
-  transform: translateY(0);
+  background: #FFFFFF;
+  color: #1A1A1A;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
 }
 
 .gradient-tab.active:hover {
+  background: #FFFFFF;
+}
+
+[data-theme="classic"] .gradient-tab.active {
+  background: rgba(255,255,255,0.95);
+  color: #667eea;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.2), 0 4px 12px rgba(255,255,255,0.3);
+}
+[data-theme="classic"] .gradient-tab.active:hover {
   background: white;
   transform: translateY(-2px);
-  box-shadow: 
-    0 12px 32px rgba(0, 0, 0, 0.25),
-    0 6px 16px rgba(255, 255, 255, 0.4);
 }
 
 .gradient-tab .tab-icon {
@@ -179,10 +197,10 @@
 
 /* Основной контент */
 .competitions-main {
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(248, 249, 255, 0.98));
-  border-radius: 24px 24px 0 0;
-  padding: 24px 20px;
-  box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.1);
+  background: #FFFFFF;
+  border-radius: 16px 16px 0 0;
+  padding: 20px 16px;
+  box-shadow: 0 -2px 8px rgba(0,0,0,0.04);
   min-height: calc(100vh - 200px);
   margin-top: 12px;
   position: relative;
@@ -190,9 +208,10 @@
   overflow: visible;
 }
 
-[data-theme="dark"] .competitions-main {
-  background: rgba(16, 16, 30, 0.98);
-  box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.4);
+[data-theme="classic"] .competitions-main {
+  background: rgba(16,16,30,0.98);
+  border-radius: 24px 24px 0 0;
+  box-shadow: 0 -8px 32px rgba(0,0,0,0.4);
 }
 
 /* Заголовок соревнований */
@@ -997,66 +1016,66 @@
   box-sizing: border-box;
 }
 
-[data-theme="dark"] .calendar-grid {
+[data-theme="classic"] .calendar-grid {
   background: rgba(255, 255, 255, 0.04);
   box-shadow: none;
   border-color: rgba(255, 255, 255, 0.07);
 }
 
-[data-theme="dark"] .calendar-day:not(.empty):not(.completed):not(.today):not(.missed) {
+[data-theme="classic"] .calendar-day:not(.empty):not(.completed):not(.today):not(.missed) {
   background: rgba(255, 255, 255, 0.06);
   color: #b0b0d0;
   border-color: rgba(255, 255, 255, 0.08);
 }
 
-[data-theme="dark"] .calendar-day.missed {
+[data-theme="classic"] .calendar-day.missed {
   background: rgba(220, 50, 50, 0.35) !important;
   color: #ffb3b3 !important;
   border: 1px solid rgba(220, 50, 50, 0.65) !important;
 }
 
-[data-theme="dark"] .calendar-day.skipped {
+[data-theme="classic"] .calendar-day.skipped {
   background: rgba(234, 179, 8, 0.2) !important;
   color: #fcd34d !important;
   border: 1px solid rgba(234, 179, 8, 0.45) !important;
 }
 
-[data-theme="dark"] .skip-indicator {
+[data-theme="classic"] .skip-indicator {
   color: #fbbf24;
 }
 
-[data-theme="dark"] .calendar-day.empty {
+[data-theme="classic"] .calendar-day.empty {
   background: rgba(255, 255, 255, 0.02);
   border-color: rgba(255, 255, 255, 0.04);
 }
 
-[data-theme="dark"] .calendar-day.today {
+[data-theme="classic"] .calendar-day.today {
   border-color: #667eea;
   background: rgba(102, 126, 234, 0.15);
   color: #a0b4ff;
 }
 
-[data-theme="dark"] .weekday-cell {
+[data-theme="classic"] .weekday-cell {
   color: #55557a;
 }
 
-[data-theme="dark"] .calendar-title {
+[data-theme="classic"] .calendar-title {
   color: #9090b8;
 }
 
-[data-theme="dark"] .calendar-stats {
+[data-theme="classic"] .calendar-stats {
   color: #7777a0;
   background: rgba(255, 255, 255, 0.04);
   border-color: rgba(255, 255, 255, 0.06);
 }
 
-[data-theme="dark"] .calendar-section:first-child .calendar-stats {
+[data-theme="classic"] .calendar-section:first-child .calendar-stats {
   color: #5ccc60;
   background: rgba(76, 175, 80, 0.08);
   border-color: rgba(76, 175, 80, 0.15);
 }
 
-[data-theme="dark"] .calendar-section:last-child .calendar-stats {
+[data-theme="classic"] .calendar-section:last-child .calendar-stats {
   color: #c060e0;
   background: rgba(156, 39, 176, 0.08);
   border-color: rgba(156, 39, 176, 0.15);
@@ -3212,11 +3231,11 @@
   font-weight: 600;
 }
 
-[data-theme="dark"] .cal-month-label {
+[data-theme="classic"] .cal-month-label {
   color: #b0b0d8;
 }
 
-[data-theme="dark"] .competition-stats {
+[data-theme="classic"] .competition-stats {
   background: rgba(255, 255, 255, 0.03);
   border-color: rgba(255, 255, 255, 0.06);
 }
@@ -3538,59 +3557,59 @@ button, .action-btn, .gradient-tab, .friends-tab, .nav-item {
 
 /* ===== DARK THEME OVERRIDES ===== */
 
-[data-theme="dark"] .friends-header {
+[data-theme="classic"] .friends-header {
   border-bottom-color: rgba(255, 255, 255, 0.07);
 }
 
-[data-theme="dark"] .friend-search-input {
+[data-theme="classic"] .friend-search-input {
   background: rgba(255, 255, 255, 0.06);
   border-color: rgba(255, 255, 255, 0.1);
   color: #e8e8f8;
 }
 
-[data-theme="dark"] .friend-search-input::placeholder { color: #55557a; }
+[data-theme="classic"] .friend-search-input::placeholder { color: #55557a; }
 
-[data-theme="dark"] .section-container {
+[data-theme="classic"] .section-container {
   background: rgba(255, 255, 255, 0.04);
   border-color: rgba(255, 255, 255, 0.06);
 }
 
-[data-theme="dark"] .section-header h3 { color: #9090b8; }
+[data-theme="classic"] .section-header h3 { color: #9090b8; }
 
-[data-theme="dark"] .friend-item,
-[data-theme="dark"] .friend-request-item {
+[data-theme="classic"] .friend-item,
+[data-theme="classic"] .friend-request-item {
   background: rgba(255, 255, 255, 0.04);
   border-color: rgba(255, 255, 255, 0.06);
 }
 
-[data-theme="dark"] .friend-item h4,
-[data-theme="dark"] .friend-request-info h4 { color: #e8e8f8; }
+[data-theme="classic"] .friend-item h4,
+[data-theme="classic"] .friend-request-info h4 { color: #e8e8f8; }
 
-[data-theme="dark"] .friend-status,
-[data-theme="dark"] .request-time { color: #7777a0; }
+[data-theme="classic"] .friend-status,
+[data-theme="classic"] .request-time { color: #7777a0; }
 
-[data-theme="dark"] .friend-avatar,
-[data-theme="dark"] .recommended-user-avatar {
+[data-theme="classic"] .friend-avatar,
+[data-theme="classic"] .recommended-user-avatar {
   background: rgba(102, 126, 234, 0.25);
   color: #a0b4ff;
 }
 
-[data-theme="dark"] .recommended-user-item {
+[data-theme="classic"] .recommended-user-item {
   background: rgba(255, 255, 255, 0.04);
   border-color: rgba(255, 255, 255, 0.06);
 }
 
-[data-theme="dark"] .recommended-user-name { color: #e8e8f8; }
-[data-theme="dark"] .recommendation-reason,
-[data-theme="dark"] .common-interests { color: #7777a0; }
+[data-theme="classic"] .recommended-user-name { color: #e8e8f8; }
+[data-theme="classic"] .recommendation-reason,
+[data-theme="classic"] .common-interests { color: #7777a0; }
 
-[data-theme="dark"] .search-results {
+[data-theme="classic"] .search-results {
   background: rgba(20, 20, 38, 0.95);
   border-color: rgba(255, 255, 255, 0.06);
   box-shadow: none;
 }
 
-[data-theme="dark"] .search-results h3 { color: #9090b8; }
+[data-theme="classic"] .search-results h3 { color: #9090b8; }
 
 /* ── Reactions ───────────────────────────────────────────────── */
 .reactions-section {
@@ -3641,26 +3660,26 @@ button, .action-btn, .gradient-tab, .friends-tab, .nav-item {
   color: #667eea;
 }
 
-[data-theme="dark"] .reactions-section {
+[data-theme="classic"] .reactions-section {
   border-top-color: rgba(255, 255, 255, 0.07);
 }
 
-[data-theme="dark"] .reaction-btn {
+[data-theme="classic"] .reaction-btn {
   background: rgba(255, 255, 255, 0.07);
   border-color: rgba(255, 255, 255, 0.1);
 }
 
-[data-theme="dark"] .reaction-btn:hover:not(:disabled) {
+[data-theme="classic"] .reaction-btn:hover:not(:disabled) {
   background: rgba(102, 126, 234, 0.2);
   border-color: #7b8fff;
 }
 
-[data-theme="dark"] .reaction-btn.has-reactions {
+[data-theme="classic"] .reaction-btn.has-reactions {
   background: rgba(102, 126, 234, 0.15);
   border-color: rgba(160, 180, 255, 0.3);
 }
 
-[data-theme="dark"] .reaction-count { color: #a0b4ff; }
+[data-theme="classic"] .reaction-count { color: #a0b4ff; }
 
 /* ── Archive tab ─────────────────────────────────────────────── */
 .archive-container {
@@ -3793,25 +3812,25 @@ button, .action-btn, .gradient-tab, .friends-tab, .nav-item {
 }
 
 /* Dark mode — archive */
-[data-theme="dark"] .empty-archive-text { color: #9090b8; }
-[data-theme="dark"] .empty-archive-hint { color: #6666a0; }
+[data-theme="classic"] .empty-archive-text { color: #9090b8; }
+[data-theme="classic"] .empty-archive-hint { color: #6666a0; }
 
-[data-theme="dark"] .archive-card {
+[data-theme="classic"] .archive-card {
   background: rgba(255, 255, 255, 0.05);
   border-color: rgba(255, 255, 255, 0.07);
 }
 
-[data-theme="dark"] .archive-habit-title { color: #e8e8f8; }
-[data-theme="dark"] .archive-vs { color: #7777a0; }
-[data-theme="dark"] .archive-score-you,
-[data-theme="dark"] .archive-score-friend { color: #6666a0; }
-[data-theme="dark"] .archive-score-you.winner,
-[data-theme="dark"] .archive-score-friend.winner { color: #a0b4ff; }
-[data-theme="dark"] .archive-score-sep { color: #3a3a5c; }
-[data-theme="dark"] .archive-meta-item { color: #7777a0; }
+[data-theme="classic"] .archive-habit-title { color: #e8e8f8; }
+[data-theme="classic"] .archive-vs { color: #7777a0; }
+[data-theme="classic"] .archive-score-you,
+[data-theme="classic"] .archive-score-friend { color: #6666a0; }
+[data-theme="classic"] .archive-score-you.winner,
+[data-theme="classic"] .archive-score-friend.winner { color: #a0b4ff; }
+[data-theme="classic"] .archive-score-sep { color: #3a3a5c; }
+[data-theme="classic"] .archive-meta-item { color: #7777a0; }
 
-[data-theme="dark"] .competitions-list-header h2 { color: #e8e8f8; }
-[data-theme="dark"] .competitions-list-header { border-bottom-color: rgba(255, 255, 255, 0.07); }
+[data-theme="classic"] .competitions-list-header h2 { color: #e8e8f8; }
+[data-theme="classic"] .competitions-list-header { border-bottom-color: rgba(255, 255, 255, 0.07); }
 /* ── Провокации ── */
 .provocation-btn {
   margin-top: 10px;
@@ -3896,9 +3915,9 @@ button, .action-btn, .gradient-tab, .friends-tab, .nav-item {
 }
 
 /* dark mode */
-[data-theme="dark"] .provocation-btn { border-color: #f59e0b; color: #f59e0b; }
-[data-theme="dark"] .skip-request-card { background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.1); }
-[data-theme="dark"] .skip-request-reason { color: #e8e8f8; }
+[data-theme="classic"] .provocation-btn { border-color: #f59e0b; color: #f59e0b; }
+[data-theme="classic"] .skip-request-card { background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.1); }
+[data-theme="classic"] .skip-request-reason { color: #e8e8f8; }
 
 /* Pull-to-refresh */
 .pull-indicator {

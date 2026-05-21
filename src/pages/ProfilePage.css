@@ -1,19 +1,27 @@
 .profile-page {
   min-height: 100vh;
+  background: #F5F0E8;
+  padding-bottom: 80px;
+  color: #1A1A1A;
+}
+[data-theme="classic"] .profile-page {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  padding-bottom: 80px; /* Отступ для навигации снизу */
   color: white;
 }
 
-/* Хедер как в HabitsPage */
+/* Хедер */
 .profile-header {
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(10px);
+  background: #FFFFFF;
   padding: 20px 16px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  border-bottom: 1px solid #E8E4DC;
   display: flex;
   align-items: center;
   justify-content: space-between;
+}
+[data-theme="classic"] .profile-header {
+  background: rgba(255,255,255,0.1);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(255,255,255,0.2);
 }
 
 .header-content {
@@ -24,23 +32,34 @@
 }
 
 .header-content h1 {
-  color: white;
-  font-size: 24px;
-  font-weight: 600;
+  color: #1A1A1A;
+  font-size: 22px;
+  font-weight: 500;
   margin: 0;
+  letter-spacing: -0.02em;
 }
+[data-theme="classic"] .header-content h1 { color: white; font-size: 24px; font-weight: 600; letter-spacing: 0; }
 
 .user-avatar {
-  width: 40px;
-  height: 40px;
-  background: rgba(255, 255, 255, 0.2);
-  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  background: #E8E4DC;
+  border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
+  color: #1A1A1A;
+  font-weight: 500;
+  font-size: 16px;
+}
+[data-theme="classic"] .user-avatar {
+  background: rgba(255,255,255,0.2);
+  border-radius: 50%;
   color: white;
   font-weight: bold;
   font-size: 18px;
+  width: 40px;
+  height: 40px;
 }
 
 /* Основной контент */
@@ -90,15 +109,15 @@
   box-shadow: 0 1px 6px rgba(0, 0, 0, 0.1);
 }
 
-[data-theme="dark"] .profile-tabs {
+[data-theme="classic"] .profile-tabs {
   background: rgba(255, 255, 255, 0.08);
 }
 
-[data-theme="dark"] .profile-tab {
+[data-theme="classic"] .profile-tab {
   color: #6666a0;
 }
 
-[data-theme="dark"] .profile-tab.active {
+[data-theme="classic"] .profile-tab.active {
   background: rgba(255, 255, 255, 0.12);
   color: #e8e8f8;
 }
@@ -359,8 +378,9 @@
 }
 
 .toggle-switch.on {
-  background: #34c759;
+  background: #FF4D1C;
 }
+[data-theme="classic"] .toggle-switch.on { background: #34c759; }
 
 .toggle-switch.on::after {
   transform: translateX(20px);
@@ -405,12 +425,12 @@
   font-weight: 600;
 }
 
-[data-theme="dark"] .channel-btn {
+[data-theme="classic"] .channel-btn {
   border-color: rgba(102, 126, 234, 0.3);
   color: #aaa;
 }
 
-[data-theme="dark"] .channel-btn.active {
+[data-theme="classic"] .channel-btn.active {
   color: #fff;
 }
 
@@ -438,7 +458,7 @@
   text-align: center;
 }
 
-[data-theme="dark"] .push-active-note { color: #73d13d; }
+[data-theme="classic"] .push-active-note { color: #73d13d; }
 
 /* iOS push guide */
 .push-ios-guide {
@@ -480,13 +500,13 @@
   line-height: 1.2;
 }
 
-[data-theme="dark"] .push-ios-guide {
+[data-theme="classic"] .push-ios-guide {
   background: rgba(102, 126, 234, 0.08);
   border-color: rgba(102, 126, 234, 0.18);
 }
 
-[data-theme="dark"] .push-ios-guide-title { color: #aaa; }
-[data-theme="dark"] .push-ios-steps li { color: #888; }
+[data-theme="classic"] .push-ios-guide-title { color: #aaa; }
+[data-theme="classic"] .push-ios-steps li { color: #888; }
 
 /* Reminder block */
 .reminder-block {
@@ -604,33 +624,33 @@
   margin: 8px 0 0 0;
 }
 
-[data-theme="dark"] .reminder-block {
+[data-theme="classic"] .reminder-block {
   background: rgba(102, 126, 234, 0.07);
   border-color: rgba(102, 126, 234, 0.15);
 }
 
-[data-theme="dark"] .reminder-block-title { color: #e8e8f8; }
-[data-theme="dark"] .reminder-block-desc { color: #6666a0; }
+[data-theme="classic"] .reminder-block-title { color: #e8e8f8; }
+[data-theme="classic"] .reminder-block-desc { color: #6666a0; }
 
-[data-theme="dark"] .reminder-time-input {
+[data-theme="classic"] .reminder-time-input {
   background: rgba(255, 255, 255, 0.07);
   border-color: rgba(102, 126, 234, 0.25);
   color: #e8e8f8;
 }
 
-[data-theme="dark"] .reminder-time-input:disabled {
+[data-theme="classic"] .reminder-time-input:disabled {
   background: rgba(255, 255, 255, 0.03);
   color: #44447a;
   border-color: rgba(255, 255, 255, 0.05);
 }
 
-[data-theme="dark"] .reminder-clear-btn {
+[data-theme="classic"] .reminder-clear-btn {
   border-color: rgba(255, 255, 255, 0.1);
   color: #6666a0;
 }
 
-[data-theme="dark"] .reminder-locked { color: #44447a; }
-[data-theme="dark"] .reminder-limit-note { color: #44447a; }
+[data-theme="classic"] .reminder-locked { color: #44447a; }
+[data-theme="classic"] .reminder-limit-note { color: #44447a; }
 
 /* Секция выхода */
 .logout-section {
@@ -872,7 +892,7 @@
   background: linear-gradient(135deg, rgba(102,126,234,0.2), rgba(118,75,162,0.2));
   transform: translateY(-1px);
 }
-[data-theme="dark"] .whats-new-btn {
+[data-theme="classic"] .whats-new-btn {
   background: rgba(102,126,234,0.15);
   border-color: rgba(102,126,234,0.4);
   color: #a0b0ff;
@@ -906,7 +926,7 @@
   from { transform: translateY(100%); }
   to { transform: translateY(0); }
 }
-[data-theme="dark"] .whats-new-sheet {
+[data-theme="classic"] .whats-new-sheet {
   background: #1e1e2e;
 }
 
@@ -918,7 +938,7 @@
   margin: 12px auto 0;
   flex-shrink: 0;
 }
-[data-theme="dark"] .whats-new-handle {
+[data-theme="classic"] .whats-new-handle {
   background: rgba(255,255,255,0.2);
 }
 
@@ -930,7 +950,7 @@
   flex-shrink: 0;
   border-bottom: 1px solid rgba(0,0,0,0.07);
 }
-[data-theme="dark"] .whats-new-header {
+[data-theme="classic"] .whats-new-header {
   border-color: rgba(255,255,255,0.07);
 }
 
@@ -939,7 +959,7 @@
   font-weight: 700;
   color: var(--text-primary, #111);
 }
-[data-theme="dark"] .whats-new-title {
+[data-theme="classic"] .whats-new-title {
   color: #e8e8ff;
 }
 
@@ -957,7 +977,7 @@
   color: #666;
   flex-shrink: 0;
 }
-[data-theme="dark"] .whats-new-close {
+[data-theme="classic"] .whats-new-close {
   background: rgba(255,255,255,0.1);
   color: #aaa;
 }
@@ -1003,7 +1023,7 @@
   line-height: 1.5;
   color: var(--text-primary, #333);
 }
-[data-theme="dark"] .wn-list li {
+[data-theme="classic"] .wn-list li {
   color: #c8c8e8;
 }
 

@@ -38,7 +38,7 @@
   opacity: 1;
 }
 
-[data-theme="dark"] .mno-card {
+[data-theme="classic"] .mno-card {
   background: #1e1e2e;
   box-shadow: 0 24px 64px rgba(0, 0, 0, 0.65);
 }
@@ -80,7 +80,7 @@
   margin: 0 0 8px;
 }
 
-[data-theme="dark"] .mno-title {
+[data-theme="classic"] .mno-title {
   color: #f0f0f8;
 }
 
@@ -91,7 +91,7 @@
   line-height: 1.5;
 }
 
-[data-theme="dark"] .mno-sub {
+[data-theme="classic"] .mno-sub {
   color: #9090b0;
 }
 
@@ -150,11 +150,11 @@
   cursor: not-allowed;
 }
 
-[data-theme="dark"] .mno-emoji-btn {
+[data-theme="classic"] .mno-emoji-btn {
   background: rgba(102, 126, 234, 0.1);
 }
 
-[data-theme="dark"] .mno-emoji-btn:hover:not(:disabled) {
+[data-theme="classic"] .mno-emoji-btn:hover:not(:disabled) {
   background: rgba(102, 126, 234, 0.22);
 }
 

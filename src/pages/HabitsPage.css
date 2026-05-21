@@ -1,18 +1,27 @@
 /* Основные стили */
 .habits-page {
   min-height: 100vh;
-  background: linear-gradient(180deg, #ede9f7 0%, #f5f3fb 30%, #f8f9fa 60%);
+  background: #F5F0E8;
   display: flex;
   flex-direction: column;
+}
+[data-theme="classic"] .habits-page {
+  background: linear-gradient(180deg, #ede9f7 0%, #f5f3fb 30%, #f8f9fa 60%);
 }
 
 /* Шапка */
 .habits-header {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
+  background: #FFFFFF;
+  color: #1A1A1A;
   padding: 16px;
   padding-top: calc(16px + env(safe-area-inset-top));
-  box-shadow: 0 2px 20px rgba(102, 126, 234, 0.35);
+  border-bottom: 1px solid #E8E4DC;
+}
+[data-theme="classic"] .habits-header {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border-bottom: none;
+  box-shadow: 0 2px 20px rgba(102,126,234,0.35);
 }
 
 .header-content {
@@ -74,10 +83,11 @@
 
 .daily-progress-fill {
   height: 100%;
-  background: white;
+  background: #FF4D1C;
   border-radius: 2px;
   transition: width 0.5s ease;
 }
+[data-theme="classic"] .daily-progress-fill { background: white; }
 
 .daily-progress-label {
   font-size: 13px;
@@ -127,20 +137,23 @@
 }
 
 .add-habit-btn {
-  background: #667eea;
+  background: #FF4D1C;
   color: white;
   border: none;
-  padding: 8px 16px;
-  border-radius: 20px;
-  font-size: 14px;
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-size: 13px;
   font-weight: 500;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: opacity 0.15s;
 }
 
 .add-habit-btn:hover {
-  background: #5a6fd8;
+  opacity: 0.88;
 }
+
+[data-theme="classic"] .add-habit-btn { background: #667eea; border-radius: 20px; font-size: 14px; }
+[data-theme="classic"] .add-habit-btn:hover { background: #5a6fd8; opacity: 1; }
 
 /* Сетка привычек */
 .habits-grid {
@@ -159,7 +172,7 @@
   transition: transform 0.2s, box-shadow 0.2s;
 }
 
-[data-theme="dark"] .habit-card {
+[data-theme="classic"] .habit-card {
   background: rgba(20, 20, 40, 0.95);
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
   border: 1px solid rgba(255, 255, 255, 0.06);
@@ -285,19 +298,19 @@
   font-weight: 700;
 }
 
-[data-theme="dark"] .calendar-day-small.future {
+[data-theme="classic"] .calendar-day-small.future {
   background: rgba(255, 255, 255, 0.05);
   color: #8888aa;
   border-color: rgba(255, 255, 255, 0.08);
 }
 
-[data-theme="dark"] .calendar-day-small.before-start {
+[data-theme="classic"] .calendar-day-small.before-start {
   background: rgba(255, 255, 255, 0.03);
   color: #444466;
   border-color: rgba(255, 255, 255, 0.05);
 }
 
-[data-theme="dark"] .weekday-cell-small {
+[data-theme="classic"] .weekday-cell-small {
   color: #55557a;
 }
 
@@ -418,13 +431,13 @@
   margin-bottom: 20px;
 }
 
-[data-theme="dark"] .add-habit-card {
+[data-theme="classic"] .add-habit-card {
   background: rgba(255, 255, 255, 0.04);
   border-color: rgba(255, 255, 255, 0.1);
   box-shadow: none;
 }
 
-[data-theme="dark"] .add-habit-card:hover {
+[data-theme="classic"] .add-habit-card:hover {
   background: rgba(102, 126, 234, 0.08);
   border-color: #667eea;
 }
@@ -569,9 +582,9 @@
   font-weight: 400;
 }
 
-[data-theme="dark"] .cal-nav-btn { color: #818cf8; }
-[data-theme="dark"] .cal-nav-btn:disabled { color: #444; }
-[data-theme="dark"] .cal-nav-label { color: #aaa; }
+[data-theme="classic"] .cal-nav-btn { color: #818cf8; }
+[data-theme="classic"] .cal-nav-btn:disabled { color: #444; }
+[data-theme="classic"] .cal-nav-label { color: #aaa; }
 
 /* Нижняя навигация */
 .bottom-nav {
@@ -1796,7 +1809,7 @@
 }
 .skip-submit-btn:disabled { opacity: 0.5; cursor: default; }
 
-[data-theme="dark"] .skip-modal { background: #1e1e3a; }
-[data-theme="dark"] .skip-modal-title { color: #e8e8f8; }
-[data-theme="dark"] .skip-preset-btn { border-color: rgba(255,255,255,0.1); color: #e8e8f8; }
-[data-theme="dark"] .skip-custom-input { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.1); color: #e8e8f8; }
+[data-theme="classic"] .skip-modal { background: #1e1e3a; }
+[data-theme="classic"] .skip-modal-title { color: #e8e8f8; }
+[data-theme="classic"] .skip-preset-btn { border-color: rgba(255,255,255,0.1); color: #e8e8f8; }
+[data-theme="classic"] .skip-custom-input { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.1); color: #e8e8f8; }
