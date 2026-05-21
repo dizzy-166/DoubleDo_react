@@ -9,17 +9,40 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Проверяем сессию при загрузке
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    const initAuth = async () => {
+      // SSO: если в URL есть токены от hi-dashboard — восстанавливаем сессию явно
+      const hash = window.location.hash;
+      if (hash.includes('access_token=')) {
+        const params = new URLSearchParams(hash.substring(1));
+        const access_token = params.get('access_token');
+        const refresh_token = params.get('refresh_token');
+        if (access_token && refresh_token) {
+          console.log('SSO: found tokens in URL hash, setting session...');
+          const { data, error } = await supabase.auth.setSession({ access_token, refresh_token });
+          // Убираем токены из URL
+          window.history.replaceState(null, '', window.location.pathname + window.location.search);
+          if (!error && data.session) {
+            console.log('SSO: session restored from URL hash');
+            setUser(data.session.user);
+            setLoading(false);
+            ensurePublicUser(data.session.user);
+            return;
+          }
+          console.warn('SSO: failed to set session from URL hash', error);
+        }
+      }
+
+      // Обычное восстановление сессии из хранилища
+      const { data: { session } } = await supabase.auth.getSession();
       console.log('Session on load:', session);
       setUser(session?.user ?? null);
       setLoading(false);
-      
-      // Если есть пользователь, убедимся что он в public.users
       if (session?.user) {
         ensurePublicUser(session.user);
       }
-    });
+    };
+
+    initAuth();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log('Auth event:', event, 'User:', session?.user?.id);
