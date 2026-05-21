@@ -5,7 +5,6 @@ import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import BottomNav from '../components/BottomNav';
 import './CompetitionsPage.css';
-import '../components/CompetitionCard.css';
 
 function CompetitionsPage() {
   const navigate = useNavigate();

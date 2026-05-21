@@ -10,7 +10,7 @@ import './ProfilePage.css';
 
 function ProfilePage() {
   const { user } = useAuth();
-  const { theme } = useTheme();
+  const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [editingUsername, setEditingUsername] = useState(false);
@@ -426,9 +426,14 @@ function ProfilePage() {
                 <h3 className="settings-title">Настройки</h3>
                 <div className="setting-row">
                   <div className="setting-info">
-                    <span className="setting-label">✦ hi. дизайн</span>
-                    <span className="setting-desc">Экосистема hi.</span>
+                    <span className="setting-label">Тёмная тема</span>
+                    <span className="setting-desc">Переключить между светлой и тёмной темой</span>
                   </div>
+                  <button
+                    className={`toggle-switch ${theme === 'dark' ? 'on' : ''}`}
+                    onClick={toggleTheme}
+                    aria-label="Переключить тему"
+                  />
                 </div>
               </div>
 
