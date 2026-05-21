@@ -10,7 +10,7 @@ import './ProfilePage.css';
 
 function ProfilePage() {
   const { user } = useAuth();
-  const { theme, toggleTheme } = useTheme();
+  const { theme } = useTheme();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [editingUsername, setEditingUsername] = useState(false);
@@ -426,20 +426,9 @@ function ProfilePage() {
                 <h3 className="settings-title">Настройки</h3>
                 <div className="setting-row">
                   <div className="setting-info">
-                    <span className="setting-label">
-                      {theme === 'classic' ? '← Классический дизайн' : '✦ hi. дизайн'}
-                    </span>
-                    <span className="setting-desc">
-                      {theme === 'classic'
-                        ? 'Переключиться на новый дизайн экосистемы hi.'
-                        : 'Переключиться на классический тёмный дизайн'}
-                    </span>
+                    <span className="setting-label">✦ hi. дизайн</span>
+                    <span className="setting-desc">Экосистема hi.</span>
                   </div>
-                  <button
-                    className={`toggle-switch ${theme === 'classic' ? 'on' : ''}`}
-                    onClick={toggleTheme}
-                    aria-label="Переключить дизайн"
-                  />
                 </div>
               </div>
 

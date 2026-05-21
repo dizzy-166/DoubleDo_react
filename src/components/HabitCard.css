@@ -1,0 +1,86 @@
+/* HabitCard — square checkmark, fire streak */
+
+.habit-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  overflow: hidden;
+}
+
+.habit-card__head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 16px 14px;
+  border-bottom: 1px solid var(--border);
+}
+
+.habit-card__title {
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--dark);
+}
+.habit-card__sub {
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+/* Square checkbox (not round) */
+.habit-check {
+  width: 28px;
+  height: 28px;
+  border: 1.5px solid var(--border);
+  background: transparent;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  cursor: pointer;
+  transition: background 120ms ease, border-color 120ms ease;
+}
+.habit-check.checked {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+.habit-check.checked svg {
+  width: 14px; height: 14px;
+  stroke: #fff; stroke-width: 3;
+  fill: none; stroke-linecap: round; stroke-linejoin: round;
+}
+
+/* Mini month calendar */
+.habit-cal__grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+  justify-items: center;
+}
+.habit-cal__day {
+  width: 30px;
+  height: 30px;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+.habit-cal__day.done    { background: var(--accent); color: #fff; font-weight: 500; }
+.habit-cal__day.missed  { background: var(--surface); color: var(--muted); border: 1px solid var(--border); }
+.habit-cal__day.today   { background: var(--text); color: #fff; font-weight: 500; }
+
+/* Streak pill */
+.streak-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--accent);
+  font-weight: 600;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+.streak-pill svg { color: var(--accent); fill: var(--accent); }

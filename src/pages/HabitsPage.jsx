@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import BottomNav from '../components/BottomNav';
 import './HabitsPage.css';
+import '../components/HabitCard.css';
 
 function HabitsPage() {
   const navigate = useNavigate();
