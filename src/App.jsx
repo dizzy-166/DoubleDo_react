@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from './context/AuthContext.jsx';
 import { ThemeProvider } from './context/ThemeContext.jsx';
+import { LangProvider } from './context/LangContext.jsx';
 import { supabase } from './services/supabase';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster, toast } from 'react-hot-toast';
@@ -812,6 +813,7 @@ const handleSubmit = async (e) => {
 
   // Основной рендеринг
   return (
+    <LangProvider>
     <ThemeProvider>
     <Router>
       {showOnboarding && <Onboarding onDone={() => setShowOnboarding(false)} />}
@@ -853,6 +855,7 @@ const handleSubmit = async (e) => {
       )}
     </Router>
     </ThemeProvider>
+    </LangProvider>
   );
 }
 

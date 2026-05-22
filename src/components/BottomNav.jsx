@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '../services/supabase';
+import { useLang } from '../context/LangContext';
 import './BottomNav.css';
 
 function BottomNav() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { t } = useLang();
   const [pendingCount, setPendingCount] = useState(0);
 
   const getActiveTab = () => {
@@ -49,7 +51,7 @@ function BottomNav() {
             <span className="nav-badge">{pendingCount > 9 ? '9+' : pendingCount}</span>
           )}
         </div>
-        <span className="nav-label">Соревнования</span>
+        <span className="nav-label">{t('navCompetitions')}</span>
       </button>
 
       <button
@@ -60,7 +62,7 @@ function BottomNav() {
           <circle cx="12" cy="12" r="10"/>
           <path d="m9 12 2 2 4-4"/>
         </svg>
-        <span className="nav-label">Привычки</span>
+        <span className="nav-label">{t('navHabits')}</span>
       </button>
 
       <button
@@ -72,7 +74,7 @@ function BottomNav() {
           <line x1="12" y1="20" x2="12" y2="4"/>
           <line x1="6" y1="20" x2="6" y2="14"/>
         </svg>
-        <span className="nav-label">Статистика</span>
+        <span className="nav-label">{t('navStats')}</span>
       </button>
 
       <button
@@ -83,7 +85,7 @@ function BottomNav() {
           <circle cx="12" cy="8" r="4"/>
           <path d="M20 21a8 8 0 1 0-16 0"/>
         </svg>
-        <span className="nav-label">Профиль</span>
+        <span className="nav-label">{t('navProfile')}</span>
       </button>
     </nav>
   );
