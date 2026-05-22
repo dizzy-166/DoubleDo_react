@@ -623,31 +623,31 @@ function CompetitionsPage() {
                 {searchResults.length > 0 && (
                   <div className="search-results">
                     <h3>Результаты поиска:</h3>
-                    {searchResults.map(user => (
-                      <div key={user.id} className="search-result-item">
+                    {searchResults.map(searchUser => (
+                      <div key={searchUser.id} className="search-result-item">
                         <div className="search-result-info">
                           <div className="friend-avatar">
-                            <span>{user.username?.charAt(0).toUpperCase() || '👤'}</span>
+                            <span>{searchUser.username?.charAt(0).toUpperCase() || '👤'}</span>
                           </div>
                           <div>
-                            <h4>{user.username}</h4>
+                            <h4>{searchUser.username}</h4>
                             <p className="friend-status-info">
-                              {user.is_friend ? 'Уже в друзьях' : 
-                               user.friendship_status === 'pending' ? 'Запрос отправлен' : 
+                              {searchUser.is_friend ? 'Уже в друзьях' :
+                               searchUser.friendship_status === 'pending' ? 'Запрос отправлен' :
                                'Не в друзьях'}
                             </p>
                           </div>
                         </div>
-                        
+
                         <div className="search-result-actions">
-                          {!user.is_friend && user.friendship_status !== 'pending' ? (
-                            <button 
+                          {!searchUser.is_friend && searchUser.friendship_status !== 'pending' ? (
+                            <button
                               className="add-friend-btn-small"
-                              onClick={() => handleSendFriendRequest(user.username)}
+                              onClick={() => handleSendFriendRequest(searchUser.username)}
                             >
                               Добавить в друзья
                             </button>
-                          ) : user.friendship_status === 'pending' ? (
+                          ) : searchUser.friendship_status === 'pending' ? (
                             <span className="pending-badge">Ожидание</span>
                           ) : (
                             <span className="already-friend">✓ Друг</span>
@@ -764,11 +764,11 @@ function CompetitionsPage() {
                       </div>
                     ) : (
                       <div className="recommendations-grid">
-                        {recommendedUsers.map(user => (
-                          <RecommendedUserItem 
-                            key={user.id} 
-                            user={user} 
-                            onSendRequest={() => handleSendFriendRequest(user.username)}
+                        {recommendedUsers.map(recUser => (
+                          <RecommendedUserItem
+                            key={recUser.id}
+                            user={recUser}
+                            onSendRequest={() => handleSendFriendRequest(recUser.username)}
                           />
                         ))}
                       </div>
@@ -837,6 +837,7 @@ function CompetitionCard({ competition, user, onRefresh, onDelete }) {
   const [calendarLoaded, setCalendarLoaded] = useState(false);
   const viewMonthRef = useRef(new Date().getMonth());
   const viewYearRef = useRef(new Date().getFullYear());
+  const realtimeMountedRef = useRef(false);
 
   const monthNames = ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь',
                       'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'];
@@ -991,7 +992,12 @@ function CompetitionCard({ competition, user, onRefresh, onDelete }) {
 
   // Реалтайм-подписка
   useEffect(() => {
-    loadCalendarData();
+    // loadCalendarData() on first mount is handled by [viewMonth, viewYear] effect;
+    // only call here on subsequent re-runs (e.g. competition status change).
+    if (realtimeMountedRef.current) {
+      loadCalendarData();
+    }
+    realtimeMountedRef.current = true;
     loadReactions();
     loadSkips();
 

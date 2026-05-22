@@ -17,6 +17,8 @@ function StatsPage() {
       const { data: { user } } = await supabase.auth.getUser();
       setUser(user);
 
+      if (!user) { setLoading(false); return; }
+
       try {
         const [{ data, error }, { data: progress }] = await Promise.all([
           supabase.rpc('get_user_stats'),

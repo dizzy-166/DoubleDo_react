@@ -827,7 +827,7 @@ function HabitsPage() {
           supabase.rpc('notify_rival_habit_complete_push', {
             p_competition_id: habit.competition_id,
             p_habit_title: habit.title,
-          });
+          }).catch(() => {});
         } else {
           const { error } = await supabase.rpc('mark_habit_completed', { 
             p_habit_id: habitId, 

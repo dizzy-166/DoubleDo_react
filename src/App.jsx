@@ -171,9 +171,7 @@ const verifyOTPCode = async (email, token) => {
 
 function App() {
   const { user } = useAuth();
-  const [showOnboarding, setShowOnboarding] = useState(
-    user && !localStorage.getItem('onboarding_done')
-  );
+  const [showOnboarding, setShowOnboarding] = useState(false);
   const [notifQueue, setNotifQueue] = useState([]);
   const [email, setEmail] = useState('');
   const [confirmationCode, setConfirmationCode] = useState('');
@@ -195,6 +193,13 @@ function App() {
     const t = setTimeout(() => setResendCountdown(c => c - 1), 1000);
     return () => clearTimeout(t);
   }, [resendCountdown]);
+
+  // Show onboarding once user is known and hasn't completed it yet
+  useEffect(() => {
+    if (user && !localStorage.getItem('onboarding_done')) {
+      setShowOnboarding(true);
+    }
+  }, [user]);
 
   useEffect(() => {
     if (confirmationCode.length === 6 && !loading && needsConfirmation) {
