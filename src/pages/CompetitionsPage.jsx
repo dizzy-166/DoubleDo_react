@@ -834,6 +834,7 @@ function CompetitionCard({ competition, user, onRefresh, onDelete }) {
   const [friendSkippedDays, setFriendSkippedDays] = useState([]);
   const [sendingProvocation, setSendingProvocation] = useState(false);
   const [respondingToSkip, setRespondingToSkip] = useState(null);
+  const [calendarLoaded, setCalendarLoaded] = useState(false);
   const viewMonthRef = useRef(new Date().getMonth());
   const viewYearRef = useRef(new Date().getFullYear());
 
@@ -878,6 +879,7 @@ function CompetitionCard({ competition, user, onRefresh, onDelete }) {
       console.error('Error loading calendar data:', error);
     } finally {
       setLoadingCalendar(false);
+      setCalendarLoaded(true);
     }
   };
 
@@ -1182,6 +1184,12 @@ function CompetitionCard({ competition, user, onRefresh, onDelete }) {
           </button>
         </div>
 
+        {!calendarLoaded ? (
+          <div className="calendar-loading">
+            <div className="loading-spinner-small" />
+          </div>
+        ) : (
+        <>
         <div className="calendar-section">
           <div className="calendar-title">● Ваш календарь</div>
           <div className="calendar-grid">
@@ -1314,6 +1322,8 @@ function CompetitionCard({ competition, user, onRefresh, onDelete }) {
             </div>
           )}
         </div>
+        </>
+        )}
         </>
       </div>
     </div>
