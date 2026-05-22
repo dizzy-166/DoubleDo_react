@@ -186,6 +186,19 @@ function CompetitionsPage() {
     }
   }, [user]);
 
+  // Перезагружаем данные когда вкладка/страница снова становится активной
+  // (например, после перехода в HabitsPage и обратно)
+  useEffect(() => {
+    if (!user) return;
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        loadCompetitions();
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, [user]);
+
   // Подписка на изменения в прогрессии привычек
   useEffect(() => {
     if (!user) return;
@@ -996,12 +1009,22 @@ function CompetitionCard({ competition, user, onRefresh, onDelete }) {
       if (competition.status === 'active') loadCalendarData();
     }, 30000);
 
+    // Перезагружаем когда вкладка снова становится активной
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible' && competition.status === 'active') {
+        loadCalendarData();
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
+
+    // Перезагружаем когда HabitsPage отмечает выполнение привычки
     const handleHabitCompleted = () => loadCalendarData();
     window.addEventListener('habit-completed', handleHabitCompleted);
 
     return () => {
       supabase.removeChannel(channel);
       clearInterval(interval);
+      document.removeEventListener('visibilitychange', handleVisibility);
       window.removeEventListener('habit-completed', handleHabitCompleted);
     };
   }, [competition.competition_id, competition.habit_id, competition.status, lastUpdate]);
