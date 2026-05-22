@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useTheme } from '../context/ThemeContext.jsx';
+import { useLang } from '../context/LangContext.jsx';
 import { supabase } from '../services/supabase';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
@@ -11,6 +12,8 @@ import './ProfilePage.css';
 function ProfilePage() {
   const { user } = useAuth();
   const { theme, toggleTheme } = useTheme();
+  const { lang, setLang } = useLang();
+  const toggleLang = () => setLang(lang === 'ru' ? 'en' : 'ru');
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [editingUsername, setEditingUsername] = useState(false);
@@ -434,6 +437,20 @@ function ProfilePage() {
                     onClick={toggleTheme}
                     aria-label="Переключить тему"
                   />
+                </div>
+                <div className="setting-row">
+                  <div className="setting-info">
+                    <span className="setting-label">{lang === 'ru' ? 'Язык' : 'Language'}</span>
+                    <span className="setting-desc">{lang === 'ru' ? 'Переключить на English' : 'Switch to Русский'}</span>
+                  </div>
+                  <button
+                    className="toggle-switch"
+                    style={{ fontFamily: 'inherit', fontSize: 11, fontWeight: 700, letterSpacing: '0.05em', width: 52, height: 28 }}
+                    onClick={toggleLang}
+                    aria-label="Switch language"
+                  >
+                    {lang === 'ru' ? 'RU' : 'EN'}
+                  </button>
                 </div>
               </div>
 
