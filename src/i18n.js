@@ -1,4 +1,4 @@
-/* ── DoubleDo i18n ──────────────────────────────────────────────
+/* ── duo. i18n ──────────────────────────────────────────────────
    Shared key with hi-dashboard: localStorage 'hi_lang'
    Values: 'ru' | 'en'   Default: 'ru'
 ────────────────────────────────────────────────────────────────── */
@@ -25,7 +25,7 @@ export const strings = {
     back:       '← назад',
 
     // ── Auth ─────────────────────────────────────────────────────
-    loginTitle:   'DoubleDo',
+    loginTitle:   'duo.',
     loginSub:     'соревнование привычек · hi. экосистема',
     loginSendBtn: 'Получить код',
     loginSending: 'Отправка…',
@@ -125,7 +125,7 @@ export const strings = {
     back:       '← back',
 
     // ── Auth ─────────────────────────────────────────────────────
-    loginTitle:   'DoubleDo',
+    loginTitle:   'duo.',
     loginSub:     'habit competition · hi. ecosystem',
     loginSendBtn: 'Get code',
     loginSending: 'Sending…',

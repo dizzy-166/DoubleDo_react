@@ -907,7 +907,7 @@ function HabitsPage() {
       <div className="habits-page">
         <header className="habits-header">
           <div className="header-content">
-            <h1>DoubleDo</h1>
+            <h1>duo.</h1>
             <div className="user-avatar">
               <span>👤</span>
             </div>
@@ -930,7 +930,7 @@ function HabitsPage() {
       <div className="habits-page">
         <header className="habits-header">
           <div className="header-content">
-            <h1>DoubleDo</h1>
+            <h1>duo.</h1>
             <div className="user-avatar">
               <span>👤</span>
             </div>
@@ -953,7 +953,7 @@ function HabitsPage() {
       <div className="habits-page">
         <header className="habits-header">
           <div className="header-content">
-            <h1>DoubleDo</h1>
+            <h1>duo.</h1>
             <div className="user-avatar" onClick={() => navigate('/profile')}>
               <span>{user?.email?.charAt(0).toUpperCase() || 'U'}</span>
             </div>
@@ -1036,7 +1036,7 @@ function HabitsPage() {
       )}
       <header className="habits-header">
         <div className="header-content">
-          <h1>DoubleDo</h1>
+          <h1>duo.</h1>
           <div className="user-avatar" onClick={() => navigate('/profile')}>
             <span>{user?.email?.charAt(0).toUpperCase() || 'U'}</span>
           </div>

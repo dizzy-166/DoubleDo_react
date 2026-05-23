@@ -330,7 +330,7 @@ function ProfilePage() {
       {/* Заголовок как в HabitsPage */}
       <header className="profile-header">
         <div className="header-content">
-          <h1>DoubleDo</h1>
+          <h1>duo.</h1>
           <div className="user-avatar">
             <span>{getAvatarInitials()}</span>
           </div>
@@ -521,7 +521,7 @@ function ProfilePage() {
                             <li><span className="step-icon">🧭</span><span>Открой сайт в <b>Safari</b> (не Chrome)</span></li>
                             <li><span className="step-icon">📤</span><span>Нажми кнопку <b>«Поделиться»</b> внизу экрана</span></li>
                             <li><span className="step-icon">🏠</span><span>Выбери <b>«На экран «Домой»»</b></span></li>
-                            <li><span className="step-icon">📲</span><span>Открой <b>DoubleDo</b> с рабочего стола</span></li>
+                            <li><span className="step-icon">📲</span><span>Открой <b>duo.</b> с рабочего стола</span></li>
                             <li><span className="step-icon">🔔</span><span>Вернись сюда и нажми кнопку выше</span></li>
                           </ol>
                         </div>
@@ -629,7 +629,7 @@ function ProfilePage() {
             ✨ Что нового?
           </button>
           <p className="app-info">
-            DoubleDo — приложение для отслеживания привычек и соревнований
+            duo. — приложение для отслеживания привычек и соревнований
           </p>
           <p className="version">Версия 1.0.0</p>
         </div>
@@ -661,7 +661,7 @@ function ProfilePage() {
                     <li><span className="wn-icon">⚡</span><span>Вызовы между участниками соревнований — бросай и принимай вызовы прямо в карточке соревнования</span></li>
                     <li><span className="wn-icon">📋</span><span>Запрос на пропуск дня — можно попросить соперника засчитать пропуск по уважительной причине</span></li>
                     <li><span className="wn-icon">🔔</span><span>Push-уведомления: напоминания о привычках, реакции на пропуски, уведомления о вызовах</span></li>
-                    <li><span className="wn-icon">🏆</span><span>Иконка приложения DoubleDo и поддержка установки на экран «Домой» (PWA)</span></li>
+                    <li><span className="wn-icon">🏆</span><span>Иконка приложения duo. и поддержка установки на экран «Домой» (PWA)</span></li>
                     <li><span className="wn-icon">📊</span><span>Разбивка профиля на вкладки «Профиль» и «Уведомления»</span></li>
                   </ul>
                 </div>

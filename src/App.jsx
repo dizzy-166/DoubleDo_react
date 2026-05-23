@@ -660,8 +660,8 @@ const handleSubmit = async (e) => {
         <div className="app">
           <div className="auth-container">
             <div className="auth-logo">
-              <img src="/icon-192.png" className="auth-logo-img" alt="DoubleDo" />
-              <span className="auth-logo-text">DoubleDo</span>
+              <img src="/icon-192.png" className="auth-logo-img" alt="duo." />
+              <span className="auth-logo-text">duo.</span>
             </div>
 
             <div className="otp-header">
@@ -743,8 +743,8 @@ const handleSubmit = async (e) => {
       <div className="app">
         <div className={`auth-container ${transitioning ? 'fade-out' : 'fade-in'}`}>
           <div className="auth-logo">
-            <img src="/icon-192.png" className="auth-logo-img" alt="DoubleDo" />
-            <span className="auth-logo-text">DoubleDo</span>
+            <img src="/icon-192.png" className="auth-logo-img" alt="duo." />
+            <span className="auth-logo-text">duo.</span>
           </div>
 
           <div className="auth-tabs">

@@ -368,7 +368,7 @@ function CompetitionsPage() {
       <div className="competitions-page">
         <header className="competitions-header">
           <div className="header-content">
-            <h1>DoubleDo</h1>
+            <h1>duo.</h1>
             <div className="user-avatar" onClick={() => navigate('/profile')}>
               <span>{user?.email?.charAt(0).toUpperCase() || 'U'}</span>
             </div>
@@ -386,7 +386,7 @@ function CompetitionsPage() {
     return (
       <div className="competitions-page">
         <header className="competitions-header">
-          <div className="header-content"><h1>DoubleDo</h1></div>
+          <div className="header-content"><h1>duo.</h1></div>
         </header>
         <div className="empty-competitions-container">
           <h2>Пожалуйста, войдите в систему</h2>
@@ -447,7 +447,7 @@ function CompetitionsPage() {
 
       <header className="competitions-header">
         <div className="header-content">
-          <h1>DoubleDo</h1>
+          <h1>duo.</h1>
           <div className="user-avatar" onClick={() => navigate('/profile')}>
             <span>{user?.email?.charAt(0).toUpperCase() || 'U'}</span>
           </div>
@@ -1957,7 +1957,7 @@ function InviteLinkModal({ setShowModal }) {
   };
 
   const handleCopy = () => {
-    const text = `Вас приглашают в соревнование по привычке «${formData.habitTitle}» на ${formData.duration} дней в приложении DoubleDo!\n\nПерейдите по ссылке, чтобы принять вызов:\n${generatedLink}`;
+    const text = `Вас приглашают в соревнование по привычке «${formData.habitTitle}» на ${formData.duration} дней в приложении duo.!\n\nПерейдите по ссылке, чтобы принять вызов:\n${generatedLink}`;
     navigator.clipboard.writeText(text).then(() => {
       setCopied(true);
       toast.success('Ссылка скопирована!');

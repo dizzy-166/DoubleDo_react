@@ -222,7 +222,7 @@ export default function InvitePage() {
         <div className="invite-card">
           <div className="invite-logo">
             <div className="invite-logo-icon">DD</div>
-            <div className="invite-logo-text">DoubleDo</div>
+            <div className="invite-logo-text">duo.</div>
           </div>
           <div className="invite-error-block">
             <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
@@ -260,7 +260,7 @@ export default function InvitePage() {
         <div className="invite-card">
           <div className="invite-logo">
             <div className="invite-logo-icon">DD</div>
-            <div className="invite-logo-text">DoubleDo</div>
+            <div className="invite-logo-text">duo.</div>
           </div>
           <InviteInfoCard />
           <button className="invite-action-btn" onClick={acceptInvite} disabled={accepting}>
@@ -280,7 +280,7 @@ export default function InvitePage() {
       <div className="invite-card">
         <div className="invite-logo">
           <div className="invite-logo-icon">DD</div>
-          <div className="invite-logo-text">DoubleDo</div>
+          <div className="invite-logo-text">duo.</div>
         </div>
 
         <InviteInfoCard />
